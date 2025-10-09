@@ -39,6 +39,6 @@ Route::get('/kelola-jadwal', function () {
 })->name('kelola-jadwal');
 
 Route::get('/profil', function () {
-    return view('profil');
+    return view('profile');
 })->name('profil');
 
