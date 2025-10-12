@@ -15,6 +15,18 @@ Route::get('/dashboard', function () {
     return view('dashboard');
 })->name('dashboard');
 
+Route::get('/kelola-pengguna/tambah-pengguna', function () {
+    return view('tambah-pengguna');
+})->name('tambah-pengguna');
+
+Route::get('/kelola-pengguna', function () {
+    return view('kelola-pengguna');
+})->name('admin');
+
+Route::get('/kelola-matkul', function () {
+    return view('kelola-matkul');
+})->name('kelola-matkul');
+
 Route::get('/scan-qr', function () {
     return view('scanqr');
 })->name('scanqr');
@@ -22,6 +34,14 @@ Route::get('/scan-qr', function () {
 Route::get('/logbook', function () {
     return view('logbook');
 })->name('logbook');
+
+Route::get('/ambil-jadwal', function () {
+    return view('ambil-jadwal');
+})->name('ambil-jadwal');
+
+Route::get('/kelola-jadwal', function () {
+    return view('kelola-jadwal');
+})->name('kelola-jadwal');
 
 Route::get('/profile', function () {
     return view('profile'); // Langsung tampilkan view profile.blade.php
@@ -34,3 +54,4 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/auth.php';
+
