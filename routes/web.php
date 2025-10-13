@@ -1,9 +1,14 @@
 <?php
 
+use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
+});
+
+Route::get('/login', function () {
+    return view('auth.login');
 });
 
 Route::get('/dashboard', function () {
@@ -42,7 +47,15 @@ Route::get('/kelola-jadwal', function () {
     return view('kelola-jadwal');
 })->name('kelola-jadwal');
 
-Route::get('/profil', function () {
-    return view('profile');
-})->name('profil');
+Route::get('/profile', function () {
+    return view('profile'); // Langsung tampilkan view profile.blade.php
+})->name('profile.edit');
+
+
+Route::middleware('auth')->group(function () {
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+require __DIR__.'/auth.php';
 
