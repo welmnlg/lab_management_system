@@ -2,25 +2,23 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
+    protected $primaryKey = 'user_id'; // pakai kunci primary custom
+
     protected $fillable = [
         'name',
         'email',
         'password',
+        // tambahkan fields lain jika ada
     ];
+
 
     /**
      * The attributes that should be hidden for serialization.
@@ -32,16 +30,26 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+    ];
+
+    // Relasi ke user_courses (user punya banyak kelas praktikum)
+    public function userCourses()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return $this->hasMany(UserCourse::class, 'user_id', 'user_id');
+    }
+
+    // Relasi many-to-many ke roles lewat tabel pivot role_user
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class, 'role_user', 'user_id', 'role_id');
+    }
+
+    // Relasi ke Program studi untuk program user
+    public function program()
+    {
+        return $this->belongsTo(Program::class, 'program_studi', 'program_id');
     }
 }
