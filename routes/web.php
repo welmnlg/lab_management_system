@@ -39,6 +39,10 @@ Route::get('/ambil-jadwal', function () {
     return view('ambil-jadwal');
 })->name('ambil-jadwal');
 
+Route::get('/form-ambil-jadwal', function () {
+    return view('form-ambil-jadwal');
+})->name('form-ambil-jadwal');
+
 Route::get('/kelola-jadwal', function () {
     return view('kelola-jadwal');
 })->name('kelola-jadwal');
