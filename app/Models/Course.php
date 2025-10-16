@@ -12,4 +12,9 @@ class Course extends Model
     {
         return $this->hasMany(CourseClass::class, 'course_id', 'course_id');
     }
+    // Relasi ke Logbooks (course memiliki banyak logbook)
+    public function logbooks()
+    {
+        return $this->hasMany(Logbook::class, 'course_id', 'course_id');
+    }
 }

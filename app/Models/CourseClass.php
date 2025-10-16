@@ -17,4 +17,8 @@ class CourseClass extends Model
     {
         return $this->hasMany(UserCourse::class, 'class_id', 'class_id');
     }
+    public function schedules()
+    {
+    return $this->hasMany(Schedule::class, 'class_id', 'class_id');
+    }
 }

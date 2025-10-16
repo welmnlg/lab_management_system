@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
         SchedulesTableSeeder::class,
         ScheduleOverridesTableSeeder::class,
         NotificationsTableSeeder::class,
+        LogbookSeeder::class,
         ]);
         // User::factory(10)->create();
 

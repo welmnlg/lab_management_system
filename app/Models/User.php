@@ -52,4 +52,38 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Program::class, 'program_studi', 'program_id');
     }
+
+    // Relasi ke Logbooks (user memiliki banyak logbook)
+    public function logbooks()
+    {
+        return $this->hasMany(Logbook::class, 'user_id', 'user_id');
+    }
+
+    // Relasi ke Schedules (user memiliki banyak jadwal)
+    public function schedules()
+    {
+        return $this->hasMany(Schedule::class, 'user_id', 'user_id');
+    }
+
+    // Relasi ke ScheduleOverrides
+    public function scheduleOverrides()
+    {
+        return $this->hasMany(ScheduleOverride::class, 'user_id', 'user_id');
+    }
+
+    // Method untuk get active logbook (yang belum logout)
+    public function getActiveLogbook()
+    {
+        return $this->logbooks()
+                    ->whereDate('date', today())
+                    ->whereNull('logout')
+                    ->first();
+    }
+
+    // Method untuk check apakah user sedang menggunakan ruangan
+    public function isUsingRoom()
+    {
+        return $this->getActiveLogbook() !== null;
+    }
+
 }
