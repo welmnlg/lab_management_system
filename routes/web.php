@@ -46,3 +46,7 @@ Route::get('/profil', function () {
     return view('profile');
 })->name('profil');
 
+Route::get('/notifikasi', function () {
+    return view('notifikasi');
+})->name('notifikasi');
+

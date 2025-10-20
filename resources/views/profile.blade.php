@@ -78,7 +78,7 @@
                     </div>
                 </div>
                 {{-- Bagian Kanan (Tombol) --}}
-                <div id="tombol-jadwal-1" class="flex-shrink-0 flex sm:flex-col md:flex-row gap-2 w-full sm:w-auto">
+                <div id="tombol-jadwal-1" class="flex-shrink-0 flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                     <button onclick="konfirmasiPindahRuangan(1)"
                         class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-blue-900 to-gray-700 rounded-lg hover:opacity-90 transition min-w-[135px]">
                         Pindah Ruangan
@@ -110,7 +110,7 @@
                     </div>
                 </div>
                 {{-- Bagian Kanan (Tombol) --}}
-                <div id="tombol-jadwal-2" class="flex-shrink-0 flex sm:flex-col md:flex-row gap-2 w-full sm:w-auto">
+                <div id="tombol-jadwal-2" class="flex-shrink-0 flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                     <button onclick="konfirmasiBatal(2)"
                         class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-red-700 to-orange-500 rounded-lg hover:opacity-90 transition min-w-[135px]">
                         Batal
@@ -147,7 +147,7 @@
                     </div>
                 </div>
                 {{-- Bagian Kanan (Tombol) --}}
-                <div id="tombol-jadwal-selasa-1" class="flex-shrink-0 flex sm:flex-col md:flex-row gap-2 w-full sm:w-auto">
+                <div id="tombol-jadwal-selasa-1" class="flex-shrink-0 flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                     <button onclick="konfirmasiBatal('selasa-1')"
                         class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-red-700 to-orange-500 rounded-lg hover:opacity-90 transition min-w-[135px]">
                         Batal
@@ -179,7 +179,7 @@
                     </div>
                 </div>
                 {{-- Bagian Kanan (Tombol) --}}
-                <div id="tombol-jadwal-selasa-2" class="flex-shrink-0 flex sm:flex-col md:flex-row gap-2 w-full sm:w-auto">
+                <div id="tombol-jadwal-selasa-2" class="flex-shrink-0 flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                     <button onclick="konfirmasiBatal('selasa-2')"
                         class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-red-700 to-orange-500 rounded-lg hover:opacity-90 transition min-w-[135px]">
                         Batal
