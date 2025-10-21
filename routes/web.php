@@ -47,9 +47,9 @@ Route::get('/kelola-jadwal', function () {
     return view('kelola-jadwal');
 })->name('kelola-jadwal');
 
-Route::get('/profile', function () {
-    return view('profile'); // Langsung tampilkan view profile.blade.php
-})->name('profile.edit');
+Route::get('/profil', function () {
+    return view('profile');
+})->name('profil');
 
 
 Route::middleware('auth')->group(function () {
