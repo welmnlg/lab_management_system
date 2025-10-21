@@ -79,9 +79,9 @@
                     </div>
                 </div>
                 {{-- Bagian Kanan (Tombol) --}}
-                <div id="tombol-jadwal-1" class="flex-shrink-0 flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                    <button onclick="konfirmasiPindahRuangan(1)"
-                        class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-blue-900 to-gray-700 rounded-lg hover:opacity-90 transition min-w-[135px]">
+                <div class="flex-shrink-0 flex sm:flex-col md:flex-row gap-2 w-full sm:w-auto">
+                    <a href="{{ route('scanqr') }}"
+                        class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-blue-900 to-gray-700 rounded-lg hover:opacity-90">
                         Pindah Ruangan
                     </a> <button
                         class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-red-700 to-orange-500 rounded-lg hover:opacity-90">Selesai</button>
@@ -109,6 +109,7 @@
                     </div>
                 </div>
                 {{-- Bagian Kanan (Tombol) --}}
+<<<<<<< HEAD
                 <div id="tombol-jadwal-2" class="flex-shrink-0 flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                     <button onclick="konfirmasiBatal(2)"
                         class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-red-700 to-orange-500 rounded-lg hover:opacity-90 transitio
@@ -188,6 +189,13 @@
                         class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-blue-900 to-gray-700 rounded-lg hover:opacity-90 transition min-w-[135px]">
                         Konfirmasi
                     </button>
+=======
+                <div class="flex-shrink-0 flex sm:flex-col md:flex-row gap-2 w-full sm:w-auto">
+                    <button
+                        class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-red-700 to-orange-500 rounded-lg hover:opacity-90">Batal</button>
+                    <button
+                        class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-blue-900 to-gray-700 rounded-lg hover:opacity-90">Konfirmasi</button>
+>>>>>>> 5904c6d370172a1dfe29eef05bbce6744c78e1f9
                 </div>
             </div>
 
