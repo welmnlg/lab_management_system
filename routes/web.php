@@ -59,3 +59,7 @@ Route::middleware('auth')->group(function () {
 
 require __DIR__.'/auth.php';
 
+Route::get('/notifikasi', function () {
+    return view('notifikasi');
+})->name('notifikasi');
+

@@ -79,9 +79,9 @@
                     </div>
                 </div>
                 {{-- Bagian Kanan (Tombol) --}}
-                <div class="flex-shrink-0 flex sm:flex-col md:flex-row gap-2 w-full sm:w-auto">
-                    <a href="{{ route('scanqr') }}"
-                        class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-blue-900 to-gray-700 rounded-lg hover:opacity-90">
+                <div id="tombol-jadwal-1" class="flex-shrink-0 flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                    <button onclick="konfirmasiPindahRuangan(1)"
+                        class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-blue-900 to-gray-700 rounded-lg hover:opacity-90 transition min-w-[135px]">
                         Pindah Ruangan
                     </a> <button
                         class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-red-700 to-orange-500 rounded-lg hover:opacity-90">Selesai</button>
@@ -109,11 +109,85 @@
                     </div>
                 </div>
                 {{-- Bagian Kanan (Tombol) --}}
-                <div class="flex-shrink-0 flex sm:flex-col md:flex-row gap-2 w-full sm:w-auto">
-                    <button
-                        class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-red-700 to-orange-500 rounded-lg hover:opacity-90">Batal</button>
-                    <button
-                        class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-blue-900 to-gray-700 rounded-lg hover:opacity-90">Konfirmasi</button>
+                <div id="tombol-jadwal-2" class="flex-shrink-0 flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                    <button onclick="konfirmasiBatal(2)"
+                        class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-red-700 to-orange-500 rounded-lg hover:opacity-90 transitio
+                        n min-w-[135px]">
+                        Batal
+                    </button>
+                    <button onclick="konfirmasiAjar(2)"
+                        class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-blue-900 to-gray-700 rounded-lg hover:opacity-90 transition min-w-[135px]">
+                        Konfirmasi
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        {{-- Daftar Jadwal untuk SELASA --}}
+        <div id="jadwal-selasa" class="space-y-4 hidden">
+
+            <!-- Jadwal Selasa 1: Akan Berlangsung -->
+            <div id="jadwal-selasa-1"
+                class="bg-gray-50 rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 border-l-4 border-gray-400 shadow-sm">
+                {{-- Bagian Kiri (Info) --}}
+                <div class="flex-grow w-full">
+                    <p class="font-bold text-gray-800">Mata Kuliah: Praktikum Basis Data</p>
+                    <div class="flex items-center flex-wrap gap-2 text-sm text-gray-600 mt-2">
+                        <span class="flex items-center gap-1.5 bg-gray-200 px-2 py-1 rounded-md"><svg class="w-4 h-4"
+                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg> 10:00 - 11:40</span>
+                        <span class="bg-gray-200 px-2 py-1 rounded-md">KOM C1</span>
+                        <span class="bg-gray-200 px-2 py-1 rounded-md">Lab Database</span>
+                    </div>
+                    <div class="mt-3">
+                        <span id="status-jadwal-selasa-1" class="px-3 py-1 text-xs font-semibold text-gray-800 bg-gray-200 rounded-full">Akan Berlangsung</span>
+                    </div>
+                </div>
+                {{-- Bagian Kanan (Tombol) --}}
+                <div id="tombol-jadwal-selasa-1" class="flex-shrink-0 flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                    <button onclick="konfirmasiBatal('selasa-1')"
+                        class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-red-700 to-orange-500 rounded-lg hover:opacity-90 transition min-w-[135px]">
+                        Batal
+                    </button>
+                    <button onclick="konfirmasiAjar('selasa-1')"
+                        class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-blue-900 to-gray-700 rounded-lg hover:opacity-90 transition min-w-[135px]">
+                        Konfirmasi
+                    </button>
+                </div>
+            </div>
+
+            <!-- Jadwal Selasa 2: Akan Berlangsung -->
+            <div id="jadwal-selasa-2"
+                class="bg-gray-50 rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 border-l-4 border-gray-400 shadow-sm">
+                {{-- Bagian Kiri (Info) --}}
+                <div class="flex-grow w-full">
+                    <p class="font-bold text-gray-800">Mata Kuliah: Praktikum Pemrograman Web</p>
+                    <div class="flex items-center flex-wrap gap-2 text-sm text-gray-600 mt-2">
+                        <span class="flex items-center gap-1.5 bg-gray-200 px-2 py-1 rounded-md"><svg class="w-4 h-4"
+                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg> 13:00 - 14:40</span>
+                        <span class="bg-gray-200 px-2 py-1 rounded-md">KOM D1</span>
+                        <span class="bg-gray-200 px-2 py-1 rounded-md">Lab Pemrograman</span>
+                    </div>
+                    <div class="mt-3">
+                        <span id="status-jadwal-selasa-2" class="px-3 py-1 text-xs font-semibold text-gray-800 bg-gray-200 rounded-full">Akan Berlangsung</span>
+                    </div>
+                </div>
+                {{-- Bagian Kanan (Tombol) --}}
+                <div id="tombol-jadwal-selasa-2" class="flex-shrink-0 flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                    <button onclick="konfirmasiBatal('selasa-2')"
+                        class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-red-700 to-orange-500 rounded-lg hover:opacity-90 transition min-w-[135px]">
+                        Batal
+                    </button>
+                    <button onclick="konfirmasiAjar('selasa-2')"
+                        class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-blue-900 to-gray-700 rounded-lg hover:opacity-90 transition min-w-[135px]">
+                        Konfirmasi
+                    </button>
                 </div>
             </div>
 

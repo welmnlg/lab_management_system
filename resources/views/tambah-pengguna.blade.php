@@ -17,7 +17,7 @@
                 <label class="block text-sm font-medium text-gray-700">Nama Lengkap <span class="text-red-500">*</span></label>
                 <input type="text" 
                        placeholder="Masukkan nama lengkap Anda" 
-                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 sm:px-4 sm:py-3">
             </div>
 
             <!-- NIM -->
@@ -25,7 +25,7 @@
                 <label class="block text-sm font-medium text-gray-700">NIM <span class="text-red-500">*</span></label>
                 <input type="text" 
                        placeholder="Masukkan NIM Anda" 
-                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 sm:px-4 sm:py-3">
             </div>
 
             <!-- Email -->
@@ -33,7 +33,7 @@
                 <label class="block text-sm font-medium text-gray-700">Email <span class="text-red-500">*</span></label>
                 <input type="email" 
                        placeholder="Masukkan alamat email Anda" 
-                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 sm:px-4 sm:py-3">
             </div>
 
             <!-- Kata Sandi -->
@@ -41,23 +41,23 @@
                 <label class="block text-sm font-medium text-gray-700">Kata Sandi <span class="text-red-500">*</span></label>
                 <input type="password" 
                        placeholder="Masukkan kata sandi" 
-                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 sm:px-4 sm:py-3">
             </div>
 
             <!-- Garis Pemisah -->
-            <div class="border-t border-gray-200 my-6"></div>
+            <div class="border-t border-gray-200 my-4 sm:my-6"></div>
 
             <!-- Mata Kuliah - Struktur Baru -->
             <div class="space-y-4">
                 <h3 class="text-lg font-medium text-gray-900">Mata Kuliah</h3>
                 
                 <!-- Baris 1 - Mata Kuliah 1 dan Kelas MK 1 -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <!-- Mata Kuliah 1 -->
                     <div class="space-y-2">
                         <label class="block text-sm font-medium text-gray-700">Mata Kuliah 1 <span class="text-red-500">*</span></label>
                         <div class="relative">
-                            <select id="mataKuliah1" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white">
+                            <select id="mataKuliah1" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white sm:px-4 sm:py-3">
                                 <option value="">Pilih mata kuliah...</option>
                                 <option value="kecerdasan_buatan">Praktikum Kecerdasan Buatan</option>
                                 <option value="desain_interaksi">Praktikum Desain Interaksi</option>
@@ -74,7 +74,7 @@
                     <div class="space-y-2">
                         <label class="block text-sm font-medium text-gray-700">Kelas MK 1 <span class="text-red-500">*</span></label>
                         <div class="relative">
-                            <select id="kelasMK1" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white">
+                            <select id="kelasMK1" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white sm:px-4 sm:py-3">
                                 <option value="">Pilih kelas...</option>
                                 <option value="KOM A1">KOM A</option>
                                 <option value="KOM A2">KOM B</option>
@@ -88,12 +88,12 @@
                 </div>
                 
                 <!-- Baris 2 - Mata Kuliah 2 dan Kelas MK 2 -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <!-- Mata Kuliah 2 -->
                     <div class="space-y-2">
                         <label class="block text-sm font-medium text-gray-700">Mata Kuliah 2</label>
                         <div class="relative">
-                            <select id="mataKuliah2" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white">
+                            <select id="mataKuliah2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white sm:px-4 sm:py-3">
                                 <option value="">Pilih mata kuliah...</option>
                                 <option value="kecerdasan_buatan">Praktikum Kecerdasan Buatan</option>
                                 <option value="desain_interaksi">Praktikum Desain Interaksi</option>
@@ -110,9 +110,9 @@
                     <div class="space-y-2">
                         <label class="block text-sm font-medium text-gray-700">Kelas MK 2</label>
                         <div class="relative">
-                            <select id="kelasMK2" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white">
+                            <select id="kelasMK2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white sm:px-4 sm:py-3">
                                 <option value="">Pilih kelas...</option>
-                                <<option value="KOM A1">KOM A</option>
+                                <option value="KOM A1">KOM A</option>
                                 <option value="KOM A2">KOM B</option>
                                 <option value="KOM B1">KOM C</option>
                             </select>
@@ -124,12 +124,12 @@
                 </div>
                 
                 <!-- Baris 3 - Mata Kuliah 3 dan Kelas MK 3 -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <!-- Mata Kuliah 3 -->
                     <div class="space-y-2">
                         <label class="block text-sm font-medium text-gray-700">Mata Kuliah 3</label>
                         <div class="relative">
-                            <select id="mataKuliah3" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white">
+                            <select id="mataKuliah3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white sm:px-4 sm:py-3">
                                 <option value="">Pilih mata kuliah...</option>
                                 <option value="kecerdasan_buatan">Praktikum Kecerdasan Buatan</option>
                                 <option value="desain_interaksi">Praktikum Desain Interaksi</option>
@@ -146,7 +146,7 @@
                     <div class="space-y-2">
                         <label class="block text-sm font-medium text-gray-700">Kelas MK 3</label>
                         <div class="relative">
-                            <select id="kelasMK3" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white">
+                            <select id="kelasMK3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white sm:px-4 sm:py-3">
                                 <option value="">Pilih kelas...</option>
                                 <option value="KOM A1">KOM A</option>
                                 <option value="KOM A2">KOM B</option>
@@ -161,7 +161,7 @@
             </div>
 
             <!-- Garis Pemisah -->
-            <div class="border-t border-gray-200 my-6"></div>
+            <div class="border-t border-gray-200 my-4 sm:my-6"></div>
 
             <!-- Peran -->
             <div class="space-y-4">
@@ -179,17 +179,17 @@
             </div>
 
             <!-- Garis Pemisah -->
-            <div class="border-t border-gray-200 my-6"></div>
+            <div class="border-t border-gray-200 my-4 sm:my-6"></div>
 
             <!-- Button Simpan dan Batal -->
-            <div class="flex justify-end space-x-3">
+            <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                 <!-- Button Batal -->
-                <a href="{{ route('admin') }}" class="inline-flex items-center px-6 py-3 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-all duration-200 shadow-md hover:shadow-lg font-medium">
+                <a href="{{ route('admin') }}" class="inline-flex items-center justify-center px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-all duration-200 shadow-md hover:shadow-lg font-medium sm:px-6 sm:py-3">
                     <i class="bi bi-x-lg mr-2"></i>
                     Batal
                 </a>
                 <!-- Button Simpan -->
-                <button id="simpanButton" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-900 to-red-700 text-white rounded-md hover:from-blue-800 hover:to-red-600 transition-all duration-200 shadow-md hover:shadow-lg font-medium">
+                <button id="simpanButton" class="inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-blue-900 to-red-700 text-white rounded-md hover:from-blue-800 hover:to-red-600 transition-all duration-200 shadow-md hover:shadow-lg font-medium sm:px-6 sm:py-3">
                     <i class="bi bi-check-lg mr-2"></i>
                     Simpan
                 </button>
