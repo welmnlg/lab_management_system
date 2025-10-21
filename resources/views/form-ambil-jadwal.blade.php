@@ -22,7 +22,7 @@
                 <input type="text" 
                        name="nama_lengkap"
                        id="nama_lengkap"
-                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                       class="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 text-sm sm:text-base"
                        placeholder="Masukkan nama lengkap Anda"
                        required>
             </div>
@@ -35,7 +35,7 @@
                 <input type="text" 
                        name="nim"
                        id="nim"
-                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                       class="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 text-sm sm:text-base"
                        placeholder="Masukkan NIM Anda"
                        required>
             </div>
@@ -47,7 +47,7 @@
                 </label>
                 <select name="mata_kuliah" 
                         id="mata_kuliah"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200" 
+                        class="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 text-sm sm:text-base" 
                         required>
                     <option value="">Pilih Mata Kuliah</option>
                     <option value="praktikum-kecerdasan-buatan">Praktikum Kecerdasan Buatan</option>
@@ -64,7 +64,7 @@
                 </label>
                 <select name="kelas" 
                         id="kelas"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200" 
+                        class="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 text-sm sm:text-base" 
                         required>
                     <option value="">Pilih Kelas</option>
                     <option value="kom-a1">KOM A1</option>
@@ -83,7 +83,7 @@
                 </label>
                 <select name="ruangan" 
                         id="ruangan"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200" 
+                        class="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 text-sm sm:text-base" 
                         required>
                     <option value="">Pilih Ruangan</option>
                     <option value="lab-jaringan-1">Lab Jaringan 1</option>
@@ -100,7 +100,7 @@
                 </label>
                 <select name="hari" 
                         id="hari"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200" 
+                        class="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 text-sm sm:text-base" 
                         required>
                     <option value="">Pilih Hari</option>
                     <option value="senin">Senin</option>
@@ -118,7 +118,7 @@
                 </label>
                 <select name="waktu" 
                         id="waktu"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200" 
+                        class="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 text-sm sm:text-base" 
                         required>
                     <option value="">Pilih Waktu</option>
                     <option value="08:00-09:40">08:00 - 09:40</option>
@@ -130,10 +130,10 @@
             </div>
 
             <!-- Button Simpan dan Batal -->
-            <div class="flex justify-end space-x-3 pt-6">
+            <div class="flex flex-col sm:flex-row sm:justify-end sm:space-x-3 space-y-3 sm:space-y-0 pt-4 sm:pt-6">
                 <!-- Button Batal -->
                 <a href="{{ route('ambil-jadwal') }}" 
-                   class="inline-flex items-center px-6 py-3 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-all duration-200 shadow-md hover:shadow-lg font-medium">
+                   class="inline-flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-all duration-200 shadow-md hover:shadow-lg font-medium">
                     <i class="bi bi-x-lg mr-2"></i>
                     Batal
                 </a>
@@ -141,7 +141,7 @@
                 <button type="submit" 
                         id="simpanButton" 
                         disabled
-                        class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-900 to-red-700 text-white rounded-md hover:from-blue-800 hover:to-red-600 transition-all duration-200 shadow-md hover:shadow-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+                        class="inline-flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-blue-900 to-red-700 text-white rounded-md hover:from-blue-800 hover:to-red-600 transition-all duration-200 shadow-md hover:shadow-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed">
                     <i class="bi bi-check-lg mr-2"></i>
                     Simpan
                 </button>
