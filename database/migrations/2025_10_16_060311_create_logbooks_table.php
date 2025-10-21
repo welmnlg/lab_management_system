@@ -21,7 +21,7 @@ return new class extends Migration
             $table->date('date'); 
             $table->time('login'); 
             $table->time('logout')->nullable(); 
-            $table->enum('activity', ['MENGAJAR', 'BELAJAR'])->default('MENGAJAR'); 
+            $table->enum('activity', ['MENGAJAR'])->default('MENGAJAR'); 
             $table->enum('status', ['GANTI RUANGAN', 'SELESAI'])->nullable(); 
             $table->timestamps();
 

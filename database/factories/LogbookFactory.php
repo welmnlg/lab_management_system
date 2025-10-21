@@ -33,7 +33,7 @@ class LogbookFactory extends Factory
             'date' => $this->faker->dateTimeBetween('-1 month', 'now')->format('Y-m-d'),
             'login' => $loginTime,
             'logout' => $logoutTime,
-            'activity' => $this->faker->randomElement(['MENGAJAR', 'BELAJAR']),
+            'activity' => $this->faker->randomElement(['MENGAJAR']),
             'status' => $this->faker->optional(0.7)->randomElement(['GANTI RUANGAN', 'SELESAI']),
         ];
     }
