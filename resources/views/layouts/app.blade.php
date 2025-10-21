@@ -139,7 +139,7 @@
                 </svg>
                 <span class="text-xs font-medium mt-1">Ambil Jadwal</span>
             </a>
-              <a href="{{ route('profil.edit') }}" class="flex flex-col items-center p-2 {{ request()->routeIs('profile.edit') ? 'text-white' : 'text-white/70' }}">
+              <a href="{{ route('profile.edit') }}" class="flex flex-col items-center p-2 {{ request()->routeIs('profile.edit') ? 'text-white' : 'text-white/70' }}">
              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
             </svg>
