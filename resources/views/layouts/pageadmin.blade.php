@@ -133,6 +133,62 @@
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
+
+        /* Custom scrollbar untuk sidebar desktop */
+        .sidebar-desktop::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .sidebar-desktop::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .sidebar-desktop::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        .sidebar-desktop::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        /* Smooth scrolling untuk sidebar */
+        .sidebar-desktop {
+            scroll-behavior: smooth;
+        }
+
+        /* Main content area styling */
+        .main-content {
+            margin-top: 64px; /* Height navbar */
+            margin-left: 256px; /* Width sidebar desktop */
+            min-height: calc(100vh - 64px);
+            transition: margin-left 0.3s ease;
+        }
+
+        @media (max-width: 1023px) {
+            .main-content {
+                margin-left: 0;
+            }
+        }
+
+        /* Ensure navbar stays on top */
+        .navbar-fixed {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+
+        /* Desktop sidebar fixed positioning */
+        .sidebar-desktop-fixed {
+            position: fixed;
+            top: 64px; /* Height navbar */
+            left: 0;
+            bottom: 0;
+            width: 256px;
+            z-index: 900;
+        }
     </style>
 </head>
 
@@ -244,8 +300,8 @@
         </div>
     </div>
 
-    <!-- Header -->
-    <div class="bg-white shadow-sm border-b border-gray-200 px-4 lg:px-6 py-4 sticky top-0 z-50">
+    <!-- Navbar (Fixed untuk semua device) -->
+    <div class="bg-white shadow-sm border-b border-gray-200 px-4 lg:px-6 py-4 navbar-fixed">
         <div class="flex items-center justify-between">
             <div class="flex items-center">
                 <!-- Mobile Menu Button -->
@@ -286,10 +342,24 @@
         </div>
     </div>
 
-    <div class="flex flex-col lg:flex-row min-h-screen">
-        <!-- Sidebar (Desktop only) -->
-        <div class="hidden lg:block w-64 bg-white shadow-sm border-r border-gray-200 min-h-screen">
+    <!-- Desktop Sidebar (Fixed Position) - DIHAPUS LOGO DAN TULISAN -->
+    <div class="hidden lg:block sidebar-desktop-fixed sidebar-desktop">
+        <div class="bg-white shadow-sm border-r border-gray-200 h-full overflow-y-auto">
             <nav class="p-4 space-y-2">
+                <!-- HAPUS BAGIAN INI: Logo/Header Sidebar Desktop -->
+                <!-- 
+                <div class="mb-6 pb-4 border-b border-gray-200">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 mr-3 relative">
+                            <img src="{{ asset('images/logo ITLG.png') }}" alt="ITLG Logo" class="w-full h-full object-contain">
+                        </div>
+                        <div>
+                            <h1 class="text-lg font-bold text-blue-900">ITLG LAB</h1>
+                            <p class="text-xs text-gray-500">Management System</p>
+                        </div>
+                    </div>
+                </div>
+                -->
                 
                 <a href="{{ route('dashboard') }}" 
                    class="flex items-center space-x-3 px-4 py-3 rounded-lg 
@@ -357,13 +427,13 @@
                 </a>
             </nav>
         </div>
+    </div>
 
-        <!-- Main Content -->
-        <main class="flex-1 pb-24 lg:pb-6 overflow-x-hidden">
-            <div class="p-4 md:p-6">
-                @yield('content')
-            </div>
-        </main>
+    <!-- Main Content Area -->
+    <div class="main-content">
+        <div class="p-4 md:p-6">
+            @yield('content')
+        </div>
     </div>
 
     <script>
