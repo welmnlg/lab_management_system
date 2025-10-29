@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 
 Route::get('/', function () {
     return view('welcome');
@@ -14,14 +16,6 @@ Route::get('/login', function () {
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->name('dashboard');
-
-Route::get('/kelola-pengguna/tambah-pengguna', function () {
-    return view('tambah-pengguna');
-})->name('tambah-pengguna');
-
-Route::get('/kelola-pengguna', function () {
-    return view('kelola-pengguna');
-})->name('admin');
 
 Route::get('/kelola-matkul', function () {
     return view('kelola-matkul');
@@ -51,11 +45,32 @@ Route::get('/profil', function () {
     return view('profile');
 })->name('profil');
 
+Route::get('/notifikasi', function () {
+    return view('notifikasi');
+})->name('notifikasi');
 
+
+// Semua route fitur user hanya untuk user yang sudah login
 Route::middleware('auth')->group(function () {
+    
+    // ========================================
+    // ROUTE DELETE MULTIPLE - HARUS SEBELUM RESOURCE!
+    // ========================================
+    Route::post('/kelola-pengguna/delete-multiple', [UserController::class, 'deleteMultiple'])
+        ->name('kelola-pengguna.delete-multiple');
+    
+    // ========================================
+    // RESOURCE CONTROLLER KELOLA PENGGUNA
+    // ========================================
+    Route::resource('kelola-pengguna', UserController::class);
+
+    // ========================================
+    // PROFILE ROUTES
+    // ========================================
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
 });
 
 require __DIR__.'/auth.php';
@@ -63,4 +78,3 @@ require __DIR__.'/auth.php';
 Route::get('/notifikasi', function () {
     return view('notifikasi');
 })->name('notifikasi');
-

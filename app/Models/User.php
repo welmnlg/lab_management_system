@@ -10,15 +10,31 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
-    protected $primaryKey = 'user_id'; // pakai kunci primary custom
+    /**
+     * Primary key custom
+     */
+    protected $primaryKey = 'user_id';
 
+    /**
+     * Route key name untuk route model binding
+     */
+    public function getRouteKeyName()
+    {
+        return 'user_id';
+    }
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'name',
+        'nim',
         'email',
         'password',
-        // tambahkan fields lain jika ada
+        'program_studi',
     ];
-
 
     /**
      * The attributes that should be hidden for serialization.
@@ -30,48 +46,67 @@ class User extends Authenticatable
         'remember_token',
     ];
 
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
 
-    // Relasi ke user_courses (user punya banyak kelas praktikum)
+    /**
+     * Relasi ke user_courses (user punya banyak kelas praktikum)
+     */
     public function userCourses()
     {
         return $this->hasMany(UserCourse::class, 'user_id', 'user_id');
     }
 
-    // Relasi many-to-many ke roles lewat tabel pivot role_user
+    /**
+     * Relasi many-to-many ke roles lewat tabel pivot role_user
+     */
     public function roles()
     {
         return $this->belongsToMany(Role::class, 'role_user', 'user_id', 'role_id');
     }
 
-    // Relasi ke Program studi untuk program user
+    /**
+     * Relasi ke Program studi untuk program user
+     */
     public function program()
     {
         return $this->belongsTo(Program::class, 'program_studi', 'program_id');
     }
 
-    // Relasi ke Logbooks (user memiliki banyak logbook)
+    /**
+     * Relasi ke Logbooks (user memiliki banyak logbook)
+     */
     public function logbooks()
     {
         return $this->hasMany(Logbook::class, 'user_id', 'user_id');
     }
 
-    // Relasi ke Schedules (user memiliki banyak jadwal)
+    /**
+     * Relasi ke Schedules (user memiliki banyak jadwal)
+     */
     public function schedules()
     {
         return $this->hasMany(Schedule::class, 'user_id', 'user_id');
     }
 
-    // Relasi ke ScheduleOverrides
+    /**
+     * Relasi ke ScheduleOverrides
+     */
     public function scheduleOverrides()
     {
         return $this->hasMany(ScheduleOverride::class, 'user_id', 'user_id');
     }
 
-    // Method untuk get active logbook (yang belum logout)
+    /**
+     * Method untuk get active logbook (yang belum logout)
+     */
     public function getActiveLogbook()
     {
         return $this->logbooks()
@@ -80,10 +115,33 @@ class User extends Authenticatable
                     ->first();
     }
 
-    // Method untuk check apakah user sedang menggunakan ruangan
+    /**
+     * Method untuk check apakah user sedang menggunakan ruangan
+     */
     public function isUsingRoom()
     {
         return $this->getActiveLogbook() !== null;
     }
 
+    /**
+     * Helper method untuk check apakah user memiliki role tertentu
+     * 
+     * @param string $roleName
+     * @return bool
+     */
+    public function hasRole($roleName)
+    {
+        return $this->roles()->where('status', strtolower($roleName))->exists();
+    }
+
+    /**
+     * Helper method untuk get role pertama user
+     * 
+     * @return string|null
+     */
+    public function getRole()
+    {
+        $role = $this->roles()->first();
+        return $role ? $role->status : null;
+    }
 }

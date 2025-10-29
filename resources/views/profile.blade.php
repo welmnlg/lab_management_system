@@ -1,4 +1,4 @@
-@extends('layouts.pageadmin')
+@extends('layouts.main')
 
 @section('title', 'Profil Pengguna')
 
@@ -17,9 +17,10 @@
 
             {{-- Detail Teks (Data Statis) --}}
             <div class="flex-grow text-center md:text-left">
-                <h2 class="text-2xl font-bold text-gray-800 uppercase">AULIA HALIMATUSYADDIAH</h2>
-                <p class="text-gray-600">NIM: 221402132</p>
-                <p class="text-gray-600">Email: auliahalim217@gmail.com</p>
+                <h2 class="text-2xl font-bold text-gray-800 uppercase">{{ Auth::user()->name }}</h2>
+                <p class="text-gray-600">NIM: {{ Auth::user()->nim ?? '-' }}</p>
+                <p class="text-gray-600">Email: {{ Auth::user()->email }}</p>
+
             </div>
 
             {{-- Tombol Aksi --}}
@@ -265,6 +266,16 @@
 
         </div>
     </div>
+    {{-- Tombol Logout di bawah container --}}
+    <div class="flex justify-end mt-8">
+        <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold shadow-md transition">
+                Logout
+            </button>
+        </form>
+    </div>
+
 </div>
 
 {{-- Modal Konfirmasi Aksi --}}

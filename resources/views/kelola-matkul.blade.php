@@ -1,4 +1,4 @@
-@extends('layouts.pageadmin')
+@extends('layouts.main')
 
 @section('title', 'Kelola Mata Kuliah - ITLG Lab Management System')
 
