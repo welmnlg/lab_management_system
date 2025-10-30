@@ -9,6 +9,7 @@
     <title>@yield('title', 'ITLG Lab Management System')</title>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <script src="//unpkg.com/alpinejs" defer></script>
 </head>
 
 <body class="bg-gray-100 min-h-screen relative">
@@ -32,9 +33,11 @@
                 </button>
                 <div class="hidden lg:flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2">
                     <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
-                        <span class="text-white text-sm font-semibold">AH</span>
+                        <span class="text-white text-sm font-semibold">
+                            {{ collect(explode(' ', Auth::user()->name))->map(fn($n) => strtoupper(substr($n,0,1)))->join('') }}
+                        </span>
                     </div>
-                    <span class="text-sm font-medium text-gray-700">Aulia Halimatusyaddiah</span>
+                    <span class="text-sm font-medium text-gray-700">{{ Auth::user()->name }}</span>
                 </div>
             </div>
         </div>

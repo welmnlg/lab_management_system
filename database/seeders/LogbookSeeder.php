@@ -30,7 +30,7 @@ class LogbookSeeder extends Seeder
         }
 
         // Data sample logbook untuk minggu ini
-        $activities = ['MENGAJAR', 'BELAJAR'];
+        $activities = ['MENGAJAR'];
         $statuses = ['GANTI RUANGAN', 'SELESAI', null];
 
         for ($i = 0; $i < 50; $i++) {

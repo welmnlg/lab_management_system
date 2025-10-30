@@ -1,4 +1,4 @@
-@extends('layouts.pageadmin')
+@extends('layouts.main')
 
 @section('title', 'Form Ambil Jadwal - ITLG Lab Management System')
 
