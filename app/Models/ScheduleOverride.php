@@ -43,6 +43,12 @@ class ScheduleOverride extends Model
         return $this->belongsTo(Room::class, 'room_id', 'room_id');
     }
 
+    // Relasi ke CourseClass
+    public function courseClass()
+    {
+        return $this->belongsTo(CourseClass::class, 'class_id', 'class_id');
+    }
+
     // Relasi ke Logbooks
     public function logbooks()
     {

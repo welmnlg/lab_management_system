@@ -13,20 +13,29 @@ return new class extends Migration
     {
         Schema::create('schedule_overrides', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('schedule_id');
+            
+            // PERBAIKAN: schedule_id nullable untuk kelas tambahan
+            $table->unsignedBigInteger('schedule_id')->nullable();
+            
             $table->unsignedBigInteger('user_id');
             $table->unsignedBigInteger('room_id')->nullable();
+            $table->unsignedBigInteger('class_id')->nullable();
             $table->date('date');
             $table->enum('day', ['Senin','Selasa','Rabu','Kamis','Jumat']);
             $table->time('start_time');
             $table->time('end_time');
+            
+            // TAMBAHAN: field reason dan status
+            $table->string('reason', 500)->nullable();
+            $table->enum('status', ['active', 'cancelled'])->default('active');
+            
             $table->timestamps();
             
-
-            //foreign key
+            // Foreign keys
             $table->foreign('schedule_id')->references('schedule_id')->on('schedules')->onDelete('cascade');
             $table->foreign('user_id')->references('user_id')->on('users')->onDelete('cascade');
             $table->foreign('room_id')->references('room_id')->on('rooms')->onDelete('cascade');
+            $table->foreign('class_id')->references('class_id')->on('course_classes')->onDelete('cascade');
         });
     }
 

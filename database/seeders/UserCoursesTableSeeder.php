@@ -40,10 +40,6 @@ class UserCoursesTableSeeder extends Seeder
         ['user_id' => 5, 'class_id' => 13, 'created_at' => now(), 'updated_at' => now()],
         ['user_id' => 5, 'class_id' => 14, 'created_at' => now(), 'updated_at' => now()],
 
-        // Hermione juga ngajar Praktikum Kecerdasan Buatan kelas Kom A1,A2 class_id 1,2
-        ['user_id' => 5, 'class_id' => 1, 'created_at' => now(), 'updated_at' => now()],
-        ['user_id' => 5, 'class_id' => 2, 'created_at' => now(), 'updated_at' => now()],
-
         // Feyd Rautha (user_id=6) ngajar Praktikum Computer Vision (course_id=4) Kom B1,B2 class_id 15,16
         ['user_id' => 6, 'class_id' => 15, 'created_at' => now(), 'updated_at' => now()],
         ['user_id' => 6, 'class_id' => 16, 'created_at' => now(), 'updated_at' => now()],

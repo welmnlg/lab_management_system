@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
         RoomsTableSeeder::class,
         SchedulesTableSeeder::class,
         ScheduleOverridesTableSeeder::class,
+        OctoberScheduleSeeder::class,
         NotificationsTableSeeder::class,
         LogbookSeeder::class,
         ]);
