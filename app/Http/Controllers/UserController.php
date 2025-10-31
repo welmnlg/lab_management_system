@@ -33,7 +33,8 @@ class UserController extends Controller
             $users = User::with(['roles', 'userCourses.courseClass.course'])->get();
         }
         
-        return view('kelola-pengguna', compact('users'));
+        $coursesMaster = Course::all();
+        return view('kelola-pengguna', compact('users', 'coursesMaster'));
     }
 
     /**
@@ -55,119 +56,111 @@ class UserController extends Controller
      * Store a newly created resource in storage.
      * Menyimpan pengguna baru ke database
      */
-public function store(Request $request)
-{
-    // Validasi input
-    $validated = $request->validate([
-        'name' => 'required|string|max:255',
-        'nim' => 'required|string|unique:users,nim',
-        'program_studi' => 'required|string',
-        'email' => 'required|email|unique:users,email',
-        'password' => 'required|string|min:6',
-        'mata_kuliah_1' => 'required|exists:courses,course_id',
-        'kelas_1' => 'required|array|min:1',
-        'mata_kuliah_2' => 'nullable|exists:courses,course_id',
-        'kelas_2' => 'nullable|array',
-        'mata_kuliah_3' => 'nullable|exists:courses,course_id',
-        'kelas_3' => 'nullable|array',
-        'role' => 'required|exists:roles,id',
-    ]);
-
-    try {
-        DB::beginTransaction();
-
-        // Buat user baru
-        $user = User::create([
-            'name' => $validated['name'],
-            'nim' => $validated['nim'],
-            'program_studi' => $validated['program_studi'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
+    public function store(Request $request)
+    {
+        // Validasi input
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'nim' => 'required|string|unique:users,nim',
+            'program_studi' => 'required|string',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:6',
+            'mata_kuliah_1' => 'required|exists:courses,course_id',
+            'kelas_1' => 'required|array|min:1',
+            'mata_kuliah_2' => 'nullable|exists:courses,course_id',
+            'kelas_2' => 'nullable|array',
+            'mata_kuliah_3' => 'nullable|exists:courses,course_id',
+            'kelas_3' => 'nullable|array',
+            'role' => 'required|exists:roles,id',
         ]);
 
-        // Attach role
-        $user->roles()->attach($validated['role']);
+        try {
+            \DB::beginTransaction();
 
-        // Array untuk menampung semua relasi user-course-class
-        $userCourseClasses = [];
+            // Buat user baru
+            $user = User::create([
+                'name' => $validated['name'],
+                'nim' => $validated['nim'],
+                'program_studi' => $validated['program_studi'],
+                'email' => $validated['email'],
+                'password' => \Hash::make($validated['password']),
+            ]);
 
-        // Process Mata Kuliah 1
-        if (!empty($validated['mata_kuliah_1']) && !empty($validated['kelas_1'])) {
-            foreach ($validated['kelas_1'] as $className) {
-                // Cari class_id berdasarkan course_id dan class_name
-                // Misalnya className = "A1", "A2", "B1", dst
-                $courseClass = CourseClass::where('course_id', $validated['mata_kuliah_1'])
-                                         ->where('class_name', 'Kom ' . $className) // Sesuaikan format: "Kom A1"
-                                         ->first();
+            // Ambil role yang dipilih
+            $selectedRole = Role::find($validated['role']);
+            
+            // Jika yang dipilih adalah BPH, attach BPH + Aslab
+            if ($selectedRole && $selectedRole->status === 'bph') {
+                $aslabRole = Role::where('status', 'aslab')->first();
                 
-                if ($courseClass) {
-                    $userCourseClasses[] = [
-                        'user_id' => $user->user_id,
-                        'course_id' => $validated['mata_kuliah_1'],
-                        'class_id' => $courseClass->class_id,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ];
+                if ($aslabRole) {
+                    // Attach kedua role: BPH dan Aslab
+                    $user->roles()->attach([$selectedRole->id, $aslabRole->id]);
+                } else {
+                    // Jika aslab role tidak ditemukan, attach BPH saja
+                    $user->roles()->attach($selectedRole->id);
                 }
+            } else {
+                // Jika Aslab, attach Aslab saja
+                $user->roles()->attach($validated['role']);
             }
-        }
 
-        // Process Mata Kuliah 2
-        if (!empty($validated['mata_kuliah_2']) && !empty($validated['kelas_2'])) {
-            foreach ($validated['kelas_2'] as $className) {
-                $courseClass = CourseClass::where('course_id', $validated['mata_kuliah_2'])
-                                         ->where('class_name', 'Kom ' . $className)
-                                         ->first();
-                
-                if ($courseClass) {
-                    $userCourseClasses[] = [
-                        'user_id' => $user->user_id,
-                        'course_id' => $validated['mata_kuliah_2'],
-                        'class_id' => $courseClass->class_id,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ];
-                }
+            // Process mata kuliah
+            $this->processCourseClasses($user->user_id, $validated, 1);
+            if (!empty($validated['mata_kuliah_2'])) {
+                $this->processCourseClasses($user->user_id, $validated, 2);
             }
-        }
-
-        // Process Mata Kuliah 3
-        if (!empty($validated['mata_kuliah_3']) && !empty($validated['kelas_3'])) {
-            foreach ($validated['kelas_3'] as $className) {
-                $courseClass = CourseClass::where('course_id', $validated['mata_kuliah_3'])
-                                         ->where('class_name', 'Kom ' . $className)
-                                         ->first();
-                
-                if ($courseClass) {
-                    $userCourseClasses[] = [
-                        'user_id' => $user->user_id,
-                        'course_id' => $validated['mata_kuliah_3'],
-                        'class_id' => $courseClass->class_id,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ];
-                }
+            if (!empty($validated['mata_kuliah_3'])) {
+                $this->processCourseClasses($user->user_id, $validated, 3);
             }
+
+            \DB::commit();
+
+            return redirect()->route('kelola-pengguna.index')
+                            ->with('success', 'Pengguna berhasil ditambahkan!');
+
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            
+            \Log::error('Error creating user: ' . $e->getMessage());
+            
+            return redirect()->back()
+                            ->withInput()
+                            ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
-
-        // Insert semua data ke tabel user_courses (bukan sync, karena perlu multiple rows)
-        if (!empty($userCourseClasses)) {
-            DB::table('user_courses')->insert($userCourseClasses);
-        }
-
-        DB::commit();
-
-        return redirect()->route('kelola-pengguna.index')
-                        ->with('success', 'Pengguna berhasil ditambahkan!');
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-        
-        return redirect()->back()
-                        ->withInput()
-                        ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
     }
-}
+
+    /**
+     * Helper function untuk process course classes
+     */
+    private function processCourseClasses($userId, $validated, $mkNumber)
+    {
+        $courseId = $validated["mata_kuliah_{$mkNumber}"] ?? null;
+        $kelasArray = $validated["kelas_{$mkNumber}"] ?? [];
+        
+        if (empty($courseId) || empty($kelasArray)) {
+            return;
+        }
+        
+        foreach ($kelasArray as $className) {
+            // Format: A1, A2, B1, B2, C1, C2
+            // Di database: Kom A1, Kom A2, Kom B1, dst
+            $formattedClassName = 'Kom ' . $className;
+            
+            $courseClass = CourseClass::where('course_id', $courseId)
+                                    ->where('class_name', $formattedClassName)
+                                    ->first();
+            
+            if ($courseClass) {
+                UserCourse::create([
+                    'user_id' => $userId,
+                    'class_id' => $courseClass->class_id,
+                ]);
+            } else {
+                \Log::warning("CourseClass not found: course_id={$courseId}, class_name={$formattedClassName}");
+            }
+        }
+    }
 
     /**
      * Display the specified resource.
@@ -185,7 +178,7 @@ public function store(Request $request)
     public function edit(string $id)
     {
         // Cari user berdasarkan ID
-        $user = User::findOrFail($id);
+        $user = User::with(['roles', 'userCourses.courseClass.course'])->findOrFail($id);
         
         // Jika yang login adalah BPH, validasi hanya bisa edit user dari prodi sendiri
         if (auth()->user()->roles->contains('status', 'bph')) {
@@ -196,9 +189,12 @@ public function store(Request $request)
         
         // Ambil semua role untuk dropdown
         $roles = Role::all();
+        
+        // Ambil semua course
+        $coursesMaster = Course::all();
 
         // Tampilkan form edit dengan data user
-        return view('edit-pengguna', compact('user', 'roles'));
+        return view('edit-pengguna', compact('user', 'roles', 'coursesMaster'));
     }
 
     /**
@@ -220,10 +216,16 @@ public function store(Request $request)
         // Setup rules validasi
         $rules = [
             'name' => 'required|string|max:255',
-            'nim' => "required|string|unique:users,nim,$id",
-            'email' => "required|email|unique:users,email,$id",
-            'password' => 'nullable|min:6', // Password opsional saat update
-            'role' => 'required|exists:roles,id',
+            'nim' => "required|string|unique:users,nim,{$id},user_id",
+            'email' => "required|email|unique:users,email,{$id},user_id",
+            'password' => 'nullable|min:6',
+            'peran' => 'required|string|in:aslab,bph',
+            'mata_kuliah_1' => 'required|exists:courses,course_id',
+            'kelas_1' => 'required|array|min:1',
+            'mata_kuliah_2' => 'nullable|exists:courses,course_id',
+            'kelas_2' => 'nullable|array',
+            'mata_kuliah_3' => 'nullable|exists:courses,course_id',
+            'kelas_3' => 'nullable|array',
         ];
 
         // Jika bukan BPH, wajib isi program studi
@@ -232,38 +234,81 @@ public function store(Request $request)
         }
 
         // Validasi input
-        $request->validate($rules);
+        $validated = $request->validate($rules);
 
-        // Update data user
-        $user->name = $request->name;
-        $user->email = $request->email;
-        $user->nim = $request->nim;
+        try {
+            \DB::beginTransaction();
 
-        // Update password hanya jika diisi
-        if ($request->filled('password')) {
-            $user->password = bcrypt($request->password);
+            // Update data user
+            $user->name = $validated['name'];
+            $user->email = $validated['email'];
+            $user->nim = $validated['nim'];
+
+            // Update password hanya jika diisi
+            if ($request->filled('password')) {
+                $user->password = \Hash::make($validated['password']);
+            }
+
+            // Set program studi
+            if (auth()->user()->roles->contains('status', 'bph')) {
+                $user->program_studi = auth()->user()->program_studi;
+            } else {
+                if (isset($validated['program_studi'])) {
+                    $user->program_studi = $validated['program_studi'];
+                }
+            }
+
+            // Simpan perubahan
+            $user->save();
+
+            // Sync role berdasarkan peran
+            if ($validated['peran'] === 'bph') {
+                // BPH = attach BPH + Aslab
+                $bphRole = Role::where('status', 'bph')->first();
+                $aslabRole = Role::where('status', 'aslab')->first();
+                
+                $roleIds = [];
+                if ($bphRole) $roleIds[] = $bphRole->id;
+                if ($aslabRole) $roleIds[] = $aslabRole->id;
+                
+                $user->roles()->sync($roleIds);
+            } else {
+                // Aslab = attach Aslab saja
+                $aslabRole = Role::where('status', 'aslab')->first();
+                if ($aslabRole) {
+                    $user->roles()->sync([$aslabRole->id]);
+                }
+            }
+
+            // Hapus semua UserCourse yang lama
+            UserCourse::where('user_id', $user->user_id)->delete();
+
+            // Tambah UserCourse baru
+            $this->processCourseClasses($user->user_id, $validated, 1);
+            if (!empty($validated['mata_kuliah_2'])) {
+                $this->processCourseClasses($user->user_id, $validated, 2);
+            }
+            if (!empty($validated['mata_kuliah_3'])) {
+                $this->processCourseClasses($user->user_id, $validated, 3);
+            }
+
+            \DB::commit();
+
+            return redirect()
+                ->route('kelola-pengguna.index')
+                ->with('success', 'Pengguna berhasil diperbarui!');
+
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            
+            \Log::error('Error updating user: ' . $e->getMessage());
+            
+            return redirect()->back()
+                            ->withInput()
+                            ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
-
-        // Set program studi
-        if (auth()->user()->roles->contains('status', 'bph')) {
-            // BPH tidak bisa ubah program studi
-            $user->program_studi = auth()->user()->program_studi;
-        } else {
-            // Admin bisa ubah program studi
-            $user->program_studi = $request->program_studi;
-        }
-
-        // Simpan perubahan
-        $user->save();
-
-        // Sync role (replace role lama dengan role baru)
-        $user->roles()->sync([$request->role]);
-
-        // Redirect dengan pesan sukses
-        return redirect()
-            ->route('kelola-pengguna.index')
-            ->with('success', 'Pengguna berhasil diperbarui!');
     }
+
 
     /**
      * Remove the specified resource from storage.
@@ -281,42 +326,81 @@ public function store(Request $request)
             }
         }
         
-        // Hapus relasi user_courses terlebih dahulu (jika ada)
         try {
-            if (method_exists($user, 'userCourses')) {
-                $user->userCourses()->delete();
-            }
-        } catch (\Exception $e) {
-            \Log::error('Error deleting user courses: ' . $e->getMessage());
-        }
-        
-        // Hapus relasi role
-        $user->roles()->detach();
-        
-        // Hapus user
-        $user->delete();
+            \DB::beginTransaction();
 
-        // Redirect dengan pesan sukses
-        return redirect()
-            ->route('kelola-pengguna.index')
-            ->with('success', 'Pengguna berhasil dihapus!');
+            // Hapus relasi user_courses terlebih dahulu (jika ada)
+            UserCourse::where('user_id', $user->user_id)->delete();
+            
+            // Hapus relasi role
+            $user->roles()->detach();
+            
+            // Hapus user
+            $user->delete();
+
+            \DB::commit();
+
+            // Redirect dengan pesan sukses
+            return redirect()
+                ->route('kelola-pengguna.index')
+                ->with('success', 'Pengguna berhasil dihapus!');
+
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            
+            \Log::error('Error deleting user: ' . $e->getMessage());
+            
+            return redirect()->back()
+                            ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
     }
 
     /**
-     * Helper method untuk convert nama mata kuliah dari value ke nama yang sesuai di database
-     * 
-     * @param string $courseValue
-     * @return string
+     * Delete multiple users at once
+     * Hapus banyak pengguna sekaligus
      */
-    private function getCourseName($courseValue)
+    public function deleteMultiple(Request $request)
     {
-        $courseMap = [
-            'kecerdasan_buatan' => 'Kecerdasan Buatan',
-            'desain_interaksi' => 'Desain Interaksi',
-            'pemrograman_web' => 'Pemrograman Web',
-            'web_semantik' => 'Web Semantik',
-        ];
+        $request->validate([
+            'user_ids' => 'required|array',
+            'user_ids.*' => 'exists:users,user_id'
+        ]);
 
-        return $courseMap[$courseValue] ?? $courseValue;
+        try {
+            \DB::beginTransaction();
+
+            foreach ($request->user_ids as $userId) {
+                $user = User::findOrFail($userId);
+                
+                // Jika yang login adalah BPH, validasi prodi
+                if (auth()->user()->roles->contains('status', 'bph')) {
+                    if ($user->program_studi !== auth()->user()->program_studi) {
+                        continue; // Skip user yang bukan dari prodi yang sama
+                    }
+                }
+
+                // Hapus relasi
+                UserCourse::where('user_id', $user->user_id)->delete();
+                $user->roles()->detach();
+                $user->delete();
+            }
+
+            \DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => count($request->user_ids) . ' pengguna berhasil dihapus!'
+            ]);
+
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            
+            \Log::error('Error deleting multiple users: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

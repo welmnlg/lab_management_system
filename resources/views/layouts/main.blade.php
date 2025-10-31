@@ -453,6 +453,16 @@
     </script>
 
     {{-- Script tambahan dari halaman anak --}}
-    @stack('scripts')
+
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // Test jQuery
+        console.log('jQuery version:', $.fn.jquery);
+        console.log('jQuery loaded:', typeof $ !== 'undefined');
+    </script>
+
+@stack('scripts')
+</body>
 </body>
 </html>

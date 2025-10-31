@@ -325,11 +325,16 @@
                         @foreach($roles as $role)
                             <label class="flex items-center space-x-3">
                                 <input type="radio" 
-                                       name="role" 
-                                       value="{{ $role->id }}" 
-                                       required 
-                                       class="peranRadio w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                                    name="role" 
+                                    value="{{ $role->id }}" 
+                                    required 
+                                    class="peranRadio w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
                                 <span class="text-sm text-gray-700">{{ ucfirst($role->status) }}</span>
+                                
+                                {{-- Tampilkan info tambahan jika BPH --}}
+                                @if($role->status === 'bph')
+                                    <span class="text-xs text-gray-500 italic">(Otomatis mendapat role Aslab juga)</span>
+                                @endif
                             </label>
                         @endforeach
                     </div>

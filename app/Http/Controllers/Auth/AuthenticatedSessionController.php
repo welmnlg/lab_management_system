@@ -24,11 +24,15 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
+        // Authenticate user
         $request->authenticate();
 
+        // Regenerate session untuk keamanan
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        // Redirect ke halaman yang dituju sebelumnya, atau ke dashboard jika tidak ada
+        // Hapus parameter 'absolute: false' karena bisa menyebabkan issue
+        return redirect()->intended(route('dashboard'));
     }
 
     /**
@@ -36,12 +40,16 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        // Logout user
         Auth::guard('web')->logout();
 
+        // Hapus session
         $request->session()->invalidate();
 
+        // Regenerate CSRF token
         $request->session()->regenerateToken();
 
-        return redirect('/login');
+        // Redirect ke halaman login
+        return redirect()->route('login');
     }
 }
