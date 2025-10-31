@@ -10,8 +10,7 @@ class Role extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name',
-        'description',
+        'status',  // Kolom yang sesuai dengan migration
     ];
 
     // Relasi many-to-many ke users lewat pivot table role_user

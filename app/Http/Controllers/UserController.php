@@ -86,10 +86,26 @@ class UserController extends Controller
                 'password' => \Hash::make($validated['password']),
             ]);
 
-            // Attach role
-            $user->roles()->attach($validated['role']);
+            // Ambil role yang dipilih
+            $selectedRole = Role::find($validated['role']);
+            
+            // Jika yang dipilih adalah BPH, attach BPH + Aslab
+            if ($selectedRole && $selectedRole->status === 'bph') {
+                $aslabRole = Role::where('status', 'aslab')->first();
+                
+                if ($aslabRole) {
+                    // Attach kedua role: BPH dan Aslab
+                    $user->roles()->attach([$selectedRole->id, $aslabRole->id]);
+                } else {
+                    // Jika aslab role tidak ditemukan, attach BPH saja
+                    $user->roles()->attach($selectedRole->id);
+                }
+            } else {
+                // Jika Aslab, attach Aslab saja
+                $user->roles()->attach($validated['role']);
+            }
 
-            // Function helper untuk process mata kuliah
+            // Process mata kuliah
             $this->processCourseClasses($user->user_id, $validated, 1);
             if (!empty($validated['mata_kuliah_2'])) {
                 $this->processCourseClasses($user->user_id, $validated, 2);
@@ -202,8 +218,8 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'nim' => "required|string|unique:users,nim,{$id},user_id",
             'email' => "required|email|unique:users,email,{$id},user_id",
-            'password' => 'nullable|min:6', // Password opsional saat update
-            'peran' => 'required|string|in:aslab,admin,bph',
+            'password' => 'nullable|min:6',
+            'peran' => 'required|string|in:aslab,bph',
             'mata_kuliah_1' => 'required|exists:courses,course_id',
             'kelas_1' => 'required|array|min:1',
             'mata_kuliah_2' => 'nullable|exists:courses,course_id',
@@ -235,10 +251,8 @@ class UserController extends Controller
 
             // Set program studi
             if (auth()->user()->roles->contains('status', 'bph')) {
-                // BPH tidak bisa ubah program studi
                 $user->program_studi = auth()->user()->program_studi;
             } else {
-                // Admin bisa ubah program studi
                 if (isset($validated['program_studi'])) {
                     $user->program_studi = $validated['program_studi'];
                 }
@@ -248,9 +262,22 @@ class UserController extends Controller
             $user->save();
 
             // Sync role berdasarkan peran
-            $role = Role::where('status', $validated['peran'])->first();
-            if ($role) {
-                $user->roles()->sync([$role->id]);
+            if ($validated['peran'] === 'bph') {
+                // BPH = attach BPH + Aslab
+                $bphRole = Role::where('status', 'bph')->first();
+                $aslabRole = Role::where('status', 'aslab')->first();
+                
+                $roleIds = [];
+                if ($bphRole) $roleIds[] = $bphRole->id;
+                if ($aslabRole) $roleIds[] = $aslabRole->id;
+                
+                $user->roles()->sync($roleIds);
+            } else {
+                // Aslab = attach Aslab saja
+                $aslabRole = Role::where('status', 'aslab')->first();
+                if ($aslabRole) {
+                    $user->roles()->sync([$aslabRole->id]);
+                }
             }
 
             // Hapus semua UserCourse yang lama
@@ -267,7 +294,6 @@ class UserController extends Controller
 
             \DB::commit();
 
-            // Redirect dengan pesan sukses
             return redirect()
                 ->route('kelola-pengguna.index')
                 ->with('success', 'Pengguna berhasil diperbarui!');
@@ -282,6 +308,7 @@ class UserController extends Controller
                             ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
+
 
     /**
      * Remove the specified resource from storage.

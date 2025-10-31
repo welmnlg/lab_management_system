@@ -11,8 +11,9 @@
         <div class="flex flex-col md:flex-row items-center gap-6">
             {{-- Foto Profil --}}
             <div class="flex-shrink-0">
-                <img class="h-24 w-24 rounded-full object-cover border-4 border-gray-200"
-                    src="https://via.placeholder.com/150" alt="Foto Profil">
+                <div class="h-24 w-24 rounded-full bg-gradient-to-r from-blue-900 to-red-700 flex items-center justify-center border-4 border-gray-200 text-white text-2xl font-bold">
+                    {{ strtoupper(collect(explode(' ', Auth::user()->name))->map(fn($word) => $word[0])->join('')) }}
+                </div>
             </div>
 
             {{-- Detail Teks (Data Statis) --}}
@@ -20,7 +21,6 @@
                 <h2 class="text-2xl font-bold text-gray-800 uppercase">{{ Auth::user()->name }}</h2>
                 <p class="text-gray-600">NIM: {{ Auth::user()->nim ?? '-' }}</p>
                 <p class="text-gray-600">Email: {{ Auth::user()->email }}</p>
-
             </div>
 
             {{-- Tombol Aksi --}}
@@ -44,20 +44,31 @@
         <h2 class="text-xl font-bold text-gray-800 mb-4">Jadwal Praktikum Semester Ganjil T.A. 2025/2026</h2>
 
         {{-- Tab Hari --}}
-        <div class="flex space-x-2 overflow-x-auto pb-2 mb-6">
-            <button id="tab-senin" onclick="ubahHari('senin')"
-                class="flex-shrink-0 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-900 to-red-700 text-white font-semibold text-sm">
-                SENIN <span class="block text-xs font-normal">22 September</span>
+        <div class="flex space-x-1 overflow-x-auto pb-2 mb-6">
+            <button id="tab-sen" onclick="ubahHari('sen')"
+                class="flex-shrink-0 px-3 py-2 rounded-lg bg-gradient-to-r from-blue-900 to-red-700 text-white font-semibold text-xs min-w-[60px]">
+                SEN <span class="block text-xs font-normal">27 Okt</span>
             </button>
-            <button id="tab-selasa" onclick="ubahHari('selasa')"
-                class="flex-shrink-0 px-4 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-300">
-                SELASA <span class="block text-xs font-normal">23 September</span>
+            <button id="tab-sel" onclick="ubahHari('sel')"
+                class="flex-shrink-0 px-3 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold text-xs min-w-[60px] hover:bg-gray-300">
+                SEL <span class="block text-xs font-normal">28 Okt</span>
             </button>
-            {{-- ... tombol hari lainnya ... --}}
+            <button id="tab-rab" onclick="ubahHari('rab')"
+                class="flex-shrink-0 px-3 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold text-xs min-w-[60px] hover:bg-gray-300">
+                RAB <span class="block text-xs font-normal">29 Okt</span>
+            </button>
+            <button id="tab-kam" onclick="ubahHari('kam')"
+                class="flex-shrink-0 px-3 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold text-xs min-w-[60px] hover:bg-gray-300">
+                KAM <span class="block text-xs font-normal">30 Okt</span>
+            </button>
+            <button id="tab-jum" onclick="ubahHari('jum')"
+                class="flex-shrink-0 px-3 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold text-xs min-w-[60px] hover:bg-gray-300">
+                JUM <span class="block text-xs font-normal">31 Okt</span>
+            </button>
         </div>
 
         {{-- Daftar Jadwal untuk SENIN --}}
-        <div id="jadwal-senin" class="space-y-4">
+        <div id="jadwal-sen" class="space-y-4">
 
             <!-- Jadwal 1: Sedang Berlangsung -->
             <div id="jadwal-1"
@@ -111,6 +122,9 @@
                     </div>
                 </div>
                 {{-- Bagian Kanan (Tombol) --}}
+                <div id="tombol-jadwal-2" class="flex-shrink-0 flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                    <button onclick="konfirmasiBatal(2)"
+                        class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-red-700 to-orange-500 rounded-lg hover:opacity-90 transition min-w-[135px]">
                         Batal
                     </button>
                     <button onclick="konfirmasiAjar(2)"
@@ -123,10 +137,10 @@
         </div>
 
         {{-- Daftar Jadwal untuk SELASA --}}
-        <div id="jadwal-selasa" class="space-y-4 hidden">
+        <div id="jadwal-sel" class="space-y-4 hidden">
 
             <!-- Jadwal Selasa 1: Akan Berlangsung -->
-            <div id="jadwal-selasa-1"
+            <div id="jadwal-sel-1"
                 class="bg-gray-50 rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 border-l-4 border-gray-400 shadow-sm">
                 {{-- Bagian Kiri (Info) --}}
                 <div class="flex-grow w-full">
@@ -141,16 +155,16 @@
                         <span class="bg-gray-200 px-2 py-1 rounded-md">Lab Database</span>
                     </div>
                     <div class="mt-3">
-                        <span id="status-jadwal-selasa-1" class="px-3 py-1 text-xs font-semibold text-gray-800 bg-gray-200 rounded-full">Akan Berlangsung</span>
+                        <span id="status-jadwal-sel-1" class="px-3 py-1 text-xs font-semibold text-gray-800 bg-gray-200 rounded-full">Akan Berlangsung</span>
                     </div>
                 </div>
                 {{-- Bagian Kanan (Tombol) --}}
-                <div id="tombol-jadwal-selasa-1" class="flex-shrink-0 flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                    <button onclick="konfirmasiBatal('selasa-1')"
+                <div id="tombol-jadwal-sel-1" class="flex-shrink-0 flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                    <button onclick="konfirmasiBatal('sel-1')"
                         class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-red-700 to-orange-500 rounded-lg hover:opacity-90 transition min-w-[135px]">
                         Batal
                     </button>
-                    <button onclick="konfirmasiAjar('selasa-1')"
+                    <button onclick="konfirmasiAjar('sel-1')"
                         class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-blue-900 to-gray-700 rounded-lg hover:opacity-90 transition min-w-[135px]">
                         Konfirmasi
                     </button>
@@ -158,7 +172,7 @@
             </div>
 
             <!-- Jadwal Selasa 2: Akan Berlangsung -->
-            <div id="jadwal-selasa-2"
+            <div id="jadwal-sel-2"
                 class="bg-gray-50 rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 border-l-4 border-gray-400 shadow-sm">
                 {{-- Bagian Kiri (Info) --}}
                 <div class="flex-grow w-full">
@@ -173,113 +187,60 @@
                         <span class="bg-gray-200 px-2 py-1 rounded-md">Lab Pemrograman</span>
                     </div>
                     <div class="mt-3">
-                        <span id="status-jadwal-selasa-2" class="px-3 py-1 text-xs font-semibold text-gray-800 bg-gray-200 rounded-full">Akan Berlangsung</span>
+                        <span id="status-jadwal-sel-2" class="px-3 py-1 text-xs font-semibold text-gray-800 bg-gray-200 rounded-full">Akan Berlangsung</span>
                     </div>
                 </div>
                 {{-- Bagian Kanan (Tombol) --}}
-                <div id="tombol-jadwal-selasa-2" class="flex-shrink-0 flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                    <button onclick="konfirmasiBatal('selasa-2')"
+                <div id="tombol-jadwal-sel-2" class="flex-shrink-0 flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                    <button onclick="konfirmasiBatal('sel-2')"
                         class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-red-700 to-orange-500 rounded-lg hover:opacity-90 transition min-w-[135px]">
                         Batal
                     </button>
-                    <button onclick="konfirmasiAjar('selasa-2')"
+                    <button onclick="konfirmasiAjar('sel-2')"
                         class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-blue-900 to-gray-700 rounded-lg hover:opacity-90 transition min-w-[135px]">
                         Konfirmasi
                     </button>
-                <div class="flex-shrink-0 flex sm:flex-col md:flex-row gap-2 w-full sm:w-auto">
-                    <button
-                        class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-red-700 to-orange-500 rounded-lg hover:opacity-90">Batal</button>
-                    <button
-                        class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-blue-900 to-gray-700 rounded-lg hover:opacity-90">Konfirmasi</button>
-
                 </div>
             </div>
 
         </div>
 
-        {{-- Daftar Jadwal untuk SELASA --}}
-        <div id="jadwal-selasa" class="space-y-4 hidden">
-
-            <!-- Jadwal Selasa 1: Akan Berlangsung -->
-            <div id="jadwal-selasa-1"
-                class="bg-gray-50 rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 border-l-4 border-gray-400 shadow-sm">
-                {{-- Bagian Kiri (Info) --}}
-                <div class="flex-grow w-full">
-                    <p class="font-bold text-gray-800">Mata Kuliah: Praktikum Basis Data</p>
-                    <div class="flex items-center flex-wrap gap-2 text-sm text-gray-600 mt-2">
-                        <span class="flex items-center gap-1.5 bg-gray-200 px-2 py-1 rounded-md"><svg class="w-4 h-4"
-                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg> 10:00 - 11:40</span>
-                        <span class="bg-gray-200 px-2 py-1 rounded-md">KOM C1</span>
-                        <span class="bg-gray-200 px-2 py-1 rounded-md">Lab Database</span>
-                    </div>
-                    <div class="mt-3">
-                        <span id="status-jadwal-selasa-1" class="px-3 py-1 text-xs font-semibold text-gray-800 bg-gray-200 rounded-full">Akan Berlangsung</span>
-                    </div>
-                </div>
-                {{-- Bagian Kanan (Tombol) --}}
-                <div id="tombol-jadwal-selasa-1" class="flex-shrink-0 flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                    <button onclick="konfirmasiBatal('selasa-1')"
-                        class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-red-700 to-orange-500 rounded-lg hover:opacity-90 transition min-w-[135px]">
-                        Batal
-                    </button>
-                    <button onclick="konfirmasiAjar('selasa-1')"
-                        class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-blue-900 to-gray-700 rounded-lg hover:opacity-90 transition min-w-[135px]">
-                        Konfirmasi
-                    </button>
-                </div>
+        {{-- Daftar Jadwal untuk RABU --}}
+        <div id="jadwal-rab" class="hidden">
+            <div class="bg-gray-50 rounded-lg p-8 text-center">
+                <p class="text-gray-600 text-lg">Tidak ada kelas mengajar hari ini</p>
             </div>
+        </div>
 
-            <!-- Jadwal Selasa 2: Akan Berlangsung -->
-            <div id="jadwal-selasa-2"
-                class="bg-gray-50 rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 border-l-4 border-gray-400 shadow-sm">
-                {{-- Bagian Kiri (Info) --}}
-                <div class="flex-grow w-full">
-                    <p class="font-bold text-gray-800">Mata Kuliah: Praktikum Pemrograman Web</p>
-                    <div class="flex items-center flex-wrap gap-2 text-sm text-gray-600 mt-2">
-                        <span class="flex items-center gap-1.5 bg-gray-200 px-2 py-1 rounded-md"><svg class="w-4 h-4"
-                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg> 13:00 - 14:40</span>
-                        <span class="bg-gray-200 px-2 py-1 rounded-md">KOM D1</span>
-                        <span class="bg-gray-200 px-2 py-1 rounded-md">Lab Pemrograman</span>
-                    </div>
-                    <div class="mt-3">
-                        <span id="status-jadwal-selasa-2" class="px-3 py-1 text-xs font-semibold text-gray-800 bg-gray-200 rounded-full">Akan Berlangsung</span>
-                    </div>
-                </div>
-                {{-- Bagian Kanan (Tombol) --}}
-                <div id="tombol-jadwal-selasa-2" class="flex-shrink-0 flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                    <button onclick="konfirmasiBatal('selasa-2')"
-                        class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-red-700 to-orange-500 rounded-lg hover:opacity-90 transition min-w-[135px]">
-                        Batal
-                    </button>
-                    <button onclick="konfirmasiAjar('selasa-2')"
-                        class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-blue-900 to-gray-700 rounded-lg hover:opacity-90 transition min-w-[135px]">
-                        Konfirmasi
-                    </button>
-                </div>
+        {{-- Daftar Jadwal untuk KAMIS --}}
+        <div id="jadwal-kam" class="hidden">
+            <div class="bg-gray-50 rounded-lg p-8 text-center">
+                <p class="text-gray-600 text-lg">Tidak ada kelas mengajar hari ini</p>
             </div>
+        </div>
 
+        {{-- Daftar Jadwal untuk JUMAT --}}
+        <div id="jadwal-jum" class="hidden">
+            <div class="bg-gray-50 rounded-lg p-8 text-center">
+                <p class="text-gray-600 text-lg">Tidak ada kelas mengajar hari ini</p>
+            </div>
         </div>
     </div>
-    {{-- Tombol Logout di bawah container --}}
-    <div class="flex justify-end mt-8">
+
+    {{-- Tombol Logout --}}
+    <div class="flex justify-end">
         <form method="POST" action="{{ route('logout') }}">
             @csrf
-            <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold shadow-md transition">
+            <button type="submit" class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold shadow-md transition">
                 Logout
             </button>
         </form>
     </div>
-
 </div>
 
+
 {{-- Modal Konfirmasi Aksi --}}
-<div id="modal-konfirmasi" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+<div id="modal-konfirmasi" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50 hidden">
     <div class="bg-white rounded-xl p-6 max-w-sm w-full mx-4">
         <h3 class="text-lg font-bold text-gray-800 mb-4" id="modal-title">Konfirmasi</h3>
         <p class="text-gray-600 mb-6" id="modal-message">Apakah Anda yakin?</p>
@@ -295,7 +256,7 @@
 </div>
 
 {{-- Modal Ganti Kata Sandi --}}
-<div id="modal-ganti-sandi" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+<div id="modal-ganti-sandi" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50 hidden">
     <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
         {{-- Header --}}
         <div class="mb-6">
@@ -381,7 +342,7 @@
 </div>
 
 {{-- Modal Sukses --}}
-<div id="modal-sukses" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+<div id="modal-sukses" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50 hidden">
     <div class="bg-white rounded-xl p-6 max-w-sm w-full mx-4 text-center">
         <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -402,25 +363,28 @@
     let isSandiLamaValid = false;
     let isSandiBaruValid = false;
     let isKonfirmasiValid = false;
-    let hariAktif = 'senin'; // Default hari aktif
+    let hariAktif = 'sen'; // Default hari aktif
 
     // ========== FUNGSI UNTUK TAB HARI ==========
 
     // Fungsi untuk mengubah hari yang aktif
     function ubahHari(hari) {
         // Sembunyikan semua jadwal
-        document.getElementById('jadwal-senin').classList.add('hidden');
-        document.getElementById('jadwal-selasa').classList.add('hidden');
+        const hariList = ['sen', 'sel', 'rab', 'kam', 'jum'];
+        hariList.forEach(h => {
+            document.getElementById('jadwal-' + h).classList.add('hidden');
+        });
         
         // Reset semua tab menjadi abu-abu
-        document.getElementById('tab-senin').className = 'flex-shrink-0 px-4 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-300';
-        document.getElementById('tab-selasa').className = 'flex-shrink-0 px-4 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-300';
+        hariList.forEach(h => {
+            document.getElementById('tab-' + h).className = 'flex-shrink-0 px-3 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold text-xs min-w-[60px] hover:bg-gray-300';
+        });
         
         // Tampilkan jadwal hari yang dipilih
         document.getElementById('jadwal-' + hari).classList.remove('hidden');
         
         // Aktifkan tab yang dipilih
-        document.getElementById('tab-' + hari).className = 'flex-shrink-0 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-900 to-red-700 text-white font-semibold text-sm';
+        document.getElementById('tab-' + hari).className = 'flex-shrink-0 px-3 py-2 rounded-lg bg-gradient-to-r from-blue-900 to-red-700 text-white font-semibold text-xs min-w-[60px]';
         
         hariAktif = hari;
     }
@@ -431,7 +395,9 @@
     function tampilkanModal(title, message, callback) {
         document.getElementById('modal-title').textContent = title;
         document.getElementById('modal-message').textContent = message;
-        document.getElementById('modal-konfirmasi').classList.remove('hidden');
+        const modal = document.getElementById('modal-konfirmasi');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
         
         const modalYa = document.getElementById('modal-ya');
         const modalBatal = document.getElementById('modal-batal');
@@ -444,11 +410,15 @@
         
         document.getElementById('modal-ya').addEventListener('click', function() {
             callback();
-            document.getElementById('modal-konfirmasi').classList.add('hidden');
+            const modal = document.getElementById('modal-konfirmasi');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
         });
         
         document.getElementById('modal-batal').addEventListener('click', function() {
-            document.getElementById('modal-konfirmasi').classList.add('hidden');
+            const modal = document.getElementById('modal-konfirmasi');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
         });
     }
 
@@ -456,23 +426,31 @@
     function tampilkanModalSukses(title, message) {
         document.getElementById('sukses-title').textContent = title;
         document.getElementById('sukses-message').textContent = message;
-        document.getElementById('modal-sukses').classList.remove('hidden');
+        const modal = document.getElementById('modal-sukses');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
     }
 
     // Fungsi untuk modal ganti kata sandi
     function bukaModalGantiSandi() {
-        document.getElementById('modal-ganti-sandi').classList.remove('hidden');
+        const modal = document.getElementById('modal-ganti-sandi');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
         resetValidasi();
     }
 
     function tutupModalGantiSandi() {
-        document.getElementById('modal-ganti-sandi').classList.add('hidden');
+        const modal = document.getElementById('modal-ganti-sandi');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
         document.getElementById('form-ganti-sandi').reset();
         resetValidasi();
     }
 
     function tutupModalSukses() {
-        document.getElementById('modal-sukses').classList.add('hidden');
+        const modal = document.getElementById('modal-sukses');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
     }
 
     function resetValidasi() {
@@ -638,7 +616,7 @@
         
         if (isSandiLamaValid && isSandiBaruValid && isKonfirmasiValid) {
             // Simulasi proses ganti kata sandi berhasil
-            document.getElementById('modal-ganti-sandi').classList.add('hidden');
+            tutupModalGantiSandi();
             tampilkanModalSukses('Berhasil!', 'Kata sandi berhasil diganti.');
         }
     });
@@ -733,7 +711,9 @@
     // Tutup modal ketika klik di luar
     document.getElementById('modal-konfirmasi').addEventListener('click', function(e) {
         if (e.target.id === 'modal-konfirmasi') {
-            document.getElementById('modal-konfirmasi').classList.add('hidden');
+            const modal = document.getElementById('modal-konfirmasi');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
         }
     });
 

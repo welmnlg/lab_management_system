@@ -73,7 +73,11 @@
                     </td>
                     <td class="px-3 py-2 md:px-6 md:py-3 whitespace-nowrap">
                         @foreach($user->roles as $role)
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">{{ $role->status }}</span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium 
+                                {{ $role->status === 'bph' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800' }} 
+                                mb-1 mr-1">
+                                {{ ucfirst($role->status) }}
+                            </span>
                         @endforeach
                     </td>
                     <td class="px-3 py-2 md:px-6 md:py-3 whitespace-nowrap text-sm text-gray-900">
@@ -115,7 +119,7 @@
                                 data-user-nim="{{ $user->nim }}"
                                 data-user-email="{{ $user->email }}"
                                 data-user-password="{{ $user->password }}"
-                                data-user-peran="{{ $user->roles->first()?->status ?? '' }}"
+                                data-user-peran="{{ $user->roles->contains('status', 'bph') ? 'bph' : 'aslab' }}"
                                 data-user-role-id="{{ $user->roles->first()?->id ?? '' }}"
                                 data-user-courses="{{ json_encode($user->userCourses->groupBy(function($uc) {
                                     return $uc->courseClass->course->course_id ?? null;
@@ -218,7 +222,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 nim: this.getAttribute('data-user-nim'),
                 email: this.getAttribute('data-user-email'),
                 password: this.getAttribute('data-user-password'),
-                peran: this.getAttribute('data-user-peran'),
+                peran: this.getAttribute('data-user-peran'), // ← INI YANG PENTING
                 roleId: this.getAttribute('data-user-role-id'),
                 userCourses: JSON.parse(this.getAttribute('data-user-courses') || '[]')
             };
@@ -447,7 +451,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <!-- Garis Pemisah -->
                     <div class="border-t border-gray-200 my-4 sm:my-6"></div>
 
-                    <!-- Peran - HANYA 2 OPSI: ASLAB DAN BPH -->
+                    <!-- Peran - PRIORITAS BPH -->
                     <div class="space-y-4">
                         <h3 class="text-lg font-medium text-gray-900">Peran <span class="text-red-500">*</span></h3>
                         <div class="space-y-3">
@@ -460,6 +464,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <input type="radio" name="peran" value="bph" ${userData.peran === 'bph' ? 'checked' : ''} required
                                     class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
                                 <span class="text-sm text-gray-700">Bph</span>
+                                <span class="text-xs text-gray-500 italic">(Otomatis mendapat role Aslab)</span>
                             </label>
                         </div>
                     </div>

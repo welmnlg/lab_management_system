@@ -17,7 +17,7 @@ class SchedulesTableSeeder extends Seeder
             // LAB JARINGAN 1
             [
                 'class_id' => 1,
-                'user_id' => 1,
+                'user_id' => 1, // Austin Butler
                 'room_id' => 1,
                 'day' => 'Senin',
                 'start_time' => '08:00:00',
