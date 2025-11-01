@@ -106,7 +106,7 @@
                             <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
                         </svg>
                     </button>
-                    <span class="text-sm font-medium text-gray-700" id="date-range">22 September 2025 - 26 September 2025</span>
+                    <span class="text-sm font-medium text-gray-700" id="date-range"></span>
                     <button onclick="nextWeek()" class="p-2 rounded-full bg-blue-900 text-white hover:bg-blue-800">
                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
@@ -147,14 +147,14 @@
                 <form id="kelas-ganti-form" action="#" method="POST">
                     <div class="space-y-5">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <!-- <div>
+                            <div>
                                 <label for="nama-lengkap" class="block text-sm font-medium text-gray-800 mb-2">Nama Lengkap</label>
-                                <input type="text" name="nama-lengkap" class="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="Masukkan nama lengkap Anda">
+                                <input type="text" name="nama-lengkap" class="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="Masukkan nama lengkap Anda" value = "{{ auth()->user()->name }}" readonly disabled>
                             </div>
                             <div>
                                 <label for="nim" class="block text-sm font-medium text-gray-800 mb-2">NIM</label>
-                                <input type="text" name="nim" class="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="Masukkan NIM Anda">
-                            </div> -->
+                                <input type="text" name="nim" class="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="Masukkan NIM Anda" value = "{{ old('nim', auth()->user()->nim ?? '') }}" readonly disabled>
+                            </div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
@@ -328,8 +328,8 @@
             const selectedOption = timeSelect.options[timeSelect.selectedIndex];
             
             const payload = {
-                // name: formDataObj.get('nama-lengkap'),
-                // nim: formDataObj.get('nim'),
+                name: formDataObj.get('nama-lengkap'),
+                nim: formDataObj.get('nim'),
                 class_id: formDataObj.get('class_id'),
                 room_id: formDataObj.get('room_id'),
                 day: formDataObj.get('day'),
@@ -339,14 +339,14 @@
             };
 
             // Validation
-            if (!payload.class_id || !payload.room_id || !payload.day || !payload.start_time) {
-                alert('Mohon lengkapi semua field!');
-                return;
-            }
-            // if (!payload.name || !payload.nim || !payload.class_id || !payload.room_id || !payload.day || !payload.start_time) {
+            // if (!payload.class_id || !payload.room_id || !payload.day || !payload.start_time) {
             //     alert('Mohon lengkapi semua field!');
             //     return;
             // }
+            if (!payload.name || !payload.nim || !payload.class_id || !payload.room_id || !payload.day || !payload.start_time) {
+                alert('Mohon lengkapi semua field!');
+                return;
+            }
 
             console.log('Paylooad:', payload)
 
@@ -489,6 +489,15 @@
             return;
         }
         
+        // ✅ Deduplicate berdasarkan kombinasi time + course
+        const seen = new Set();
+        const uniqueSchedules = data.schedules.filter(schedule => {
+            const key = `${schedule.start_time}-${schedule.end_time}-${schedule.course_name}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+
         let contentHTML = '';
         
         data.schedules.forEach(function(schedule) {

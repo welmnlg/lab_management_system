@@ -45,4 +45,47 @@ class Room extends Model
     {
         return $query->where('location', 'like', '%' . $location . '%');
     }
+
+    public function occupancyStatus()
+    {
+        return $this->hasOne(RoomOccupancyStatus::class, 'room_id', 'room_id');
+    }
+
+    // Relasi ke QrCode (new table)
+    public function qrCode()
+    {
+        return $this->hasOne(QrCode::class, 'room_id', 'room_id');
+    }
+
+    // Relasi ke RoomAccessLogs (new table)
+    public function accessLogs()
+    {
+        return $this->hasMany(RoomAccessLog::class, 'room_id', 'room_id');
+    }
+
+    // Method untuk check status ruangan saat ini
+    public function isCurrentlyActive()
+    {
+        return $this->occupancyStatus()
+            ->where('is_active', true)
+            ->exists();
+    }
+
+    // Method untuk get current user (aslab yang sedang menggunakan)
+    public function getCurrentUser()
+    {
+        $status = $this->occupancyStatus()
+            ->where('is_active', true)
+            ->first();
+        
+        return $status ? $status->user : null;
+    }
+
+    // Scope untuk filter ruangan yang sedang digunakan
+    public function scopeActive($query)
+    {
+        return $query->whereHas('occupancyStatus', function ($q) {
+            $q->where('is_active', true);
+        });
+    }
 }

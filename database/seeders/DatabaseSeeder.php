@@ -14,19 +14,20 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-        ProgramsTableSeeder::class,
-        RolesTableSeeder::class,
-        UsersTableSeeder::class,
-        RoleUserTableSeeder::class,
-        CoursesTableSeeder::class,
-        CourseClassesTableSeeder::class,
-        UserCoursesTableSeeder::class,
-        RoomsTableSeeder::class,
-        SchedulesTableSeeder::class,
-        ScheduleOverridesTableSeeder::class,
-        OctoberScheduleSeeder::class,
-        NotificationsTableSeeder::class,
-        LogbookSeeder::class,
+        // 1. Master Data (tidak ada dependency)
+            ProgramsTableSeeder::class,
+            RolesTableSeeder::class,
+            UsersTableSeeder::class,
+            RoleUserTableSeeder::class,
+            CoursesTableSeeder::class,
+            CourseClassesTableSeeder::class,
+            UserCoursesTableSeeder::class,
+            RoomsTableSeeder::class,
+            SchedulesTableSeeder::class,
+            ScheduleOverridesTableSeeder::class,
+            NotificationsTableSeeder::class,
+            LogbookSeeder::class,
+            DashboardTableSeeder::class,
         ]);
         // User::factory(10)->create();
 

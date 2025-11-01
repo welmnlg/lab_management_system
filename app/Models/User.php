@@ -144,4 +144,17 @@ class User extends Authenticatable
         $role = $this->roles()->first();
         return $role ? $role->status : null;
     }
+
+    // Relasi ke RoomAccessLogs (new table)
+    public function roomAccessLogs()
+    {
+        return $this->hasMany(RoomAccessLog::class, 'user_id', 'user_id');
+    }
+
+    // Relasi ke RoomOccupancyStatus (untuk current active session)
+    public function currentRoomSession()
+    {
+        return $this->hasOne(RoomOccupancyStatus::class, 'current_user_id', 'user_id')
+            ->where('is_active', true);
+    }
 }

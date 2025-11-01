@@ -106,14 +106,14 @@ class RoomScheduleService
                 }
             }
             
-            // // Add standalone overrides (overrides without schedule_id)
-            // foreach ($dayOverrides->where('schedule_id', null) as $override) {
-            //     $timeSlot = $this->formatTimeSlot(
-            //         $override->start_time ?? '00:00:00',
-            //         $override->end_time ?? '00:00:00'
-            //     );
-            //     $calendar[$day]['schedules'][] = $this->formatScheduleForCalendar($override, $timeSlot, true);
-            // }
+            // Add standalone overrides (overrides without schedule_id)
+            foreach ($dayOverrides->where('schedule_id', null) as $override) {
+                $timeSlot = $this->formatTimeSlot(
+                    $override->start_time ?? '00:00:00',
+                    $override->end_time ?? '00:00:00'
+                );
+                $calendar[$day]['schedules'][] = $this->formatScheduleForCalendar($override, $timeSlot, true);
+            }
         }
         
         return $calendar;
@@ -264,8 +264,10 @@ class RoomScheduleService
         }
         
         foreach ($overrides as $override) {
+        if (is_null($override->schedule_id)) {
             $formattedSchedules[] = $this->formatSchedule($override, $dateCarbon, true);
         }
+    }
         
         // Sort by start time
         usort($formattedSchedules, function($a, $b) {

@@ -199,14 +199,8 @@
     @else
         @include('layouts.app')
     @endif
-
-    <!-- MAIN KONTEN -->
-    <main class="main-content bg-gray-100 p-4 xl:p-8">
-        @yield('content')
-    </main>
-    </div>
-    <!-- Semua script sidebar/notification pindahkan ke bawah sebelum </body> -->
-    <script>
+    
+    
     <script>
     // Enhanced Mobile Sidebar Functionality
     document.addEventListener('DOMContentLoaded', function() {
@@ -464,5 +458,5 @@
 
 @stack('scripts')
 </body>
-</body>
+
 </html>

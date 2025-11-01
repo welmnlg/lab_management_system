@@ -116,8 +116,8 @@ class DashboardApiController extends Controller
     public function getFormData()
     {
         try {
-            // ✅ Hardcode user_id = 1 untuk sementara
-            $userId = 1;  // Nanti ganti: auth()->id()
+            
+            $userId = auth()->id();  // Nanti ganti: auth()->id()
             
             // Filter courses & classes berdasarkan user
             $userCourseIds = Schedule::where('user_id', $userId)

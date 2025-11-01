@@ -72,4 +72,20 @@ class Schedule extends Model
     {
         return $query->where('user_id', $userId);
     }
+
+    public function isActiveNow()
+    {
+        $now = \Carbon\Carbon::now();
+        $currentDay = $now->dayOfWeek;
+        $currentTime = $now->format('H:i:s');
+        
+        $startTime = \Carbon\Carbon::parse($this->start_time)->format('H:i:s');
+        $endTime = \Carbon\Carbon::parse($this->end_time)->format('H:i:s');
+        $bufferTime = \Carbon\Carbon::parse($this->start_time)
+            ->subMinutes(15)->format('H:i:s');
+        
+        return $this->day_of_week == $currentDay 
+            && $currentTime >= $bufferTime 
+            && $currentTime <= $endTime;
+    }
 }
