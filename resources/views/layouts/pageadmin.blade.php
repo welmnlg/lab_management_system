@@ -1,4 +1,4 @@
-    <!-- Mobile Sidebar Overlay -->
+<!-- Mobile Sidebar Overlay -->
     <div id="mobileSidebarOverlay" class="mobile-sidebar-overlay"></div>
     
     <!-- Mobile Sidebar -->
@@ -60,9 +60,9 @@
                     <span class="font-medium whitespace-nowrap text-base">LOGBOOK</span>
                 </a>
 
-                <a href="{{ route('ambil-jadwal') }}" 
+                <a href="{{ route('ambil-jadwal-admin') }}" 
                    class="flex items-center space-x-4 mobile-nav-item rounded-xl transition-all duration-200
-                          {{ request()->routeIs('ambil-jadwal') ? 'mobile-nav-active' : 'text-gray-700 hover:bg-gray-100 active:bg-gray-200' }}">
+                          {{ request()->routeIs('ambil-jadwal-admin') ? 'mobile-nav-active' : 'text-gray-700 hover:bg-gray-100 active:bg-gray-200' }}">
                     <svg class="w-6 h-6 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
                     </svg>
@@ -73,7 +73,7 @@
                    class="flex items-center space-x-4 mobile-nav-item rounded-xl transition-all duration-200
                           {{ request()->routeIs('kelola-matkul') ? 'mobile-nav-active' : 'text-gray-700 hover:bg-gray-100 active:bg-gray-200' }}">
                     <svg class="w-6 h-6 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                        <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
                     </svg>
                     <span class="font-medium whitespace-nowrap text-base">KELOLA MATA KULIAH</span>
                 </a>
@@ -93,11 +93,13 @@
                 <a href="{{ route('profil') }}" 
                    class="flex items-center space-x-3 bg-gray-50 rounded-xl p-3 hover:bg-gray-100 active:bg-gray-200 transition-colors duration-200 cursor-pointer">
                     <div class="w-12 h-12 rounded-full bg-gradient-to-r from-blue-600 to-red-600 flex items-center justify-center shadow-sm">
-                        <span class="text-white font-semibold text-base">AH</span>
+                        <span class="text-white font-semibold text-base">
+                            {{ collect(explode(' ', Auth::user()->name))->map(fn($n) => strtoupper(substr($n,0,1)))->join('') }}
+                        </span>
                     </div>
                     <div class="flex-1 min-w-0">
-                        <p class="text-sm font-semibold text-gray-900 truncate">Aulia Halimatusyaddiah</p>
-                        <p class="text-xs text-gray-500 truncate">auliahalim217@gmail.com</p>
+                        <p class="text-sm font-semibold text-gray-900 truncate">{{ Auth::user()->name }}</p>
+                        <p class="text-xs text-gray-500 truncate">{{ Auth::user()->email }}</p>
                     </div>
                 </a>
             </div>
@@ -148,25 +150,10 @@
         </div>
     </div>
 
-    <!-- Desktop Sidebar (Fixed Position) - DIHAPUS LOGO DAN TULISAN -->
+    <!-- Desktop Sidebar (Fixed Position) -->
     <div class="hidden lg:block sidebar-desktop-fixed sidebar-desktop">
         <div class="bg-white shadow-sm border-r border-gray-200 h-full overflow-y-auto">
             <nav class="p-4 space-y-2">
-                <!-- HAPUS BAGIAN INI: Logo/Header Sidebar Desktop -->
-                <!-- 
-                <div class="mb-6 pb-4 border-b border-gray-200">
-                    <div class="flex items-center">
-                        <div class="w-10 h-10 mr-3 relative">
-                            <img src="{{ asset('images/logo ITLG.png') }}" alt="ITLG Logo" class="w-full h-full object-contain">
-                        </div>
-                        <div>
-                            <h1 class="text-lg font-bold text-blue-900">ITLG LAB</h1>
-                            <p class="text-xs text-gray-500">Management System</p>
-                        </div>
-                    </div>
-                </div>
-                -->
-                
                 <a href="{{ route('dashboard') }}" 
                    class="flex items-center space-x-3 px-4 py-3 rounded-lg 
                           {{ request()->routeIs('dashboard') ? 'bg-gradient-to-r from-blue-900 to-red-700 text-white' : 'text-gray-700 hover:bg-gray-100' }}">
@@ -178,8 +165,8 @@
 
                 <!-- Menu Kelola Pengguna -->
                 <a href="{{ route('kelola-pengguna.index') }}" 
-                    class="flex items-center space-x-4 mobile-nav-item rounded-xl transition-all duration-200
-                            {{ request()->routeIs('kelola-pengguna.*') ? 'mobile-nav-active' : 'text-gray-700 hover:bg-gray-100 active:bg-gray-200' }}">
+                    class="flex items-center space-x-3 px-4 py-3 rounded-lg
+                            {{ request()->routeIs('kelola-pengguna.*') ? 'bg-gradient-to-r from-blue-900 to-red-700 text-white' : 'text-gray-700 hover:bg-gray-100' }}">
                     <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
                     </svg>
@@ -205,9 +192,9 @@
                     <span class="font-medium whitespace-nowrap">LOGBOOK</span>
                 </a>
 
-                <a href="{{ route('ambil-jadwal') }}" 
+                <a href="{{ route('ambil-jadwal-admin') }}" 
                    class="flex items-center space-x-3 px-4 py-3 rounded-lg
-                          {{ request()->routeIs('ambil-jadwal') ? 'bg-gradient-to-r from-blue-900 to-red-700 text-white' : 'text-gray-700 hover:bg-gray-100' }}">
+                          {{ request()->routeIs('ambil-jadwal-admin') ? 'bg-gradient-to-r from-blue-900 to-red-700 text-white' : 'text-gray-700 hover:bg-gray-100' }}">
                     <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
                     </svg>
@@ -218,7 +205,7 @@
                    class="flex items-center space-x-3 px-4 py-3 rounded-lg
                           {{ request()->routeIs('kelola-matkul') ? 'bg-gradient-to-r from-blue-900 to-red-700 text-white' : 'text-gray-700 hover:bg-gray-100' }}">
                     <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                        <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
                     </svg>
                     <span class="font-medium whitespace-nowrap">KELOLA MATA KULIAH</span>
                 </a>

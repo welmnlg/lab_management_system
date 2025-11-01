@@ -39,10 +39,15 @@ Route::middleware(['auth'])->group(function () {
         return view('logbook');
     })->name('logbook');
 
-    // Ambil Jadwal
+    // Ambil Jadwal - UNTUK ASLAB (User biasa)
     Route::get('/ambil-jadwal', function () {
         return view('ambil-jadwal');
     })->name('ambil-jadwal');
+
+    // Ambil Jadwal - UNTUK ADMIN/BPH
+    Route::get('/ambil-jadwal-admin', function () {
+        return view('ambil-jadwal-admin');
+    })->name('ambil-jadwal-admin');
 
     // Form Ambil Jadwal
     Route::get('/form-ambil-jadwal', function () {
@@ -65,7 +70,7 @@ Route::middleware(['auth'])->group(function () {
     })->name('notifikasi');
 
     // ========================================
-    // KELOLA PENGGUNA
+    // KELOLA PENGGUNA (Hanya untuk Admin/BPH)
     // ========================================
     Route::post('/kelola-pengguna/delete-multiple', [UserController::class, 'deleteMultiple'])
         ->name('kelola-pengguna.delete-multiple');
@@ -80,7 +85,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // ========================================
-    // KELOLA MATA KULIAH
+    // KELOLA MATA KULIAH (Hanya untuk Admin/BPH)
     // ========================================
     Route::get('/kelola-matkul', [CourseController::class, 'index'])->name('kelola-matkul');
     Route::post('/kelola-matkul', [CourseController::class, 'store'])->name('kelola-matkul.store');

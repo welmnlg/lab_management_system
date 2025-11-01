@@ -63,6 +63,7 @@ class CourseController extends Controller
             // Check if course with same code already exists for this program
             $course = Course::where('course_code', $request->course_code)
                 ->where('program_id', $programId)
+                ->where('semester', $request->semester)
                 ->first();
 
             // If course doesn't exist, create it
@@ -73,6 +74,25 @@ class CourseController extends Controller
                     'semester' => $request->semester,
                     'program_id' => $programId,
                 ]);
+            }
+
+            // VALIDASI PENTING: Extract prefix from KOM (e.g., "Kom A" from "Kom A1" or "Kom A2")
+            if (preg_match('/^(Kom [A-C])/', $request->kom, $matches)) {
+                $komPrefix = $matches[1]; // Will be "Kom A", "Kom B", or "Kom C"
+                
+                // Check apakah sudah ada kelas dengan prefix yang sama untuk COURSE INI
+                $existingClassWithSamePrefix = CourseClass::where('course_id', $course->course_id)
+                    ->where('class_name', 'LIKE', $komPrefix . '%')
+                    ->first();
+
+                // Jika ada dan dosennya berbeda, TOLAK!
+                if ($existingClassWithSamePrefix && $existingClassWithSamePrefix->lecturer !== $request->lecturer) {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Nama dosen untuk ' . $komPrefix . ' di mata kuliah ' . $course->course_name . ' harus sama! Dosen yang sudah terdaftar: ' . $existingClassWithSamePrefix->lecturer
+                    ], 422);
+                }
             }
 
             // Check if class with same KOM already exists for this course
@@ -176,6 +196,25 @@ class CourseController extends Controller
                 }
             }
 
+            // VALIDASI: Extract prefix dari KOM baru
+            if (preg_match('/^(Kom [A-C])/', $request->kom, $matches)) {
+                $komPrefix = $matches[1];
+                
+                // Check apakah ada kelas lain dengan prefix yang sama tapi dosen berbeda (exclude class yang sedang diedit)
+                $existingClassWithSamePrefix = CourseClass::where('course_id', $course->course_id)
+                    ->where('class_name', 'LIKE', $komPrefix . '%')
+                    ->where('class_id', '!=', $classId)
+                    ->first();
+
+                if ($existingClassWithSamePrefix && $existingClassWithSamePrefix->lecturer !== $request->lecturer) {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Nama dosen untuk ' . $komPrefix . ' di mata kuliah ' . $course->course_name . ' harus sama! Dosen yang sudah terdaftar: ' . $existingClassWithSamePrefix->lecturer
+                    ], 422);
+                }
+            }
+
             // Update course
             $course->update([
                 'course_name' => $request->course_name,
@@ -188,11 +227,9 @@ class CourseController extends Controller
                 'lecturer' => $request->lecturer,
             ]);
 
-            // Update lecturer for all classes with same prefix
-            // Contoh: Jika update Kom A1, maka Kom A2 juga ikut update dosennya
-            // Extract prefix (Kom A, Kom B, Kom C)
+            // Update lecturer untuk semua kelas dengan prefix yang sama di COURSE ini
             if (preg_match('/^(Kom [A-C])/', $request->kom, $matches)) {
-                $komPrefix = $matches[1]; // Will be "Kom A", "Kom B", or "Kom C"
+                $komPrefix = $matches[1];
                 
                 CourseClass::where('course_id', $course->course_id)
                     ->where('class_name', 'LIKE', $komPrefix . '%')
