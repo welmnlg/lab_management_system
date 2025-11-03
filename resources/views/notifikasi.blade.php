@@ -1,4 +1,4 @@
-@extends('layouts.pageadmin')
+@extends('layouts.main')
 
 @section('title', 'Notifikasi - ITLG Lab Management System')
 

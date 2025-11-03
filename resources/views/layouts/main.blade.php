@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="//unpkg.com/alpinejs" defer></script>
-    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
@@ -130,20 +130,62 @@
             50% { opacity: 0.7; transform: scale(1.1); }
             100% { opacity: 1; transform: scale(1); }
         }
+
+        /* FIX DROPDOWN DOUBLE ARROW */
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+        }
+
+        /* Remove default arrow in IE */
+        select::-ms-expand {
+            display: none;
+        }
+
+        /* FIX MODAL POSITION */
+        .modal-fixed {
+            align-items: flex-start;
+            padding-top: 5rem;
+        }
+
+        @media (max-width: 768px) {
+            .modal-fixed {
+                padding-top: 2rem;
+                align-items: center;
+            }
+        }
     </style>
     
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-100 min-h-screen">
     @php 
-        $user = auth()->user(); 
+        $user = auth()->user();
+        // Cek apakah user punya role BPH - SAMA PERSIS seperti di UserController
         $isAdmin = $user && $user->roles->contains('status', 'bph');
     @endphp
     
+    {{-- DEBUG OUTPUT - UNCOMMENT UNTUK CEK --}}
+    {{-- 
+    <div style="position: fixed; top: 100px; right: 10px; background: red; color: white; padding: 10px; z-index: 99999; font-weight: bold;">
+        User: {{ $user->name ?? 'N/A' }}<br>
+        Email: {{ $user->email ?? 'N/A' }}<br>
+        Roles: {{ $user->roles->pluck('status')->join(', ') }}<br>
+        Is BPH: {{ $isAdmin ? 'YES' : 'NO' }}<br>
+        Loading: {{ $isAdmin ? 'pageadmin.blade' : 'app.blade' }}
+    </div>
+    --}}
+    
     {{-- Pilih layout berdasarkan role --}}
     @if ($isAdmin)
+        {{-- SIDEBAR UNTUK BPH/ADMIN --}}
         @include('layouts.pageadmin')
     @else
+        {{-- SIDEBAR UNTUK ASLAB BIASA --}}
         @include('layouts.app')
     @endif
 

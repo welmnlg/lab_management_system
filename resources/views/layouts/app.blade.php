@@ -59,9 +59,9 @@
                 <span class="font-medium whitespace-nowrap text-base">AMBIL JADWAL</span>
             </a>
 
-            <a href="{{ route('profile.edit') }}" 
+            <a href="{{ route('profil') }}" 
                class="flex items-center space-x-4 mobile-nav-item rounded-xl transition-all duration-200
-                      {{ request()->routeIs('profile.edit') ? 'mobile-nav-active' : 'text-gray-700 hover:bg-gray-100 active:bg-gray-200' }}">
+                      {{ request()->routeIs('profil') ? 'mobile-nav-active' : 'text-gray-700 hover:bg-gray-100 active:bg-gray-200' }}">
                 <svg class="w-6 h-6 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
                 </svg>
@@ -71,7 +71,8 @@
         
         <!-- Mobile User Info -->
         <div class="p-4 border-t border-gray-200">
-            <div class="flex items-center space-x-3 bg-gray-50 rounded-xl p-3">
+            <a href="{{ route('profil') }}" 
+               class="flex items-center space-x-3 bg-gray-50 rounded-xl p-3 hover:bg-gray-100 active:bg-gray-200 transition-colors duration-200 cursor-pointer">
                 <div class="w-12 h-12 rounded-full bg-gradient-to-r from-blue-600 to-red-600 flex items-center justify-center shadow-sm">
                     <span class="text-white font-semibold text-base">
                         {{ collect(explode(' ', Auth::user()->name))->map(fn($n) => strtoupper(substr($n,0,1)))->join('') }}
@@ -81,7 +82,7 @@
                     <p class="text-sm font-semibold text-gray-900 truncate">{{ Auth::user()->name }}</p>
                     <p class="text-xs text-gray-500 truncate">{{ Auth::user()->email }}</p>
                 </div>
-            </div>
+            </a>
         </div>
     </div>
 </div>
@@ -115,15 +116,17 @@
                 <span id="notification-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center hidden">0</span>
             </a>
             
-            <!-- User Info -->
-            <div class="hidden lg:flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2">
+            <!-- User Info dengan Link ke Profil -->
+            <a href="{{ route('profil') }}" 
+               class="hidden lg:flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2 hover:bg-gray-100 transition-colors duration-200 cursor-pointer
+                      {{ request()->routeIs('profil') ? 'bg-blue-50 border border-blue-200' : '' }}">
                 <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
                     <span class="text-white text-sm font-semibold">
                         {{ collect(explode(' ', Auth::user()->name))->map(fn($n) => strtoupper(substr($n,0,1)))->join('') }}
                     </span>
                 </div>
                 <span class="text-sm font-medium text-gray-700">{{ Auth::user()->name }}</span>
-            </div>
+            </a>
         </div>
     </div>
 </div>
@@ -169,9 +172,9 @@
                 <span class="font-medium whitespace-nowrap">AMBIL JADWAL</span>
             </a>
 
-            <a href="{{ route('profile.edit') }}" 
+            <a href="{{ route('profil') }}" 
                class="flex items-center space-x-3 px-4 py-3 rounded-lg
-                      {{ request()->routeIs('profile.edit') ? 'bg-gradient-to-r from-blue-900 to-red-700 text-white' : 'text-gray-700 hover:bg-gray-100' }}">
+                      {{ request()->routeIs('profil') ? 'bg-gradient-to-r from-blue-900 to-red-700 text-white' : 'text-gray-700 hover:bg-gray-100' }}">
                 <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
                 </svg>

@@ -6,11 +6,6 @@ use App\Http\Controllers\CourseController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
-// Route publik (tidak perlu login)
-Route::get('/', function () {
-    return view('welcome');
-});
-
 // Redirect root ke login jika belum login, ke dashboard jika sudah login
 Route::get('/', function () {
     if (auth()->check()) {
@@ -89,10 +84,20 @@ Route::middleware(['auth'])->group(function () {
     // ========================================
     Route::get('/kelola-matkul', [CourseController::class, 'index'])->name('kelola-matkul');
     Route::post('/kelola-matkul', [CourseController::class, 'store'])->name('kelola-matkul.store');
-    Route::get('/kelola-matkul/{classId}/edit', [CourseController::class, 'edit'])->name('kelola-matkul.edit');
-    Route::put('/kelola-matkul/{classId}', [CourseController::class, 'update'])->name('kelola-matkul.update');
-    Route::delete('/kelola-matkul/{classId}', [CourseController::class, 'destroy'])->name('kelola-matkul.destroy');
     Route::post('/kelola-matkul/submit', [CourseController::class, 'submit'])->name('kelola-matkul.submit');
+    Route::get('/kelola-matkul/{classId}/edit', [CourseController::class, 'edit'])->name('kelola-matkul.edit');
+    
+    // PERBAIKAN: Tambahkan route PUT untuk update
+    Route::put('/kelola-matkul/{classId}', [CourseController::class, 'update'])->name('kelola-matkul.update');
+    
+    // Tetap pertahankan route POST untuk kompatibilitas (opsional)
+    Route::post('/kelola-matkul/{classId}/update', [CourseController::class, 'update'])->name('kelola-matkul.update-post');
+    
+    Route::delete('/kelola-matkul/{classId}', [CourseController::class, 'destroy'])->name('kelola-matkul.destroy');
+    
+    // Route tambahan untuk AJAX
+    Route::get('/kelola-matkul/{courseId}/classes', [CourseController::class, 'getClassesByCourse'])->name('kelola-matkul.classes');
+    Route::post('/kelola-matkul/check-course-code', [CourseController::class, 'checkCourseCode'])->name('kelola-matkul.check-course-code');
 });
 
 // Load auth routes (login, register, dll)
