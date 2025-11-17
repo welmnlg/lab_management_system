@@ -88,4 +88,57 @@ class Schedule extends Model
             && $currentTime >= $bufferTime 
             && $currentTime <= $endTime;
     }
+
+    // Check apakah schedule valid untuk scan pada waktu tertentu (dengan buffer 15 menit)
+public function isValidForScan($dateTime = null)
+{
+    if (!$dateTime) {
+        $dateTime = \Carbon\Carbon::now();
+    }
+    
+    $dayOfWeek = $dateTime->dayOfWeek;
+    $currentTime = $dateTime->format('H:i:s');
+    
+    // Convert day enum ke number jika diperlukan
+    $scheduleDayNumber = $this->convertDayToNumber($this->day);
+    
+    if ($scheduleDayNumber != $dayOfWeek) {
+        return false;
+    }
+    
+    $startTime = \Carbon\Carbon::parse($this->start_time)->format('H:i:s');
+    $endTime = \Carbon\Carbon::parse($this->end_time)->format('H:i:s');
+    $bufferTime = \Carbon\Carbon::parse($this->start_time)
+        ->subMinutes(15)->format('H:i:s');
+    
+    return $currentTime >= $bufferTime && $currentTime <= $endTime;
+}
+
+    // Helper convert hari ke number
+    private function convertDayToNumber($day)
+    {
+        $days = [
+            'Senin' => 1,
+            'Selasa' => 2,
+            'Rabu' => 3,
+            'Kamis' => 4,
+            'Jumat' => 5,
+            'Sabtu' => 6,
+            'Minggu' => 0
+        ];
+        
+        return $days[$day] ?? null;
+    }
+
+    // Get formatted day name
+    public function getDayName()
+    {
+        return $this->day;
+    }
+
+    // Get formatted time range
+    public function getTimeRange()
+    {
+        return $this->start_time . ' - ' . $this->end_time;
+    }
 }

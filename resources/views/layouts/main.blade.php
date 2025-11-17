@@ -2,7 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" viewport-fit=cover>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'ITLG Lab Management System')</title>
     
@@ -125,6 +125,15 @@
             animation: pulse 2s infinite;
         }
 
+        #notification-container {
+            position: fixed;
+            top: 60px; /* sedikit di bawah top bar utama */
+            right: 20px;
+            z-index: 9999;
+            width: calc(100% - 40px);
+            max-width: 400px;
+        }
+        
         @keyframes pulse {
             0% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.7; transform: scale(1.1); }

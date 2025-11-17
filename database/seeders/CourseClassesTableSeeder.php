@@ -25,6 +25,12 @@ class CourseClassesTableSeeder extends Seeder
         ['class_name' => 'Kom A2', 'course_id' => 2, 'lecturer' => 'Filius Flitwick', 'created_at' => now(), 'updated_at' => now()],
         ['class_name' => 'Kom C1', 'course_id' => 2, 'lecturer' => 'Filius Flitwick', 'created_at' => now(), 'updated_at' => now()],
         ['class_name' => 'Kom C2', 'course_id' => 2, 'lecturer' => 'Filius Flitwick', 'created_at' => now(), 'updated_at' => now()],
+        ['class_name' => 'Kom A1', 'course_id' => 5, 'lecturer' => 'Sarah Purnawati', 'created_at' => now(), 'updated_at' => now()],
+        ['class_name' => 'Kom A2', 'course_id' => 5, 'lecturer' => 'Sarah Purnawati', 'created_at' => now(), 'updated_at' => now()],
+        ['class_name' => 'Kom B1', 'course_id' => 5, 'lecturer' => 'Sarah Purnawati', 'created_at' => now(), 'updated_at' => now()],
+        ['class_name' => 'Kom B2', 'course_id' => 5, 'lecturer' => 'Sarah Purnawati', 'created_at' => now(), 'updated_at' => now()],
+        ['class_name' => 'Kom C1', 'course_id' => 5, 'lecturer' => 'Sarah Purnawati', 'created_at' => now(), 'updated_at' => now()],
+        ['class_name' => 'Kom C2', 'course_id' => 5, 'lecturer' => 'Sarah Purnawati', 'created_at' => now(), 'updated_at' => now()],
 
         // Wil Ohmsford, ASLAB only, TI, TIF2209 - Albus Dumbledore - Selasa
         ['class_name' => 'Kom B1', 'course_id' => 2, 'lecturer' => 'Albus Dumbledore', 'created_at' => now(), 'updated_at' => now()],

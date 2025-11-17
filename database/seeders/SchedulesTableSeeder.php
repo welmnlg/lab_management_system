@@ -45,6 +45,7 @@ class SchedulesTableSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
+            
 
             // === LAB 2 ===
             [
@@ -87,10 +88,64 @@ class SchedulesTableSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
+            [
+                'class_id' => 9,
+                'user_id' => 3, // Kim Mingyu
+                'room_id' => 2, // Jaringan 2
+                'day' => 'Senin',
+                'start_time' => '08:00:00',
+                'end_time' => '09:40:00',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+
+            [
+                'class_id' => 10,
+                'user_id' => 3, // Kim Mingyu
+                'room_id' => 2, // Jaringan 2
+                'day' => 'Senin',
+                'start_time' => '09:40:00',
+                'end_time' => '11:20:00',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+
+            [
+                'class_id' => 11,
+                'user_id' => 3, // Kim Mingyu
+                'room_id' => 2, // Jaringan 2
+                'day' => 'Senin',
+                'start_time' => '11:20:00',
+                'end_time' => '13:00:00',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+
+            [
+                'class_id' => 12,
+                'user_id' => 3, // Kim Mingyu
+                'room_id' => 2, // Jaringan 2
+                'day' => 'Senin',
+                'start_time' => '13:00:00',
+                'end_time' => '14:40:00',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+
+            [
+                'class_id' => 13,
+                'user_id' => 3, // Kim Mingyu
+                'room_id' => 2, // Jaringan 2
+                'day' => 'Senin',
+                'start_time' => '14:40:00',
+                'end_time' => '16:20:00',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
 
             // === LAB 3 ===
             [
-                'class_id' => 9,
+                'class_id' => 14,
                 'user_id' => 3,
                 'room_id' => 4,
                 'day' => 'Rabu',
@@ -100,7 +155,7 @@ class SchedulesTableSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'class_id' => 10,
+                'class_id' => 15,
                 'user_id' => 3,
                 'room_id' => 3,
                 'day' => 'Kamis',
@@ -110,7 +165,7 @@ class SchedulesTableSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'class_id' => 11,
+                'class_id' => 16,
                 'user_id' => 4,
                 'room_id' => 2,
                 'day' => 'Kamis',
@@ -120,7 +175,7 @@ class SchedulesTableSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'class_id' => 12,
+                'class_id' => 17,
                 'user_id' => 4,
                 'room_id' => 3,
                 'day' => 'Jumat',
@@ -132,7 +187,7 @@ class SchedulesTableSeeder extends Seeder
 
             // === LAB 5 ===
             [
-                'class_id' => 13,
+                'class_id' => 18,
                 'user_id' => 5,
                 'room_id' => 4,
                 'day' => 'Jumat',
@@ -142,7 +197,7 @@ class SchedulesTableSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'class_id' => 14,
+                'class_id' => 19,
                 'user_id' => 5,
                 'room_id' => 4,
                 'day' => 'Senin',
@@ -152,7 +207,7 @@ class SchedulesTableSeeder extends Seeder
                 'updated_at' => now(),
             ],          
             [
-                'class_id' => 15,
+                'class_id' => 20,
                 'user_id' => 6,
                 'room_id' => 1,
                 'day' => 'Kamis',
@@ -162,7 +217,7 @@ class SchedulesTableSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'class_id' => 16,
+                'class_id' => 21,
                 'user_id' => 6,
                 'room_id' => 4,
                 'day' => 'Kamis',
@@ -171,6 +226,7 @@ class SchedulesTableSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
+            
         ]);
     }
 }

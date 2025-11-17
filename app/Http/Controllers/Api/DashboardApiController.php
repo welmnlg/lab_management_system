@@ -112,50 +112,53 @@ class DashboardApiController extends Controller
     /**
      * GET /api/dashboard/form-data
      * Mendapatkan data untuk form kelas ganti (dropdown options)
+     * ENHANCED: Filter berdasarkan user yang login
      */
     public function getFormData()
     {
         try {
+            $userId = auth()->user  (); // User yang login (Kim Mingyu = user_id 3)
             
-            $userId = auth()->id();  // Nanti ganti: auth()->id()
-            
-            // Filter courses & classes berdasarkan user
+            // ✅ FIX 1: Ambil UNIQUE course_id yang diajarkan user
             $userCourseIds = Schedule::where('user_id', $userId)
+                ->join('course_classes', 'schedules.class_id', '=', 'course_classes.class_id')
+                ->pluck('course_classes.course_id')
+                ->unique();
+            
+            // ✅ FIX 2: Ambil class_id yang diajarkan user
+            $userClassIds = Schedule::where('user_id', $userId)
                 ->pluck('class_id')
                 ->unique();
             
-            $userCourses = CourseClass::whereIn('class_id', $userCourseIds)
-                ->pluck('course_id')
-                ->unique();
-            
             $data = [
-                // Filtered courses
-                'courses' => Course::whereIn('course_id', $userCourses)
+                // Filtered courses: hanya mata kuliah yang diajarkan user
+                'courses' => Course::whereIn('course_id', $userCourseIds)
                     ->select('course_id', 'course_code', 'course_name')
                     ->orderBy('course_name')
                     ->get(),
                 
-                // Filtered course classes
-                'course_classes' => CourseClass::whereIn('class_id', $userCourseIds)
-                    ->with('course:course_id,course_name')
+                // Filtered course classes: hanya kelas yang diajarkan user
+                'course_classes' => CourseClass::whereIn('class_id', $userClassIds)
+                    ->with('course:course_id,course_name,course_code')
                     ->select('class_id', 'course_id', 'class_name', 'lecturer')
                     ->orderBy('class_name')
-                    ->get(),
+                    ->get()
+                    ->map(function($class) {
+                        return [
+                            'class_id' => $class->class_id,
+                            'course_id' => $class->course_id,
+                            'class_name' => $class->class_name,
+                            'lecturer' => $class->lecturer,
+                            'display_name' => $class->course->course_name . ' - Kelas ' . $class->class_name
+                        ];
+                    }),
                 
-                // Rooms (semua ruangan - tidak difilter)
+                // Rooms (semua ruangan)
                 'rooms' => Room::select('room_id', 'room_name', 'location')
                     ->orderBy('room_name')
                     ->get(),
                 
-                // Instructors (semua dosen/aslab)
-                'instructors' => User::whereHas('roles', function($query) {
-                        $query->whereIn('name', ['Aslab', 'Dosen']);
-                    })
-                    ->select('user_id', 'name', 'email')
-                    ->orderBy('name')
-                    ->get(),
-                
-                // Days (semua hari)
+                // Days (hari kerja)
                 'days' => [
                     ['value' => 'Senin', 'label' => 'Senin'],
                     ['value' => 'Selasa', 'label' => 'Selasa'],
@@ -164,7 +167,7 @@ class DashboardApiController extends Controller
                     ['value' => 'Jumat', 'label' => 'Jumat']
                 ],
                 
-                // Time slots (semua waktu)
+                // Time slots
                 'time_slots' => [
                     ['value' => '08:00-09:40', 'start' => '08:00:00', 'end' => '09:40:00', 'label' => '08:00 - 09:40'],
                     ['value' => '09:40-11:20', 'start' => '09:40:00', 'end' => '11:20:00', 'label' => '09:40 - 11:20'],
@@ -177,7 +180,7 @@ class DashboardApiController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Data form berhasil diambil',
-                'data' => $data  // ✅ "data" wrapper TETAP ADA
+                'data' => $data
             ]);
             
         } catch (\Exception $e) {
@@ -189,23 +192,21 @@ class DashboardApiController extends Controller
         }
     }
 
+
     /**
      * POST /api/dashboard/schedule-override
-     * Membuat kelas ganti (schedule override)
+     * Membuat kelas ganti dengan validasi lengkap dan week-based logic
      */
     public function createScheduleOverride(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            // 'name' => 'required|string|max:255',
-            // 'nim' => 'required|string|max:50',
             'class_id' => 'required|integer|exists:course_classes,class_id',
             'room_id' => 'required|exists:rooms,room_id',
             'day' => 'required|in:Senin,Selasa,Rabu,Kamis,Jumat',
             'start_time' => 'required',
-            'end_time' => 'required',
-            'week_start' => 'required|date'
+            'end_time' => 'required'
         ]);
-
+        
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
@@ -213,50 +214,110 @@ class DashboardApiController extends Controller
                 'errors' => $validator->errors()
             ], 422);
         }
-
+        
         try {
-            // Hitung tanggal dari week_start + day
-            $weekStart = Carbon::parse($request->week_start)->startOfWeek(Carbon::MONDAY);
-            $dayIndex = array_search($request->day, ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat']);
-            $date = $weekStart->copy()->addDays($dayIndex);
-
-            // Cek conflict
-            $hasConflict = $this->scheduleService->hasScheduleConflict(
-                $request->room_id,
-                $date->format('Y-m-d'),
-                $request->start_time,
-                $request->end_time,
-                $request->class_id
-            );
-
-            if ($hasConflict) {
+            $userId = auth()->id();
+            
+            // ✅ STEP 1: Hitung tanggal override berdasarkan week-based logic
+            $overrideDate = $this->calculateOverrideDate($request->day);
+            
+            // ✅ STEP 2: Cek apakah ada jadwal asli user di class_id ini
+            $originalSchedule = Schedule::where('user_id', $userId)
+                ->where('class_id', $request->class_id)
+                ->first();
+            
+            if (!$originalSchedule) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Jadwal bentrok dengan jadwal lain di ruangan yang sama',
+                    'message' => 'Anda tidak mengajar kelas ini'
+                ], 403);
+            }
+            
+            // ✅ STEP 3: Cek konflik dengan jadwal lain di schedule
+            $conflictResult = $this->checkScheduleConflict(
+                $request->room_id,
+                $request->day,
+                $request->start_time,
+                $request->end_time,
+                $userId,
+                $request->class_id
+            );
+            
+            if ($conflictResult['has_conflict']) {
+                if ($conflictResult['is_own_schedule']) {
+                    // Konflik dengan jadwal sendiri (tapi beda mata kuliah/kelas)
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Anda memiliki jadwal lain di ruangan {$conflictResult['room_name']} pada hari {$request->day} jam {$request->start_time}-{$request->end_time} untuk {$conflictResult['conflict_info']}. Apakah Anda ingin override jadwal tersebut?",
+                        'conflict' => true,
+                        'requires_confirmation' => true,
+                        'conflict_details' => $conflictResult
+                    ], 409);
+                } else {
+                    // Konflik dengan jadwal orang lain
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Ruangan {$conflictResult['room_name']} sudah digunakan pada {$request->day} jam {$request->start_time}-{$request->end_time} oleh {$conflictResult['instructor_name']} untuk {$conflictResult['conflict_info']}",
+                        'conflict' => true,
+                        'requires_confirmation' => false
+                    ], 409);
+                }
+            }
+            
+            // ✅ STEP 4: Cek konflik dengan schedule_override lain
+            $overrideConflict = ScheduleOverride::where('room_id', $request->room_id)
+                ->where('date', $overrideDate->format('Y-m-d'))
+                ->where('status', 'active')
+                ->where(function ($query) use ($request) {
+                    $query->whereBetween('start_time', [$request->start_time, $request->end_time])
+                        ->orWhereBetween('end_time', [$request->start_time, $request->end_time])
+                        ->orWhere(function ($q) use ($request) {
+                            $q->where('start_time', '<=', $request->start_time)
+                            ->where('end_time', '>=', $request->end_time);
+                        });
+                })
+                ->with(['user', 'courseClass.course'])
+                ->first();
+            
+            if ($overrideConflict) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Sudah ada kelas ganti di ruangan ini pada tanggal yang sama oleh {$overrideConflict->user->name}",
                     'conflict' => true
                 ], 409);
             }
-
-            // Simpan schedule override (gunakan user_id = 1 sebagai default untuk sementara)
+            
+            // ✅ STEP 5: Jika tidak ada konflik, simpan override
+            // Cari schedule_id asli untuk referensi
+            $originalScheduleForOverride = Schedule::where('user_id', $userId)
+                ->where('class_id', $request->class_id)
+                ->where('day', $originalSchedule->day)
+                ->first();
+            
             $override = ScheduleOverride::create([
-                'schedule_id' => null,
-                'user_id' => 1, // Default user ID (ubah setelah autentikasi ready)
+                'schedule_id' => $originalScheduleForOverride->schedule_id ?? null,
+                'user_id' => $userId,
                 'room_id' => $request->room_id,
                 'class_id' => $request->class_id,
-                'date' => $date->format('Y-m-d'),
+                'date' => $overrideDate->format('Y-m-d'),
                 'start_time' => $request->start_time,
                 'end_time' => $request->end_time,
-                'reason' => "Kelas ganti oleh {$request->name} (NIM: {$request->nim})"
+                'reason' => $request->reason ?? "Kelas ganti",
+                'status' => 'active'
             ]);
-
-            $override->load(['user', 'room', 'courseClass.course']);
-
+            
+            $override->load(['user', 'room', 'courseClass.course', 'schedule']);
+            
             return response()->json([
                 'success' => true,
                 'message' => 'Kelas ganti berhasil dibuat',
-                'data' => $override
+                'data' => [
+                    'override' => $override,
+                    'override_date' => $overrideDate->format('Y-m-d'),
+                    'week_info' => $this->getWeekInfo($overrideDate)
+                ]
             ], 201);
-
+            
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -265,6 +326,114 @@ class DashboardApiController extends Controller
             ], 500);
         }
     }
+
+    /**
+ * Helper: Hitung tanggal override berdasarkan week-based logic
+ */
+private function calculateOverrideDate($selectedDay)
+{
+    $now = Carbon::now();
+    $currentWeekStart = $now->copy()->startOfWeek(Carbon::MONDAY);
+    
+    // Map hari ke index (0 = Senin, 4 = Jumat)
+    $dayMap = [
+        'Senin' => 0,
+        'Selasa' => 1,
+        'Rabu' => 2,
+        'Kamis' => 3,
+        'Jumat' => 4
+    ];
+    
+    $selectedDayIndex = $dayMap[$selectedDay];
+    
+    // Hitung tanggal untuk hari yang dipilih di minggu ini
+    $targetDateThisWeek = $currentWeekStart->copy()->addDays($selectedDayIndex);
+    
+    // Jika tanggal sudah lewat (lebih kecil dari hari ini), gunakan minggu depan
+    if ($targetDateThisWeek->lt($now->startOfDay())) {
+        return $targetDateThisWeek->addWeek();
+    }
+    
+    return $targetDateThisWeek;
+}
+
+/**
+ * Helper: Get week info for display
+ */
+private function getWeekInfo($date)
+{
+    $weekStart = $date->copy()->startOfWeek(Carbon::MONDAY);
+    $weekEnd = $weekStart->copy()->endOfWeek(Carbon::FRIDAY);
+    
+    return [
+        'week_start' => $weekStart->format('Y-m-d'),
+        'week_end' => $weekEnd->format('Y-m-d'),
+        'week_display' => $weekStart->format('d M') . ' - ' . $weekEnd->format('d M Y')
+    ];
+}
+
+
+    /**
+     * Helper: Cek konflik jadwal dengan logic khusus
+     */
+    private function checkScheduleConflict($roomId, $day, $startTime, $endTime, $userId, $classId)
+    {
+        // Cek jadwal di tabel schedule pada hari dan ruangan yang sama
+        $conflictSchedule = Schedule::where('room_id', $roomId)
+            ->where('day', $day)
+            ->where(function ($query) use ($startTime, $endTime) {
+                $query->whereBetween('start_time', [$startTime, $endTime])
+                    ->orWhereBetween('end_time', [$startTime, $endTime])
+                    ->orWhere(function ($q) use ($startTime, $endTime) {
+                        $q->where('start_time', '<=', $startTime)
+                        ->where('end_time', '>=', $endTime);
+                    });
+            })
+            ->with(['user', 'room', 'courseClass.course'])
+            ->first();
+        
+        if (!$conflictSchedule) {
+            return ['has_conflict' => false];
+        }
+        
+        // Jika konflik adalah jadwal yang sama persis (class_id sama), abaikan
+        if ($conflictSchedule->class_id == $classId) {
+            return ['has_conflict' => false];
+        }
+        
+        // Jika konflik adalah jadwal user sendiri (tapi beda kelas)
+        $isOwnSchedule = $conflictSchedule->user_id == $userId;
+        
+        return [
+            'has_conflict' => true,
+            'is_own_schedule' => $isOwnSchedule,
+            'schedule_id' => $conflictSchedule->schedule_id,
+            'room_name' => $conflictSchedule->room->room_name,
+            'instructor_name' => $conflictSchedule->user->name,
+            'conflict_info' => $conflictSchedule->courseClass->course->course_name . ' - Kelas ' . $conflictSchedule->courseClass->class_name,
+            'conflict_schedule' => $conflictSchedule
+        ];
+    }
+    
+
+    /**
+     * Helper: Convert day name to Carbon day number
+     */
+    private function getIndonesianDay($date)
+    {
+        $days = [
+            0 => 'Minggu',
+            1 => 'Senin',
+            2 => 'Selasa',
+            3 => 'Rabu',
+            4 => 'Kamis',
+            5 => 'Jumat',
+            6 => 'Sabtu'
+        ];
+        
+        return $days[$date->dayOfWeek];
+    }
+
 
     /**
      * PUT /api/dashboard/schedule-override/{id}
@@ -400,6 +569,28 @@ class DashboardApiController extends Controller
             ], 500);
         }
         
+    }
+    public function getLabSchedule($labName)
+    {
+        $today = Carbon::today();
+        $now = Carbon::now();
+
+        $schedules = Schedule::where('lab_name', $labName)
+            ->whereDate('date', $today)
+            ->orderBy('start_time')
+            ->get()
+            ->map(function ($item) use ($now) {
+                if ($now->between($item->start_time, $item->end_time)) {
+                    $item->status = 'Sedang Berlangsung';
+                } elseif ($now->greaterThan($item->end_time)) {
+                    $item->status = 'Selesai';
+                } else {
+                    $item->status = 'Akan Berlangsung';
+                }
+                return $item;
+            });
+
+        return response()->json($schedules);
     }
     // public function getAvailableTimeSlots(Request $request)
     // {

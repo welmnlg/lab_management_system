@@ -86,4 +86,32 @@ class Logbook extends Model
         }
         return null;
     }
+
+    // Relasi ke RoomAccessLog jika ingin link ke QR scan
+// (optional, untuk reference QR scan yang trigger logbook ini)
+public function accessLog()
+{
+    return $this->hasOne(RoomAccessLog::class, 'room_id', 'room_id')
+        ->where('user_id', $this->user_id)
+        ->orderBy('scan_time', 'desc')
+        ->limit(1);
+}
+
+    // Check apakah logbook ini dari QR scan atau from system
+    public function isFromQrScan()
+    {
+        return $this->access_log_id !== null;
+    }
+
+    // Get current duration (active logbook)
+    public function getCurrentDuration()
+    {
+        if ($this->logout) {
+            return $this->getDurationAttribute();
+        }
+        
+        $login = \Carbon\Carbon::parse($this->login);
+        $now = \Carbon\Carbon::now();
+        return $login->diff($now)->format('%H:%I:%S');
+    }
 }

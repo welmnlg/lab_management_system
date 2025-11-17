@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\DashboardApiController;
+use App\Http\Controllers\Lab\QrVerificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -30,3 +31,5 @@ Route::prefix('dashboard')->group(function () {
     Route::delete('/schedule-override/{id}', [DashboardApiController::class, 'deleteScheduleOverride']);
     
 });
+
+

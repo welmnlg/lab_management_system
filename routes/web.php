@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\Lab\QrVerificationController;
 use Illuminate\Support\Facades\Route;
 
 // Root route
@@ -84,6 +85,12 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/kelola-matkul/{classId}', [CourseController::class, 'update'])->name('kelola-matkul.update');
     Route::delete('/kelola-matkul/{classId}', [CourseController::class, 'destroy'])->name('kelola-matkul.destroy');
     Route::post('/kelola-matkul/submit', [CourseController::class, 'submit'])->name('kelola-matkul.submit');
+
+    Route::prefix('api/lab')->group(function () {
+        Route::post('/qr-verify', [QrVerificationController::class, 'verifyQrCode'])->name('api.lab.qr-verify');
+        Route::post('/confirm-entry', [QrVerificationController::class, 'confirmEntry'])->name('api.lab.confirm-entry');
+        Route::post('/exit-room', [QrVerificationController::class, 'exitRoom'])->name('api.lab.exit-room');
+    });
 });
 
 // Load auth routes (login, register, dll)

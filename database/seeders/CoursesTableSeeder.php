@@ -45,6 +45,14 @@ class CoursesTableSeeder extends Seeder
             'program_id' => 2,
             'created_at' => now(),
             'updated_at' => now(),
+        ], 
+        [
+            'course_code' => 'TIF1204',
+            'course_name' => 'Manajemen Sistem Basis Data',
+            'semester' => 'Genap',
+            'program_id' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
         ],
     ]);
     }

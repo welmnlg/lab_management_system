@@ -152,6 +152,7 @@ class RoomScheduleService
         return substr($start, 0, 5) . ' - ' . substr($end, 0, 5);
     }
     
+    
     /**
      * Get all rooms with current status
      */
@@ -163,7 +164,47 @@ class RoomScheduleService
         $currentTime = $now->format('H:i:s');
         
         return $rooms->map(function($room) use ($currentDay, $currentTime, $now) {
-            // Check if room is currently occupied
+            // ✅ PERBAIKAN: CEK OCCUPANCY STATUS DULU!
+            $occupancy = \App\Models\RoomOccupancyStatus::where('room_id', $room->room_id)
+                ->where('is_active', true)
+                ->first();
+            
+            // ✅ Jika ada occupancy aktif, ruangan PASTI sedang digunakan (hijau)
+            if ($occupancy) {
+                // Ambil data user yang sedang pakai
+                $user = \App\Models\User::find($occupancy->current_user_id);
+                
+                // Cari schedule yang sedang berjalan
+                $currentSchedule = Schedule::where('room_id', $room->room_id)
+                    ->where('day', $currentDay)
+                    ->where('start_time', '<=', $currentTime)
+                    ->where('end_time', '>=', $currentTime)
+                    ->where('user_id', $occupancy->current_user_id)
+                    ->with(['courseClass.course', 'user'])
+                    ->first();
+                
+                // Cek override juga
+                $override = ScheduleOverride::where('room_id', $room->room_id)
+                    ->where('date', $now->format('Y-m-d'))
+                    ->where('start_time', '<=', $currentTime)
+                    ->where('end_time', '>=', $currentTime)
+                    ->where('user_id', $occupancy->current_user_id)
+                    ->with(['courseClass.course', 'user'])
+                    ->first();
+                
+                $activeSchedule = $override ?? $currentSchedule;
+                
+                return [
+                    'room_id' => $room->room_id,
+                    'room_name' => $room->room_name,
+                    'location' => $room->location,
+                    'status' => 'occupied', // ✅ STATUS: DIGUNAKAN (hijau)
+                    'current_schedule' => $activeSchedule ? $this->formatCurrentSchedule($activeSchedule) : null,
+                    'current_user' => $user ? $user->name : 'Unknown'
+                ];
+            }
+            
+            // ✅ Jika TIDAK ada occupancy, cek apakah ada jadwal
             $currentSchedule = Schedule::where('room_id', $room->room_id)
                 ->where('day', $currentDay)
                 ->where('start_time', '<=', $currentTime)
@@ -171,7 +212,6 @@ class RoomScheduleService
                 ->with(['courseClass.course', 'user'])
                 ->first();
             
-            // Check for override on today
             $override = ScheduleOverride::where('room_id', $room->room_id)
                 ->where('date', $now->format('Y-m-d'))
                 ->where('start_time', '<=', $currentTime)
@@ -181,15 +221,17 @@ class RoomScheduleService
             
             $activeSchedule = $override ?? $currentSchedule;
             
+            // ✅ Ada jadwal TAPI belum ada occupancy = available (abu-abu)
             return [
                 'room_id' => $room->room_id,
                 'room_name' => $room->room_name,
                 'location' => $room->location,
-                'status' => $activeSchedule ? 'occupied' : 'available',
+                'status' => 'available', // ✅ STATUS: KOSONG (abu-abu)
                 'current_schedule' => $activeSchedule ? $this->formatCurrentSchedule($activeSchedule) : null
             ];
         });
     }
+
     
     /**
      * Format current schedule
@@ -296,7 +338,13 @@ class RoomScheduleService
         $course = $courseClass ? $courseClass->course : null;
         $user = $schedule->user;
         
-        $status = $this->determineScheduleStatus($schedule->start_time, $schedule->end_time, $date);
+        // ✅ Pass schedule object ke determineScheduleStatus
+        $status = $this->determineScheduleStatus(
+            $schedule->start_time, 
+            $schedule->end_time, 
+            $date,
+            $schedule  // ← Tambahan parameter
+        );
         
         return [
             'id' => $isOverride ? $schedule->id : $schedule->schedule_id,
@@ -316,27 +364,76 @@ class RoomScheduleService
     /**
      * Determine schedule status
      */
-        private function determineScheduleStatus($startTime, $endTime, $date)
-        {
-            $now = Carbon::now();
-            $scheduleDate = Carbon::parse($date);
-            
-            if ($scheduleDate->isToday()) {
-                $currentTime = $now->format('H:i:s');
-                
-                if ($currentTime >= $startTime && $currentTime <= $endTime) {
-                    return 'ongoing';
-                } elseif ($currentTime > $endTime) {
-                    return 'completed';
-                } else {
-                    return 'scheduled';
-                }
-            } elseif ($scheduleDate->isPast()) {
+    private function determineScheduleStatus($startTime, $endTime, $date, $schedule = null)
+    {
+        $now = Carbon::now();
+        $scheduleDate = Carbon::parse($date);
+        $currentTime = $now->format('H:i:s');
+        
+        // ✅ PERBAIKAN 1: Cek apakah hari ini
+        if (!$scheduleDate->isToday()) {
+            // Jika sudah lewat, status completed
+            if ($scheduleDate->isPast()) {
                 return 'completed';
-            } else {
+            }
+            // Jika belum tiba, status scheduled
+            return 'scheduled';
+        }
+        
+        // ✅ PERBAIKAN 2: Untuk hari ini, CEK OCCUPANCY dulu
+        if ($schedule) {
+            $roomId = $schedule->room_id;
+            $userId = $schedule->user_id;
+            
+            $isCurrentTimeInThisSchedule = ($currentTime >= $startTime && $currentTime <= $endTime);
+
+            // Cek apakah ada occupancy aktif untuk ruangan dan user ini
+            $occupancy = \App\Models\RoomOccupancyStatus::where('room_id', $roomId)
+                ->where('is_active', true)
+                ->where('current_user_id', $userId)
+                ->where('schedule_id', $schedule->schedule_id)
+                ->first();
+            
+            
+            
+            // ✅ JIKA ADA OCCUPANCY AKTIF (sudah scan QR + confirm)
+            if ($isCurrentTimeInThisSchedule) {
+                // ✅ SEKARANG dalam rentang jam jadwal ini
+                // Cek apakah ada occupancy aktif untuk user ini di room ini
+                $occupancy = \App\Models\RoomOccupancyStatus::where('room_id', $roomId)
+                    ->where('current_user_id', $userId)
+                    ->where('is_active', true)
+                    ->where('schedule_id', $schedule->schedule_id)
+                    ->first();
+                
+                // ✅ Jika ada occupancy untuk user ini → ongoing
+                if ($occupancy) {
+                    return 'ongoing'; // Sedang berlangsung
+                }
+                
+                // ✅ Jika TIDAK ada occupancy → scheduled (belum scan)
                 return 'scheduled';
             }
+            
+            // ✅ JIKA BELUM ADA OCCUPANCY (belum scan QR)
+                // ✅ SEKARANG TIDAK dalam rentang jam jadwal ini
+            if ($currentTime > $endTime) {
+                return 'completed'; // Jadwal ini sudah selesai
+            } else {
+                return 'scheduled'; // Jadwal ini belum dimulai
+            }
         }
+        
+        // ✅ Fallback jika tidak ada schedule object
+        if ($currentTime > $endTime) {
+            return 'completed';
+        } elseif ($currentTime >= $startTime) {
+            return 'scheduled'; // Default scheduled jika belum ada konfirmasi
+        } else {
+            return 'scheduled';
+        }
+    }
+
 
         /**
          * Check schedule conflict with improved logic

@@ -17,7 +17,7 @@
                     <div class="p-3 lg:p-4">
                         <button onclick="showSchedule('lab1', true)"
                             class="w-full h-24 lg:h-32 border-4 border-black rounded-lg transition-all duration-300 hover:shadow-lg"
-                            id="lab1-room" style="background-color: #9CA3AF;"></button>
+                            id="lab1-room" class="bg-gray-400";"></button>
                     </div>
                 </div>
 
@@ -29,7 +29,7 @@
                     <div class="p-3 lg:p-4">
                         <button onclick="showSchedule('lab2', false)"
                             class="w-full h-24 lg:h-32 border-4 border-black rounded-lg transition-all duration-300 hover:shadow-lg"
-                            id="lab2-room" style="background-color: #9CA3AF;"></button>
+                            id="lab2-room" class="bg-gray-400";"></button>
                     </div>
                 </div>
 
@@ -41,7 +41,7 @@
                     <div class="p-3 lg:p-4">
                         <button onclick="showSchedule('lab3', false)"
                             class="w-full h-24 lg:h-32 border-4 border-black rounded-lg transition-all duration-300 hover:shadow-lg"
-                            id="lab3-room" style="background-color: #9CA3AF;"></button>
+                            id="lab3-room" class="bg-gray-400";"></button>
                     </div>
                 </div>
 
@@ -53,7 +53,7 @@
                     <div class="p-3 lg:p-4">
                         <button onclick="showSchedule('lab4', false)"
                             class="w-full h-24 lg:h-32 border-4 border-black rounded-lg transition-all duration-300 hover:shadow-lg"
-                            id="lab4-room" style="background-color: #9CA3AF;"></button>
+                            id="lab4-room" class="bg-gray-400";"></button>
                     </div>
                 </div>
             </div>
@@ -220,8 +220,22 @@
 
     let currentRoomId = 1;
     let currentLab = 1; // Default Lab Jaringan 1 (room_id)
-    let currentWeekStart = '2025-10-27'; // Senin, 27 Oktober 2025
     
+    function formatDateLocal(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    let currentWeekStart = (() => {
+        const today = new Date();
+        const dayOfWeek = today.getDay(); // 0 = Minggu, 1 = Senin
+        const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); 
+        const monday = new Date(today.setDate(diff));
+        return formatDateLocal(monday);
+    })();
+
     // Map lab string to room_id
     const labToRoomId = {
         'lab1': 1,
@@ -232,12 +246,29 @@
 
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {
-        // Load initial data
+        loadFormData();
+        // ✅ Cek apakah baru saja confirm entry
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('confirmed') === '1') {
+            const roomId = urlParams.get('room_id');
+            
+            // Refresh room colors
+            updateRoomColors();
+            
+            // Jika ada room_id, show schedule untuk room tersebut
+            if (roomId) {
+                const labKey = Object.keys(labToRoomId).find(key => labToRoomId[key] == roomId);
+                if (labKey) {
+                    showSchedule(labKey);
+                }
+            }
+            
+            // Hapus parameter dari URL
+            window.history.replaceState({}, '', window.location.pathname);
+        }
+        updateDateRange();
         showSchedule('lab1');
         selectLab(1);
-        updateDateRange();
-        
-        // Load room statuses to set colors correctly
         updateRoomColors();
     });
 
@@ -400,14 +431,14 @@
         }
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
-        loadFormData();
-        // Get current week start (Monday)
-        const today = new Date();
-        const dayOfWeek = today.getDay();
-        const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-        currentWeekStart = new Date(today.setDate(diff)).toISOString().split('T')[0];
-    });
+    // document.addEventListener('DOMContentLoaded', function() {
+    //     loadFormData();
+    //     // Get current week start (Monday)
+    //     const today = new Date();
+    //     const dayOfWeek = today.getDay();
+    //     const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+    //     currentWeekStart = new Date(today.setDate(diff)).toISOString().split('T')[0];
+    // });
 
     async function updateRoomColors() {
         try {
@@ -424,14 +455,14 @@
             
             if (data.success && data.data) {
                 data.data.forEach(room => {
-                    const roomElement = document.getElementById('lab' + room.room_id + '-room');
+                    const roomElement = document.getElementById(`lab${room.room_id}-room`);
                     if (roomElement) {
                         roomElement.classList.remove('bg-green-500', 'bg-gray-400');
                         
                         if (room.status === 'occupied') {
-                            roomElement.classList.add('bg-green-500');
+                            roomElement.style.backgroundColor = '#21c45d'; // Hijau (Tailwind green-500)
                         } else {
-                            roomElement.classList.add('bg-gray-400');
+                            roomElement.style.backgroundColor = '#9da4b0'; // Abu-abu (Tailwind gray-400)
                         }
                     }
                 });
@@ -473,6 +504,7 @@
 
     function displayScheduleContent(data) {
         const scheduleContent = document.getElementById('schedule-content');
+        const today = formatDateLocal(new Date());
         
         if (!data.schedules || data.schedules.length === 0) {
             let html = '<div class="border-l-4 border-gray-400 bg-gray-50 p-3 lg:p-4 rounded-lg">';
@@ -481,7 +513,7 @@
             html += '<svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">';
             html += '<path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>';
             html += '</svg>';
-            html += '<span>' + data.date + '</span>';
+            html += '<span>' + today + '</span>';
             html += '<span class="ml-auto bg-gray-500 text-white px-2 py-1 rounded-full text-xs">Kosong</span>';
             html += '</div></div>';
             
@@ -500,7 +532,7 @@
 
         let contentHTML = '';
         
-        data.schedules.forEach(function(schedule) {
+        uniqueSchedules.forEach(function(schedule) {
             let borderColor, bgColor, statusBadge, statusText;
             
             if (schedule.status === 'ongoing') {
@@ -542,7 +574,7 @@
             contentHTML += '<svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">';
             contentHTML += '<path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>';
             contentHTML += '</svg>';
-            contentHTML += '<span>' + data.date + '</span>';
+            contentHTML += '<span>' + today + '</span>';
             contentHTML += '<span class="ml-auto ' + statusBadge + ' text-white px-2 py-1 rounded-full text-xs">' + statusText + '</span>';
             contentHTML += '</div>';
             contentHTML += '</div>';
@@ -654,7 +686,7 @@
     function previousWeek() { 
         const current = new Date(currentWeekStart);
         current.setDate(current.getDate() - 7);
-        currentWeekStart = current.toISOString().split('T')[0];
+        currentWeekStart = formatDateLocal(current);
         
         updateDateRange();
         loadWeeklyCalendar(currentLab, currentWeekStart);
@@ -663,7 +695,7 @@
     function nextWeek() {
         const current = new Date(currentWeekStart);
         current.setDate(current.getDate() + 7);
-        currentWeekStart = current.toISOString().split('T')[0];
+        currentWeekStart = formatDateLocal(current);
     
         updateDateRange();
         loadWeeklyCalendar(currentLab, currentWeekStart); 

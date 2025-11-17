@@ -157,4 +157,45 @@ class User extends Authenticatable
         return $this->hasOne(RoomOccupancyStatus::class, 'current_user_id', 'user_id')
             ->where('is_active', true);
     }
+
+    // Check apakah user sedang menggunakan ruangan (via QR scan, bukan logbook)
+    public function isCurrentlyInRoom()
+    {
+        return $this->currentRoomSession()->exists();
+    }
+
+    // Get ruangan yang sedang digunakan oleh user
+    public function getCurrentRoom()
+    {
+        $session = $this->currentRoomSession()->first();
+        return $session ? $session->room : null;
+    }
+
+    // Get jadwal yang active sekarang untuk user ini
+    public function getActiveSchedule()
+    {
+        return $this->schedules()
+            ->where(function ($query) {
+                $query->where('day', $this->getDayNumber())
+                    ->orWhere('day_of_week', $this->getDayNumber());
+            })
+            ->first();
+    }
+
+    // Helper untuk get nomor hari (0-6)
+    private function getDayNumber()
+    {
+        $days = ['Senin' => 1, 'Selasa' => 2, 'Rabu' => 3, 'Kamis' => 4, 'Jumat' => 5];
+        $carbonDay = \Carbon\Carbon::now()->dayOfWeek;
+        return $carbonDay;
+    }
+
+    // Get all access logs untuk user (untuk audit)
+    public function getAccessHistory($days = 30)
+    {
+        return $this->roomAccessLogs()
+            ->where('created_at', '>=', \Carbon\Carbon::now()->subDays($days))
+            ->orderBy('scan_time', 'desc')
+            ->get();
+    }
 }
