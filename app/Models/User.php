@@ -2,26 +2,23 @@
 
 namespace App\Models;
 
+// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Laravel\Fortify\TwoFactorAuthenticatable;
+use Laravel\Jetstream\HasProfilePhoto;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasApiTokens;
 
-    /**
-     * Primary key custom
-     */
-    protected $primaryKey = 'user_id';
-
-    /**
-     * Route key name untuk route model binding
-     */
-    public function getRouteKeyName()
-    {
-        return 'user_id';
-    }
+    /** @use HasFactory<\Database\Factories\UserFactory> */
+    use HasFactory;
+    use HasProfilePhoto;
+    use Notifiable;
+    use TwoFactorAuthenticatable;
 
     /**
      * The attributes that are mass assignable.
@@ -30,10 +27,8 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
-        'nim',
         'email',
         'password',
-        'program_studi',
     ];
 
     /**
@@ -44,104 +39,29 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_recovery_codes',
+        'two_factor_secret',
     ];
 
     /**
-     * The attributes that should be cast.
+     * The accessors to append to the model's array form.
      *
-     * @var array<string, string>
+     * @var array<int, string>
      */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-        'password' => 'hashed',
+    protected $appends = [
+        'profile_photo_url',
     ];
 
     /**
-     * Relasi ke user_courses (user punya banyak kelas praktikum)
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
      */
-    public function userCourses()
+    protected function casts(): array
     {
-        return $this->hasMany(UserCourse::class, 'user_id', 'user_id');
-    }
-
-    /**
-     * Relasi many-to-many ke roles lewat tabel pivot role_user
-     */
-    public function roles()
-    {
-        return $this->belongsToMany(Role::class, 'role_user', 'user_id', 'role_id');
-    }
-
-    /**
-     * Relasi ke Program studi untuk program user
-     */
-    public function program()
-    {
-        return $this->belongsTo(Program::class, 'program_studi', 'program_id');
-    }
-
-    /**
-     * Relasi ke Logbooks (user memiliki banyak logbook)
-     */
-    public function logbooks()
-    {
-        return $this->hasMany(Logbook::class, 'user_id', 'user_id');
-    }
-
-    /**
-     * Relasi ke Schedules (user memiliki banyak jadwal)
-     */
-    public function schedules()
-    {
-        return $this->hasMany(Schedule::class, 'user_id', 'user_id');
-    }
-
-    /**
-     * Relasi ke ScheduleOverrides
-     */
-    public function scheduleOverrides()
-    {
-        return $this->hasMany(ScheduleOverride::class, 'user_id', 'user_id');
-    }
-
-    /**
-     * Method untuk get active logbook (yang belum logout)
-     */
-    public function getActiveLogbook()
-    {
-        return $this->logbooks()
-                    ->whereDate('date', today())
-                    ->whereNull('logout')
-                    ->first();
-    }
-
-    /**
-     * Method untuk check apakah user sedang menggunakan ruangan
-     */
-    public function isUsingRoom()
-    {
-        return $this->getActiveLogbook() !== null;
-    }
-
-    /**
-     * Helper method untuk check apakah user memiliki role tertentu
-     * 
-     * @param string $roleName
-     * @return bool
-     */
-    public function hasRole($roleName)
-    {
-        return $this->roles()->where('status', strtolower($roleName))->exists();
-    }
-
-    /**
-     * Helper method untuk get role pertama user
-     * 
-     * @return string|null
-     */
-    public function getRole()
-    {
-        $role = $this->roles()->first();
-        return $role ? $role->status : null;
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+        ];
     }
 }

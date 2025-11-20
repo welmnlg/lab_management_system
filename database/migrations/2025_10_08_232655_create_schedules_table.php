@@ -6,31 +6,34 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('schedules', function (Blueprint $table) {
             $table->id('schedule_id');
-            $table->unsignedBigInteger('class_id');
-            $table->unsignedBigInteger('user_id');
-            $table->unsignedBigInteger('room_id');
+            
+            // Foreign keys
+            $table->foreignId('period_id')->constrained('semester_periods', 'period_id')->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('users', 'user_id')->onDelete('cascade');
+            $table->foreignId('room_id')->constrained('rooms', 'room_id')->onDelete('cascade');
+            $table->foreignId('course_id')->constrained('courses', 'course_id')->onDelete('cascade');
+            $table->foreignId('class_id')->constrained('course_classes', 'class_id')->onDelete('cascade');
+            
+            // Schedule details
             $table->enum('day', ['Senin','Selasa','Rabu','Kamis','Jumat']);
-            $table->time('start_time');
-            $table->time('end_time');
+            $table->string('time_slot'); // Untuk menyimpan format "08.00 - 08:50"
+            $table->time('start_time');  // Untuk menyimpan waktu mulai
+            $table->time('end_time');    // Untuk menyimpan waktu selesai
+            $table->enum('status', ['active', 'cancelled'])->default('active');
+            
             $table->timestamps();
             
-            //foreign key
-            $table->foreign('class_id')->references('class_id')->on('course_classes')->onDelete('cascade');
-            $table->foreign('user_id')->references('user_id')->on('users')->onDelete('cascade');
-            $table->foreign('room_id')->references('room_id')->on('rooms')->onDelete('cascade');
+            // Indexes for better performance
+            $table->index(['period_id', 'room_id', 'day']);
+            $table->index(['period_id', 'user_id']);
+            $table->index(['period_id', 'course_id']);
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('schedules');

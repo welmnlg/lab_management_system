@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('user_courses', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id');    // misal custom PK di tabel users
-            $table->unsignedBigInteger('class_id');  // misal custom PK di tabel course_classes
+            $table->unsignedBigInteger('user_id');   
+            $table->unsignedBigInteger('class_id');
             $table->foreign('user_id')->references('user_id')->on('users')->onDelete('cascade');
             $table->foreign('class_id')->references('class_id')->on('course_classes')->onDelete('cascade');
             $table->timestamps();

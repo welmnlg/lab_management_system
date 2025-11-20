@@ -1,36 +1,23 @@
 import defaultTheme from 'tailwindcss/defaultTheme';
 import forms from '@tailwindcss/forms';
+import typography from '@tailwindcss/typography';
 
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    "./resources/**/*.blade.php",
-    "./resources/**/*.js",
-    "./resources/**/*.vue",
-    "./storage/framework/views/*.php", // Include compiled views
-    "./app/Views/**/*.blade.php", // Include views in app directory if any
-  ],
+    content: [
+        './vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php',
+        './vendor/laravel/jetstream/**/*.blade.php',
+        './storage/framework/views/*.php',
+        './resources/views/**/*.blade.php',
+    ],
 
-  theme: {
-   extend: {
+    theme: {
+        extend: {
             fontFamily: {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
             },
-            
-            // ### TAMBAHKAN DARI SINI ###
-            keyframes: {
-              'scan-vertical': {
-                '0%': { transform: 'translateY(0)' },
-                '100%': { transform: 'translateY(240px)' }, // 240px adalah jarak gerak di dalam kotak 256px
-              }
-            },
-            animation: {
-              'scan': 'scan-vertical 2s linear infinite alternate',
-            }
-            // ### SAMPAI SINI ###
-        },     
-  },
+        },
+    },
 
-  plugins: [forms],
+    plugins: [forms, typography],
 };
-

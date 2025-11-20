@@ -9,19 +9,26 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('semester_periods', function (Blueprint $table) {
+        Schema::create('otps', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('user_id');
+            $table->string('otp_code', 6); // 6 digit OTP
+            $table->timestamp('expires_at');
             $table->timestamps();
+
+        $table->foreign('user_id')->references('user_id')->on('users')->onDelete('cascade');
+
         });
     }
+
 
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
-        Schema::dropIfExists('semester_periods');
+        Schema::dropIfExists('otps');
     }
 };

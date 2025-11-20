@@ -190,7 +190,7 @@
     @endif
 
     <!-- MAIN KONTEN -->
-    <main class="main-content bg-gray-100 p-4 xl:p-8">
+    <main class="main-content bg-gray-100 p-4 xl:p-8 pt-6 md:pt-8">
         @yield('content')
     </main>
 
