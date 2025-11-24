@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\Lab\QrVerificationController;
+use App\Http\Controllers\Api\ScheduleController;
 use Illuminate\Support\Facades\Route;
 
 // Root route
@@ -75,6 +76,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::post('/profile', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
     
     // ========================================
     // KELOLA MATA KULIAH (Hanya untuk Admin/BPH)
@@ -90,6 +92,25 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/qr-verify', [QrVerificationController::class, 'verifyQrCode'])->name('api.lab.qr-verify');
         Route::post('/confirm-entry', [QrVerificationController::class, 'confirmEntry'])->name('api.lab.confirm-entry');
         Route::post('/exit-room', [QrVerificationController::class, 'exitRoom'])->name('api.lab.exit-room');
+    });
+    Route::prefix('api/schedules')->group(function () {
+        // Get user's schedules
+        Route::get('/my-schedules', [ScheduleController::class, 'getMySchedules']);
+        
+        // Get schedule detail
+        Route::get('/{id}', [ScheduleController::class, 'getScheduleDetail']);
+        
+        // Cancel schedule
+        Route::post('/{id}/cancel', [ScheduleController::class, 'cancelSchedule']);
+        
+        // Confirm schedule
+        Route::post('/{id}/confirm', [ScheduleController::class, 'confirmSchedule']);
+        
+        // Complete schedule
+        Route::post('/{id}/complete', [ScheduleController::class, 'completeSchedule']);
+        
+        // Move to different room
+        Route::post('/{id}/move-room', [ScheduleController::class, 'moveToRoom']);
     });
 });
 

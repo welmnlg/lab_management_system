@@ -363,7 +363,7 @@ private function calculateOverrideDate($selectedDay)
 private function getWeekInfo($date)
 {
     $weekStart = $date->copy()->startOfWeek(Carbon::MONDAY);
-    $weekEnd = $weekStart->copy()->endOfWeek(Carbon::FRIDAY);
+    $weekEnd = $weekStart->copy()->endOfWeek(Carbon::SUNDAY);
     
     return [
         'week_start' => $weekStart->format('Y-m-d'),

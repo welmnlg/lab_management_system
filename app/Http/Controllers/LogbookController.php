@@ -13,35 +13,32 @@ use Carbon\Carbon;
 class LogbookController extends Controller
 {
     /**
-     * Display a listing of logbooks.
+     * Show logbook dashboard
      */
     public function index(Request $request)
     {
+        // ✅ Filter logbooks
         $query = Logbook::with(['user', 'room', 'course', 'schedule']);
 
-        // Filter berdasarkan tanggal
         if ($request->filled('date')) {
             $query->whereDate('date', $request->date);
         }
 
-        // Filter berdasarkan user
         if ($request->filled('user_id')) {
             $query->where('user_id', $request->user_id);
         }
 
-        // Filter berdasarkan ruangan
         if ($request->filled('room_id')) {
             $query->where('room_id', $request->room_id);
         }
 
-        // Filter berdasarkan aktivitas
         if ($request->filled('activity')) {
             $query->where('activity', $request->activity);
         }
 
         $logbooks = $query->orderBy('date', 'desc')
-                         ->orderBy('login', 'desc')
-                         ->paginate(20);
+            ->orderBy('login', 'desc')
+            ->paginate(20);
 
         $users = User::all();
         $rooms = Room::all();
@@ -50,74 +47,191 @@ class LogbookController extends Controller
     }
 
     /**
-     * Store login entry (when user confirms room usage).
+     * ✅ NEW: Get logbook untuk user hari ini (API)
      */
-    public function login(Request $request)
+    public function getMyLogbookToday()
     {
-        $validated = $request->validate([
-            'user_id' => 'required|exists:users,user_id',
-            'room_id' => 'required|exists:rooms,room_id',
-            'course_id' => 'required|exists:courses,course_id',
-            'schedule_id' => 'nullable|exists:schedules,schedule_id',
-            'override_id' => 'nullable|exists:schedule_overrides,id',
-            'activity' => 'required|in:MENGAJAR,BELAJAR',
-        ]);
+        try {
+            $user = auth()->user();
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+            }
 
-        $logbook = Logbook::create([
-            'user_id' => $validated['user_id'],
-            'room_id' => $validated['room_id'],
-            'course_id' => $validated['course_id'],
-            'schedule_id' => $validated['schedule_id'] ?? null,
-            'override_id' => $validated['override_id'] ?? null,
-            'date' => Carbon::today(),
-            'login' => Carbon::now()->format('H:i:s'),
-            'activity' => $validated['activity'],
-        ]);
+            $today = Carbon::today();
 
-        return response()->json([
-            'message' => 'Login berhasil dicatat',
-            'data' => $logbook->load(['user', 'room', 'course'])
-        ]);
+            $logbooks = Logbook::where('user_id', $user->user_id ?? $user->id)
+                ->whereDate('date', $today)
+                ->with(['user', 'room', 'course', 'schedule'])
+                ->orderBy('login', 'desc')
+                ->get();
+
+            // ✅ Map dengan calculated fields
+            $logbookData = $logbooks->map(function ($logbook) {
+                return [
+                    'id' => $logbook->id,
+                    'user_name' => $logbook->user->name ?? 'N/A',
+                    'nim' => $logbook->user->nim ?? 'N/A',
+                    'course_name' => $logbook->course->course_name ?? 'N/A',
+                    'class_name' => $logbook->schedule->courseClass->class_name ?? 'N/A',
+                    'room_name' => $logbook->room->room_name ?? 'N/A',
+                    'date' => $logbook->date->format('d/m/Y'),
+                    'schedule_time' => $logbook->schedule 
+                        ? $logbook->schedule->start_time . ' - ' . $logbook->schedule->end_time
+                        : 'N/A',
+                    'login' => $logbook->login,
+                    'logout' => $logbook->logout ?? '-',
+                    'duration' => $this->calculateDuration($logbook->login, $logbook->logout),
+                    'activity' => $logbook->activity,
+                    'status' => $logbook->status ?? 'AKTIF',
+                    'is_active' => is_null($logbook->logout),
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $logbookData,
+                'count' => count($logbookData),
+                'today' => $today->format('d/m/Y')
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error getting logbook today: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
-     * Store logout entry (when user finishes using room).
+     * ✅ NEW: Create logbook entry saat user scan QR
      */
-    public function logout(Request $request, $id)
+    public function createLoginEntry($userId, $roomId, $courseId, $scheduleId = null, $activity = 'MENGAJAR')
     {
-        $logbook = Logbook::findOrFail($id);
+        try {
+            $logbook = Logbook::create([
+                'user_id' => $userId,
+                'room_id' => $roomId,
+                'course_id' => $courseId,
+                'schedule_id' => $scheduleId,
+                'date' => today(),
+                'login' => now()->format('H:i:s'),
+                'activity' => $activity,
+                'status' => null,
+                'logout' => null
+            ]);
 
-        $validated = $request->validate([
-            'status' => 'required|in:GANTI RUANGAN,SELESAI',
-        ]);
+            return $logbook->load(['user', 'room', 'course', 'schedule']);
 
-        $logbook->update([
-            'logout' => Carbon::now()->format('H:i:s'),
-            'status' => $validated['status'],
-        ]);
-
-        return response()->json([
-            'message' => 'Logout berhasil dicatat',
-            'data' => $logbook->load(['user', 'room', 'course'])
-        ]);
+        } catch (\Exception $e) {
+            \Log::error('Error creating logbook entry: ' . $e->getMessage());
+            throw $e;
+        }
     }
 
     /**
-     * Get active sessions (users who haven't logged out).
+     * ✅ NEW: Update logbook saat user klik "Selesai" atau "Pindah Ruangan"
      */
-    public function activeSessions()
+    public function updateLogoutEntry(Request $request, $logbookId)
     {
-        $activeSessions = Logbook::with(['user', 'room', 'course'])
-            ->whereDate('date', Carbon::today())
-            ->whereNull('logout')
-            ->orderBy('login', 'desc')
-            ->get();
+        try {
+            $user = auth()->user();
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+            }
 
-        return response()->json($activeSessions);
+            $validated = $request->validate([
+                'status' => 'required|in:SELESAI,GANTI RUANGAN'
+            ]);
+
+            $logbook = Logbook::findOrFail($logbookId);
+
+            // ✅ Verify ownership
+            if ($logbook->user_id != ($user->user_id ?? $user->id)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized'
+                ], 403);
+            }
+
+            // ✅ Update logout + status
+            $logbook->update([
+                'logout' => now()->format('H:i:s'),
+                'status' => $validated['status']
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Logbook updated successfully',
+                'data' => $logbook->load(['user', 'room', 'course', 'schedule']),
+                'duration' => $this->calculateDuration($logbook->login, $logbook->logout)
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error updating logbook: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
-     * Generate report for specific date range.
+     * ✅ NEW: Get active sessions (masih login)
+     */
+    public function getActiveSessions()
+    {
+        try {
+            $activeSessions = Logbook::with(['user', 'room', 'course', 'schedule'])
+                ->whereDate('date', today())
+                ->whereNull('logout')
+                ->orderBy('login', 'desc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $activeSessions,
+                'count' => count($activeSessions)
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error getting active sessions: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Helper: Calculate duration antara login dan logout
+     */
+    private function calculateDuration($loginTime, $logoutTime)
+    {
+        if (!$logoutTime) {
+            return 'AKTIF';
+        }
+
+        try {
+            $login = Carbon::createFromFormat('H:i:s', $loginTime);
+            $logout = Carbon::createFromFormat('H:i:s', $logoutTime);
+
+            $minutes = $logout->diffInMinutes($login);
+            $hours = intdiv($minutes, 60);
+            $mins = $minutes % 60;
+
+            if ($hours > 0) {
+                return "{$hours}h {$mins}m";
+            } else {
+                return "{$mins}m";
+            }
+        } catch (\Exception $e) {
+            return '-';
+        }
+    }
+
+    /**
+     * Report
      */
     public function report(Request $request)
     {
@@ -140,8 +254,8 @@ class LogbookController extends Controller
         }
 
         $logbooks = $query->orderBy('date', 'desc')
-                         ->orderBy('login', 'desc')
-                         ->get();
+            ->orderBy('login', 'desc')
+            ->get();
 
         return response()->json($logbooks);
     }

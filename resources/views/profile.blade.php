@@ -221,6 +221,11 @@
     // HELPER FUNCTIONS - DATE & TIME
     // ==========================================
     
+    document.addEventListener('DOMContentLoaded', function() {
+        // ✅ Load schedules HANYA SEKALI saat page load
+        loadUserSchedules();
+    });
+    
     /**
      * Mendapatkan tanggal untuk hari Senin dari minggu ini
      */
@@ -249,6 +254,7 @@
         const monday = getMondayOfWeek();
         const weekDates = [];
         
+         //Testing sabtu Minggu
         for (let i = 0; i < 5; i++) {
             const date = new Date(monday);
             date.setDate(monday.getDate() + i);
@@ -300,7 +306,33 @@
      */
     async function loadUserSchedules() {
         try {
-            const response = await fetch('/api/schedules/my-schedules');
+            const token = document.querySelector('meta[name="csrf-token"]')?.content;
+            const bearerToken = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+            
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': token,
+            };
+            
+            if (bearerToken) {
+                headers['Authorization'] = `Bearer ${bearerToken}`;
+            }
+            
+            const response = await fetch('/api/schedules/my-schedules', {
+                method: 'GET',
+                headers: headers,
+                credentials: 'include'
+            });
+            
+            if (response.status === 401) {
+                console.error('Unauthorized');
+                showEmptyScheduleState();
+                return;
+            }
+            
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            
             const result = await response.json();
 
             if (result.success && result.data) {
@@ -311,10 +343,64 @@
                 showEmptyScheduleState();
             }
         } catch (error) {
-            console.error('Error loading user schedules:', error);
+            console.error('Error loading schedules:', error);
             showEmptyScheduleState();
         }
     }
+
+    // ✅ NEW: API Call untuk confirm jadwal
+    async function confirmScheduleAPI(scheduleId) {
+        const token = document.querySelector('meta[name="csrf-token"]')?.content;
+        const response = await fetch(`/api/schedules/${scheduleId}/confirm`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': token
+            },
+            credentials: 'include'  // ← SESSION AUTH
+        });
+        return await response.json();
+    }
+
+    async function cancelScheduleAPI(scheduleId) {
+        const token = document.querySelector('meta[name="csrf-token"]')?.content;
+        const response = await fetch(`/api/schedules/${scheduleId}/cancel`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': token
+            },
+            credentials: 'include'
+        });
+        return await response.json();
+    }
+
+    async function moveToRoomAPI(scheduleId) {
+        const token = document.querySelector('meta[name="csrf-token"]')?.content;
+        const response = await fetch(`/api/schedules/${scheduleId}/move-room`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': token
+            },
+            credentials: 'include'
+        });
+        return await response.json();
+    }
+
+    async function completeScheduleAPI(scheduleId) {
+        const token = document.querySelector('meta[name="csrf-token"]')?.content;
+        const response = await fetch(`/api/schedules/${scheduleId}/complete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': token
+            },
+            credentials: 'include'
+        });
+        return await response.json();
+    }
+
 
     /**
      * Update judul jadwal dengan info semester
@@ -330,10 +416,11 @@
      * Render jadwal mingguan dengan tab hari
      */
     function renderWeeklySchedules(schedules) {
-        const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
-        const dayShort = ['SEN', 'SEL', 'RAB', 'KAM', 'JUM'];
+        const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat']; //Testing sabtu Minggu
+        const dayShort = ['SEN', 'SEL', 'RAB', 'KAM', 'JUM']; //testing sabtu Minggu
         const scheduleTabsContainer = document.getElementById('schedule-tabs');
         const scheduleContentContainer = document.getElementById('schedule-content');
+        
         
         if (!scheduleTabsContainer || !scheduleContentContainer) return;
 
@@ -376,7 +463,7 @@
                     <div class="space-y-3">
                         ${daySchedules.map((schedule, idx) => {
                             const showButtons = shouldShowConfirmationButtons(schedule.time_slot, day);
-                            const scheduleId = `${day.toLowerCase()}-${idx}`;
+                            const scheduleId = schedule.schedule_id;;
                             
                             return `
                             <div id="jadwal-${scheduleId}" 
@@ -407,11 +494,11 @@
                                     class="flex-shrink-0 flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                                     ${showButtons ? `
                                         <!-- Default: Batal dan Konfirmasi (sebelum scan QR) -->
-                                        <button onclick="konfirmasiBatal('${scheduleId}')"
+                                        <button onclick="konfirmasiBatal(${scheduleId})"
                                             class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-red-600 to-red-400 rounded-lg hover:opacity-90 transition min-w-[135px]">
                                             Batal
                                         </button>
-                                        <button onclick="konfirmasiAjar('${scheduleId}')"
+                                        <button onclick="konfirmasiAjar(${scheduleId})"
                                             class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-green-600 to-green-400 rounded-lg hover:opacity-90 transition min-w-[135px]">
                                             Konfirmasi
                                         </button>
@@ -473,9 +560,9 @@
      * Fungsi untuk mengubah hari yang aktif
      */
     function ubahHari(hari) {
-        const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
         
-        // Sembunyikan semua jadwal
+        const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat']; //Testing sabtu Minggu
+        
         days.forEach(h => {
             const jadwalEl = document.getElementById(`jadwal-${h.toLowerCase()}`);
             if (jadwalEl) {
@@ -483,7 +570,6 @@
             }
         });
         
-        // Reset semua tab menjadi abu-abu
         days.forEach(h => {
             const tabEl = document.getElementById(`tab-${h.toLowerCase()}`);
             if (tabEl) {
@@ -491,13 +577,11 @@
             }
         });
         
-        // Tampilkan jadwal hari yang dipilih
         const activeJadwal = document.getElementById(`jadwal-${hari.toLowerCase()}`);
         if (activeJadwal) {
             activeJadwal.classList.remove('hidden');
         }
         
-        // Aktifkan tab yang dipilih
         const activeTab = document.getElementById(`tab-${hari.toLowerCase()}`);
         if (activeTab) {
             activeTab.className = 'flex-shrink-0 px-3 py-2 rounded-lg bg-gradient-to-r from-blue-900 to-red-700 text-white font-semibold text-xs min-w-[60px] transition-all duration-200';
@@ -778,44 +862,92 @@
     /**
      * Konfirmasi batal - Ketika user membatalkan jadwal mengajar
      */
-    function konfirmasiBatal(id) {
-        tampilkanModal(
-            'Batalkan Kelas',
-            'Apakah Anda yakin akan membatalkan kelas ini?',
-            function() {
-                updateStatusJadwal(id, 'dibatalkan');
-                tampilkanModalSukses('Telah Dibatalkan', 'Kelas telah dibatalkan.');
+    async function konfirmasiBatal(scheduleId) {
+        if (!confirm('Batalkan jadwal ini?')) return;
+        
+        const result = await cancelScheduleAPI(scheduleId);
+        
+        if (result.success) {
+            alert('✅ Jadwal berhasil dibatalkan');
+            
+            // ✅ UPDATE UI
+            const statusBadge = document.getElementById(`status-jadwal-${scheduleId}`);
+            const buttonDiv = document.getElementById(`tombol-jadwal-${scheduleId}`);
+            
+            if (statusBadge) {
+                statusBadge.textContent = 'Dibatalkan';
+                statusBadge.className = 'px-3 py-1 text-xs font-semibold text-white bg-red-500 rounded-full';
             }
-        );
+            
+            if (buttonDiv) {
+                buttonDiv.innerHTML = `<span class="text-xs text-gray-500 text-center py-2">❌ Jadwal Dibatalkan</span>`;
+            }
+            
+            if (scheduleDiv) {
+                scheduleDiv.style.opacity = '0.6';
+                scheduleDiv.style.pointerEvents = 'none';
+            }
+            
+        } else {
+            alert('❌ ' + result.message);
+        }
     }
+
 
     /**
      * Konfirmasi ajar - Ketika user mengkonfirmasi akan mengajar
      * Setelah konfirmasi, button berubah menjadi Pindah Ruangan & Selesai (setelah scan QR)
      */
-    function konfirmasiAjar(id) {
-        tampilkanModal(
-            'Konfirmasi Mengajar',
-            'Konfirmasi kehadiran Anda untuk praktikum sesi ini.',
-            function() {
-                updateStatusJadwal(id, 'sudah-dikonfirmasi');
-                tampilkanModalSukses('Terkonfirmasi!', 'Kelas telah dikonfirmasi. Jangan lupa scan QR di ruangan.');
+    async function konfirmasiAjar(scheduleId) {
+        if (!confirm('Anda yakin akan mengajar?')) return;
+        
+        const result = await confirmScheduleAPI(scheduleId);
+        
+        if (result.success) {
+            alert('✅ Jadwal berhasil dikonfirmasi!');
+            
+            // ✅ UPDATE UI IMMEDIATELY
+            const statusBadge = document.getElementById(`status-jadwal-${scheduleId}`);
+            const buttonDiv = document.getElementById(`tombol-jadwal-${scheduleId}`);
+            
+            if (statusBadge) {
+                statusBadge.textContent = 'Dikonfirmasi';
+                statusBadge.className = 'px-3 py-1 text-xs font-semibold text-white bg-green-500 rounded-full';
             }
-        );
+            
+            // ✅ UPDATE BUTTONS
+            if (buttonDiv) {
+                buttonDiv.innerHTML = `
+                    <button onclick="konfirmasiPindahRuangan(${scheduleId})"
+                        class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-red-600 to-red-400 rounded-lg hover:opacity-90 transition min-w-[135px]">
+                        Pindah Ruangan
+                    </button>
+                    <button onclick="konfirmasiSelesai(${scheduleId})"
+                        class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-green-600 to-green-400 rounded-lg hover:opacity-90 transition min-w-[135px]">
+                        Selesai
+                    </button>
+                `;
+            }         
+            
+        } else {
+            alert('❌ ' + result.message);
+        }
     }
 
     /**
      * Konfirmasi pindah ruangan - Muncul setelah user scan QR dan ingin pindah ruangan
      */
-    function konfirmasiPindahRuangan(id) {
-        tampilkanModal(
-            'Pindah Ruangan',
-            'Apakah Anda yakin ingin pindah ruangan?',
-            function() {
-                updateStatusJadwal(id, 'pindah-ruangan');
-                tampilkanModalSukses('Berhasil!', 'Permintaan pindah ruangan telah dikirim. Silakan scan QR ruangan baru.');
-            }
-        );
+    async function konfirmasiSelesai(scheduleId) {
+        if (!confirm('Tandai jadwal ini sebagai selesai?')) return;
+        
+        const result = await completeScheduleAPI(scheduleId);
+        
+        if (result.success) {
+            alert('✅ Jadwal berhasil diselesaikan');
+            loadUserSchedules(); // Refresh
+        } else {
+            alert('❌ ' + result.message);
+        }
     }
 
     /**
@@ -1065,18 +1197,8 @@
     // INITIALIZATION
     // ==========================================
     
-    // Load schedules when page loads
-    document.addEventListener('DOMContentLoaded', function() {
-        loadUserSchedules();
-        
-        // Refresh schedules every 5 minutes
-        setInterval(loadUserSchedules, 300000);
-        
-        // Refresh button visibility setiap menit untuk update waktu konfirmasi
-        setInterval(() => {
-            loadUserSchedules();
-        }, 60000); // Refresh setiap 1 menit
-    });
+
+
 </script>
 
 @endsection

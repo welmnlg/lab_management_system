@@ -95,19 +95,58 @@ class QrVerificationController extends Controller
         // 5. Validasi hari dan waktu
         $now = \Carbon\Carbon::now();
         $currentDay = $now->dayOfWeek;
+        $dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']; //testing minggu
+        // $dayName = $dayNames[$currentDay]; //testing minggu
         $currentTime = $now->format('H:i:s');
 
         // Convert day name to number if needed
         $dayMap = [
+            'Minggu' => 0,
             'Senin' => 1,
             'Selasa' => 2,
             'Rabu' => 3,
             'Kamis' => 4,
             'Jumat' => 5,
-            'Sabtu' => 6,
-            'Minggu' => 0
+            'Sabtu' => 6
+            
         ];
 
+        // Convert day number ke nama hari (FIX MINGGU BUG)
+        $dayName = $this->convertNumberToDay($currentDay);
+
+        $schedule = Schedule::where('user_id', $user->user_id)
+            ->where('room_id', $roomId)
+            ->where('day', $dayName)  // ← FIX: use day name
+            ->first();
+
+        if (!$schedule) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Jadwal tidak ditemukan'
+            ], 404);
+        }
+
+        // ✅ NEW: CHECK STATUS BEFORE ACCEPTING SCAN
+        if (!in_array($schedule->status, ['dikonfirmasi', 'pindah_ruangan'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Jadwal belum dikonfirmasi atau sudah dibatalkan',
+                'current_status' => $schedule->status
+            ], 400);
+        }
+
+        // ✅ Check time window (existing logic tetap)
+        $now = \Carbon\Carbon::now();
+        $startTime = \Carbon\Carbon::parse($schedule->start_time);
+        $endTime = \Carbon\Carbon::parse($schedule->end_time);
+        $fifteenMinBefore = $startTime->copy()->subMinutes(15);
+
+        if (!$now->isBetween($fifteenMinBefore, $endTime)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Waktu scan tidak valid'
+            ], 400);
+        }
 
         // 4. Validasi jadwal mengajar aslab pada ruangan ini
         // $schedule = Schedule::where('user_id', $user->user_id)
@@ -116,49 +155,50 @@ class QrVerificationController extends Controller
         //     ->whereTime('start_time', '<=', $currentTime)
         //     ->whereTime('end_time', '>=', $currentTime)
         //     ->first();
+        // 4. Validasi jadwal mengajar aslab pada ruangan ini - WITH STATUS CHECK
         $schedule = Schedule::where('user_id', $user->user_id)
             ->where('room_id', $roomId)
-            ->where('day', $currentDay)
+            ->where('day', $dayName)
             ->orderBy('start_time', 'asc')
-            ->get();  // ← Ambil semua jadwal hari ini, filter manual di PHP dengan buffer
+            ->get();
 
-        // ✅ FILTER MANUAL DENGAN BUFFER 15 MENIT
+        // ✅ FILTER MANUAL DENGAN BUFFER 15 MENIT + STATUS CHECK
         $validSchedule = null;
-
         foreach ($schedule as $sched) {
+            // ✅ CHECK 1: Status harus dikonfirmasi atau pindah_ruangan
+            if (!in_array($sched->status, ['dikonfirmasi', 'pindah_ruangan'])) {
+                continue; // Skip jadwal yang belum confirm atau sudah dibatalkan
+            }
+            
             $bufferStart = \Carbon\Carbon::parse($sched->start_time)->subMinutes(15)->format('H:i:s');
             $endTime = $sched->end_time;
             
-            // ✅ Cek: bufferStart <= currentTime <= endTime
+            // ✅ CHECK 2: Cek: bufferStart <= currentTime <= endTime
             if ($currentTime >= $bufferStart && $currentTime <= $endTime) {
                 $validSchedule = $sched;
                 break;
             }
         }
 
-        // Jika tidak ada schedule yang match
+        // ✅ NEW: If no schedule found, check why
         if (!$validSchedule) {
-            $nextSchedule = Schedule::where('user_id', $user->user_id)
+            // Check apakah ada schedule tapi belum dikonfirmasi
+            $unconfirmedSchedule = Schedule::where('user_id', $user->user_id)
                 ->where('room_id', $roomId)
-                ->where('day', $currentDay)
-                ->whereTime('start_time', '>', $currentTime)
-                ->orderBy('start_time', 'asc')
+                ->where('day', $dayName)
+                ->whereTime('start_time', '>=', date('H:i:s', strtotime('-15 minutes')))
                 ->first();
-
-            if ($nextSchedule) {
+            
+            if ($unconfirmedSchedule && !in_array($unconfirmedSchedule->status, ['dikonfirmasi', 'pindah_ruangan'])) {
                 return response()->json([
                     'success' => false,
-                    'message' => "Belum waktunya masuk. Jadwal berikutnya {$nextSchedule->start_time} - {$nextSchedule->end_time}",
-                    'error_type' => 'too_early'
+                    'message' => 'Jadwal belum dikonfirmasi atau sudah dibatalkan',
+                    'current_status' => $unconfirmedSchedule->status,
+                    'error_type' => 'unconfirmed_schedule'
                 ], 400);
             }
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Tidak ada jadwal aktif di ruangan ini sekarang.',
-                'error_type' => 'no_active_schedule'
-            ], 400);
         }
+
 
         $actives = RoomOccupancyStatus::where('room_id', $roomId)
             ->where('current_user_id', $user->user_id)
@@ -204,6 +244,12 @@ class QrVerificationController extends Controller
         ]);
     }
 
+    private function convertNumberToDay($dayNumber)
+    {
+        $days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+        return $days[$dayNumber] ?? null;
+    }
+    
     // POST /api/lab/confirm-entry
     public function confirmEntry(Request $request)
     {
@@ -250,7 +296,20 @@ class QrVerificationController extends Controller
             );
 
             // Create Logbook entry
+            // ✅ UPDATE Schedule status ke sedang_berlangsung
             $schedule = Schedule::find($pendingEntry['schedule_id']);
+            $schedule->update([
+                'status' => 'sedang_berlangsung',
+                'started_at' => now(),
+                'room_id' => $roomId
+            ]);
+            
+            // ✅ INVALIDATE CACHE untuk profil user (agar load data terbaru)
+            // Cache::tags(['user_schedules'])->flush();
+            // Cache::forget("user_schedules_{$user->user_id}");
+
+
+            // Create Logbook entry
             $logbook = Logbook::create([
                 'user_id' => $user->user_id,
                 'room_id' => $roomId,
@@ -265,6 +324,9 @@ class QrVerificationController extends Controller
 
             // Clear pending session
             session()->forget('pending_room_entry');
+
+            // ✅ FLUSH DASHBOARD CACHE (untuk room usage schedule)
+            // Cache::tags(['dashboard_usage'])->flush();
 
             // Broadcast update ke dashboard
             broadcast(new RoomStatusUpdated($roomId, true, $user->name, $user->user_id));
@@ -361,4 +423,7 @@ class QrVerificationController extends Controller
             ], 500);
         }
     }
+
+    
 }
+

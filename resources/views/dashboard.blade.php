@@ -128,6 +128,8 @@
                         <th class="px-2 py-3 text-center text-xs sm:text-sm font-medium text-gray-700 border-r border-gray-200 min-w-32">RABU</th>
                         <th class="px-2 py-3 text-center text-xs sm:text-sm font-medium text-gray-700 border-r border-gray-200 min-w-32">KAMIS</th>
                         <th class="px-2 py-3 text-center text-xs sm:text-sm font-medium text-gray-700 min-w-32">JUMAT</th>
+                        <!-- <th class="px-2 py-3 text-center text-xs sm:text-sm font-medium text-gray-700 min-w-32">SABTU</th> 
+                        <th class="px-2 py-3 text-center text-xs sm:text-sm font-medium text-gray-700 min-w-32">MINGGU</th>  -->
                     </tr>
                 </thead>
                 <tbody id="calendar-body">
@@ -634,7 +636,8 @@
     function displayWeeklyCalendar(data) {
         const calendarBody = document.getElementById('calendar-body');
         const timeSlots = ["08:00 - 09:40", "09:40 - 11:20", "11:20 - 13:00", "13:00 - 14:40", "14:40 - 16:20"];
-        const days = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
+        const days = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"]; // Testing Sabtu Minggu
+        // const days = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"]; 
         
         let calendarHTML = '';
         
@@ -705,6 +708,7 @@
             const start = new Date(currentWeekStart);
             const end = new Date(start);
             end.setDate(end.getDate() + 4); // Friday
+            // end.setDate(end.getDate() + 6); // Testing sabtu Minggu
             
             const options = { day: 'numeric', month: 'long', year: 'numeric' };
             const startStr = start.toLocaleDateString('id-ID', options);
