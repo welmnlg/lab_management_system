@@ -28,7 +28,7 @@ Route::middleware(['auth'])->group(function () {
         return view('scanqr');
     })->name('scanqr');
     
-    // ✅ Logbook API & Export
+    // Logbook API & Export
     Route::get('/logbook', function () {
         return view('logbook');
     })->name('logbook');
