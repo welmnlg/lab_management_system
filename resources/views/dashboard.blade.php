@@ -140,7 +140,7 @@
     </div>
 
     {{-- ### KODE MODAL YANG HILANG SEBELUMNYA, DITARUH DI SINI ### --}}
-    <div id="kelas-ganti-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden p-4">
+    <div id="kelas-ganti-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center !z-[1000] hidden p-4">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl transform transition-all flex flex-col max-h-[90vh] overflow-hidden">
             <div class="bg-gradient-to-r from-blue-900 to-red-700 p-4 text-center flex-shrink-0">
                 <h2 class="text-2xl font-bold text-white">Kelas Ganti</h2>
@@ -184,6 +184,7 @@
                                 <select name="day" class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
                                     <option selected disabled>Pilih Hari</option>
                                 </select>
+                                <p id="date-preview" class="mt-1 text-xs text-blue-600 font-medium hidden"></p>
                             </div>
                             <div>
                                 <label for="waktu" class="block text-sm font-medium text-gray-800 mb-2">Waktu</label>
@@ -249,7 +250,7 @@
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {
         loadFormData();
-        // ✅ Cek apakah baru saja confirm entry
+        // Cek apakah baru saja konfirmasi masuk
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('confirmed') === '1') {
             const roomId = urlParams.get('room_id');
@@ -293,12 +294,11 @@
     function populateDropdowns() {
         console.log('Populating dropdowns with data:', formData); // Debug
         
-        // ✅ FIX: Mata Kuliah
-        const courseSelect = document.querySelector('select[name="course_id"]'); // FIXED: underscore
+        // Mata Kuliah
+        const courseSelect = document.querySelector('select[name="course_id"]');
         if (courseSelect) {
             courseSelect.innerHTML = `<option selected disabled>Pilih Mata Kuliah</option>`;
             formData.courses.forEach(course => {
-                // FIXED: property names with underscore
                 courseSelect.innerHTML += `<option value="${course.course_id}">${course.course_name} (${course.course_code})</option>`;
             });
             
@@ -307,45 +307,122 @@
             });
         }
 
-        // ✅ FIX: Ruangan
-        const roomSelect = document.querySelector('select[name="room_id"]'); // FIXED: underscore
+        // Ruangan
+        const roomSelect = document.querySelector('select[name="room_id"]');
         if (roomSelect) {
             roomSelect.innerHTML = `<option selected disabled>Pilih Ruangan</option>`;
             formData.rooms.forEach(room => {
-                // FIXED: property names with underscore
                 roomSelect.innerHTML += `<option value="${room.room_id}">${room.room_name}</option>`;
             });
+            
+            // Add listener
+            roomSelect.addEventListener('change', loadAvailableTimeSlots);
         }
 
-        // ✅ FIX: Hari
+        // Hari
         const daySelect = document.querySelector('select[name="day"]');
         if (daySelect) {
             daySelect.innerHTML = `<option selected disabled>Pilih Hari</option>`;
+            
+            const today = new Date();
+            const dayMap = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            const currentDayName = dayMap[today.getDay()];
+
             formData.days.forEach(day => {
-                daySelect.innerHTML += `<option value="${day.value}">${day.label}</option>`;
+                let disabled = '';
+                let label = day.label;
+                
+                // Disable hari yang sama
+                if (day.value === currentDayName) {
+                    disabled = 'disabled';
+                    label += ' (Hari Ini - Tidak Bisa)';
+                }
+                
+                daySelect.innerHTML += `<option value="${day.value}" ${disabled}>${label}</option>`;
+            });
+            
+            daySelect.addEventListener('change', function() {
+                updateDatePreview(this.value);
+                loadAvailableTimeSlots();
             });
         }
 
-        // ✅ FIX: Waktu
-        const timeSelect = document.querySelector('select[name="time_slot"]'); // FIXED: underscore
+        // Waktu - Awalnya kosong, diisi setelah pilih ruangan & hari
+        const timeSelect = document.querySelector('select[name="time_slot"]');
         if (timeSelect) {
-            timeSelect.innerHTML = `<option selected disabled>Pilih Waktu</option>`;
-            formData.time_slots.forEach(slot => { // FIXED: time_slots with underscore
-                timeSelect.innerHTML += `<option value="${slot.value}" data-start="${slot.start}" data-end="${slot.end}">${slot.label}</option>`;
-            });
+            timeSelect.innerHTML = `<option selected disabled>Pilih Ruangan & Hari Terlebih Dahulu</option>`;
+        }
+        
+
+    }
+
+    // Load available time slots based on room and day
+    async function loadAvailableTimeSlots() {
+        const roomSelect = document.querySelector('select[name="room_id"]');
+        const daySelect = document.querySelector('select[name="day"]');
+        const timeSelect = document.querySelector('select[name="time_slot"]');
+        
+        if (!roomSelect || !daySelect || !timeSelect) return;
+        
+        const roomId = roomSelect.value;
+        const day = daySelect.value;
+        
+        if (!roomId || roomId === 'Pilih Ruangan' || !day || day === 'Pilih Hari') {
+            return;
+        }
+        
+        // Calculate date
+        const datePreviewText = document.getElementById('date-preview').textContent;
+        // Extract date string part if needed, or recalculate
+        // Kita hitung ulang tanggalnya biar aman
+        const dayMap = {'Senin': 1, 'Selasa': 2, 'Rabu': 3, 'Kamis': 4, 'Jumat': 5};
+        const today = new Date();
+        const currentDayIndex = today.getDay(); 
+        const selectedDayIndex = dayMap[day];
+        let diff = selectedDayIndex - currentDayIndex;
+        if (diff <= 0) diff += 7;
+        
+        const targetDate = new Date(today);
+        targetDate.setDate(today.getDate() + diff);
+        const dateStr = targetDate.toISOString().split('T')[0]; // YYYY-MM-DD
+
+        timeSelect.innerHTML = `<option selected disabled>Memuat slot waktu...</option>`;
+        timeSelect.disabled = true;
+
+        try {
+            const response = await fetch(`/api/dashboard/available-slots?room_id=${roomId}&day=${day}&date=${dateStr}`);
+            const data = await response.json();
+
+            if (data.success) {
+                timeSelect.innerHTML = `<option selected disabled>Pilih Waktu</option>`;
+                if (data.data.length === 0) {
+                    timeSelect.innerHTML += `<option disabled>Tidak ada jadwal tersedia</option>`;
+                } else {
+                    data.data.forEach(slot => {
+                        timeSelect.innerHTML += `<option value="${slot.value}" data-start="${slot.start}" data-end="${slot.end}">${slot.label}</option>`;
+                    });
+                }
+            } else {
+                timeSelect.innerHTML = `<option disabled>Gagal memuat jadwal</option>`;
+            }
+        } catch (error) {
+            console.error('Error loading time slots:', error);
+            timeSelect.innerHTML = `<option disabled>Error memuat jadwal</option>`;
+        } finally {
+            timeSelect.disabled = false;
         }
     }
 
     // Populate kelas based on selected course
     function populateClassesDropdown(courseId) {
-        const classSelect = document.querySelector('select[name="class_id"]'); // FIXED: underscore
+        const classSelect = document.querySelector('select[name="class_id"]');
         if (!classSelect) return;
 
-        const filteredClasses = formData.course_classes.filter(c => c.course_id == courseId); // FIXED: property names
+        const filteredClasses = formData.course_classes.filter(c => c.course_id == courseId);
         
         classSelect.innerHTML = `<option selected disabled>Pilih Kelas</option>`;
         filteredClasses.forEach(cls => {
-            classSelect.innerHTML += `<option value="${cls.class_id}">${cls.class_name}</option>`; // FIXED: property names
+            classSelect.innerHTML += `<option value="${cls.class_id}">${cls.class_name}</option>`;
         });
     }
 
@@ -376,7 +453,7 @@
             //     alert('Mohon lengkapi semua field!');
             //     return;
             // }
-            if (!payload.name || !payload.nim || !payload.class_id || !payload.room_id || !payload.day || !payload.start_time) {
+            if (!payload.class_id || !payload.room_id || !payload.day || !payload.start_time) {
                 alert('Mohon lengkapi semua field!');
                 return;
             }
@@ -400,11 +477,12 @@
                     closeKelasGantiModal();
                     this.reset();
                     // Refresh jadwal dan kalender
-                    if (typeof loadRoomSchedule === 'function') {
-                        loadRoomSchedule(currentRoomId);
+                    const labKey = 'lab' + currentLab;
+                    if (typeof showSchedule === 'function') {
+                        showSchedule(labKey);
                     }
-                    if (typeof loadWeeklyCalendar === 'function') {
-                        loadWeeklyCalendar(currentRoomId);
+                    if (typeof selectLab === 'function') {
+                        selectLab(currentLab);
                     }
                 } else {
                     alert('Error: ' + data.message);
@@ -414,6 +492,38 @@
                 alert('Terjadi kesalahan saat membuat kelas ganti');
             }
         });
+    }
+
+    function updateDatePreview(selectedDay) {
+        const previewEl = document.getElementById('date-preview');
+        if (!previewEl || !selectedDay) return;
+        
+        const dayMap = {
+            'Senin': 1, 'Selasa': 2, 'Rabu': 3, 'Kamis': 4, 'Jumat': 5
+        };
+        
+        const today = new Date();
+        const currentDayIndex = today.getDay(); // 0=Sun, 1=Mon, ...
+        const selectedDayIndex = dayMap[selectedDay];
+        
+        let targetDate = new Date(today);
+        
+        // Calculate difference
+        let diff = selectedDayIndex - currentDayIndex;
+        
+        // Logic: If same day or past day in this week, move to next week
+        // "di hari yang sama gak bisa"
+        if (diff <= 0) {
+            diff += 7;
+        }
+        
+        targetDate.setDate(today.getDate() + diff);
+        
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const dateStr = targetDate.toLocaleDateString('id-ID', options);
+        
+        previewEl.textContent = `Jadwal: ${dateStr}`;
+        previewEl.classList.remove('hidden');
     }
 
     // Modal functions
@@ -485,7 +595,7 @@
         try {
             const response = await fetch(API_BASE + '/rooms/' + roomId + '/schedules');
             
-            // CRITICAL FIX: Check if response is JSON
+            // Periksa apakah respons adalah JSON
             const contentType = response.headers.get("content-type");
             if (!contentType || !contentType.includes("application/json")) {
                 throw new Error('Server returned HTML instead of JSON. Check if API route exists.');
@@ -523,7 +633,7 @@
             return;
         }
         
-        // ✅ Deduplicate berdasarkan kombinasi time + course
+        // Hapus duplikasi berdasarkan kombinasi waktu + mata kuliah
         const seen = new Set();
         const uniqueSchedules = data.schedules.filter(schedule => {
             const key = `${schedule.start_time}-${schedule.end_time}-${schedule.course_name}`;
@@ -618,7 +728,7 @@
         try {
             const response = await fetch(API_BASE + '/rooms/' + roomId + '/calendar?week_start=' + weekStart);
             
-            // CRITICAL FIX: Check content type
+            // Periksa tipe konten
             const contentType = response.headers.get("content-type");
             if (!contentType || !contentType.includes("application/json")) {
                 throw new Error('Server returned HTML instead of JSON. Check if API route exists.');
@@ -638,7 +748,7 @@
     }
 
 /**
- * Display weekly calendar - FIXED: No template literals in HTML attributes
+ * Tampilkan kalender mingguan
  */
     function displayWeeklyCalendar(data) {
         const calendarBody = document.getElementById('calendar-body');
@@ -672,13 +782,18 @@
                 }
                 
                 if (schedule) {
-                    const overrideBadge = schedule.is_override ? '<span class="inline-block mt-1 px-1 py-0.5 bg-yellow-400 text-yellow-900 rounded text-xs">Ganti</span>' : '';
+                    const isOverride = schedule.is_override;
+                    const overrideBadge = isOverride ? '<span class="inline-block mt-1 px-1 py-0.5 bg-yellow-400 text-yellow-900 rounded text-xs">Ganti</span>' : '';
                     const movedBadge = schedule.status === 'pindah_ruangan' ? '<span class="inline-block mt-1 px-1 py-0.5 bg-orange-400 text-white rounded text-xs">Pindah Ruang</span>' : '';
                     
+                    const bgColor = isOverride ? 'bg-yellow-700' : 'bg-blue-100';
+                    const titleColor = isOverride ? 'text-white' : 'text-blue-900';
+                    const subtitleColor = isOverride ? 'text-yellow-100' : 'text-blue-700';
+                    
                     calendarHTML += '<td class="px-2 py-2 border-r border-gray-200 align-top">';
-                    calendarHTML += '<div class="bg-blue-100 rounded-lg p-1.5 text-xs">';
-                    calendarHTML += '<div class="font-bold text-blue-900 mb-1">' + schedule.course_name + ' (' + schedule.class_name + ')' + '</div>';
-                    calendarHTML += '<div class="text-blue-700">' + schedule.instructor + '</div>';
+                    calendarHTML += '<div class="' + bgColor + ' rounded-lg p-1.5 text-xs">';
+                    calendarHTML += '<div class="font-bold ' + titleColor + ' mb-1">' + schedule.course_name + ' (' + schedule.class_name + ')' + '</div>';
+                    calendarHTML += '<div class="' + subtitleColor + '">' + schedule.instructor + '</div>';
                     calendarHTML += overrideBadge;
                     calendarHTML += movedBadge;
                     calendarHTML += '</div>';
@@ -688,7 +803,7 @@
                 }
             }
             
-            calendarHTML += '</tr>'; // FIXED: Added closing >
+            calendarHTML += '</tr>';
         }
         
         calendarBody.innerHTML = calendarHTML;

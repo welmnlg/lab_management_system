@@ -117,7 +117,7 @@ class DashboardApiController extends Controller
     public function getFormData()
     {
         try {
-            $userId = auth()->user  (); // User yang login (Kim Mingyu = user_id 3)
+            $userId = auth()->id(); // User yang login (Kim Mingyu = user_id 3)
             
             // ✅ FIX 1: Ambil UNIQUE course_id yang diajarkan user
             $userCourseIds = Schedule::where('user_id', $userId)
@@ -187,6 +187,81 @@ class DashboardApiController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal mengambil data form',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * GET /api/dashboard/available-slots
+     * Cek slot waktu yang tersedia
+     */
+    public function getAvailableTimeSlots(Request $request)
+    {
+        try {
+            $roomId = $request->query('room_id');
+            $day = $request->query('day');
+            $date = $request->query('date'); // Format Y-m-d
+
+            if (!$roomId || !$day || !$date) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Parameter room_id, day, dan date diperlukan'
+                ], 400);
+            }
+
+            $allSlots = [
+                ['value' => '08:00-09:40', 'start' => '08:00:00', 'end' => '09:40:00', 'label' => '08:00 - 09:40'],
+                ['value' => '09:40-11:20', 'start' => '09:40:00', 'end' => '11:20:00', 'label' => '09:40 - 11:20'],
+                ['value' => '11:20-13:00', 'start' => '11:20:00', 'end' => '13:00:00', 'label' => '11:20 - 13:00'],
+                ['value' => '13:00-14:40', 'start' => '13:00:00', 'end' => '14:40:00', 'label' => '13:00 - 14:40'],
+                ['value' => '14:40-16:20', 'start' => '14:40:00', 'end' => '16:20:00', 'label' => '14:40 - 16:20']
+            ];
+
+            $availableSlots = [];
+
+            foreach ($allSlots as $slot) {
+                // 1. Cek jadwal reguler
+                $regularConflict = Schedule::where('room_id', $roomId)
+                    ->where('day', $day)
+                    ->where(function ($query) use ($slot) {
+                        $query->whereBetween('start_time', [$slot['start'], $slot['end']])
+                            ->orWhereBetween('end_time', [$slot['start'], $slot['end']])
+                            ->orWhere(function ($q) use ($slot) {
+                                $q->where('start_time', '<=', $slot['start'])
+                                ->where('end_time', '>=', $slot['end']);
+                            });
+                    })
+                    ->exists();
+
+                // 2. Cek override
+                $overrideConflict = ScheduleOverride::where('room_id', $roomId)
+                    ->where('date', $date)
+                    ->where('status', 'active')
+                    ->where(function ($query) use ($slot) {
+                        $query->whereBetween('start_time', [$slot['start'], $slot['end']])
+                            ->orWhereBetween('end_time', [$slot['start'], $slot['end']])
+                            ->orWhere(function ($q) use ($slot) {
+                                $q->where('start_time', '<=', $slot['start'])
+                                ->where('end_time', '>=', $slot['end']);
+                            });
+                    })
+                    ->exists();
+
+                if (!$regularConflict && !$overrideConflict) {
+                    $availableSlots[] = $slot;
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $availableSlots
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengecek slot waktu',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -287,15 +362,8 @@ class DashboardApiController extends Controller
                 ], 409);
             }
             
-            // ✅ STEP 5: Jika tidak ada konflik, simpan override
-            // Cari schedule_id asli untuk referensi
-            $originalScheduleForOverride = Schedule::where('user_id', $userId)
-                ->where('class_id', $request->class_id)
-                ->where('day', $originalSchedule->day)
-                ->first();
-            
             $override = ScheduleOverride::create([
-                'schedule_id' => $originalScheduleForOverride->schedule_id ?? null,
+                'schedule_id' => null,
                 'user_id' => $userId,
                 'room_id' => $request->room_id,
                 'class_id' => $request->class_id,
@@ -349,8 +417,9 @@ private function calculateOverrideDate($selectedDay)
     // Hitung tanggal untuk hari yang dipilih di minggu ini
     $targetDateThisWeek = $currentWeekStart->copy()->addDays($selectedDayIndex);
     
-    // Jika tanggal sudah lewat (lebih kecil dari hari ini), gunakan minggu depan
-    if ($targetDateThisWeek->lt($now->startOfDay())) {
+    // Jika tanggal sudah lewat ATAU hari ini (lte), gunakan minggu depan
+    // "hari : di hari yang sama gak bisa"
+    if ($targetDateThisWeek->lte($now->startOfDay())) {
         return $targetDateThisWeek->addWeek();
     }
     

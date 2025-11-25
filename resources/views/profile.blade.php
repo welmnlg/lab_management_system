@@ -536,7 +536,9 @@
                     <div class="space-y-3">
                         ${daySchedules.map((schedule, idx) => {
                             const showButtons = shouldShowConfirmationButtons(schedule.time_slot, day);
-                            const scheduleId = schedule.schedule_id;
+                            // Fix: Use override_id for overrides, schedule_id for regular
+                            const scheduleId = schedule.is_override ? schedule.override_id : schedule.schedule_id;
+                            const isOverride = schedule.is_override || false;
                             const status = schedule.status;
                             
                             // Determine what to show in the action area
@@ -578,7 +580,6 @@
                 // After QR scan - show Pindah Ruangan & Selesai buttons
                 borderColor = 'border-yellow-500';
 
-                const isOverride = schedule.is_override || false;
                 actionContent = '';
 
                 if (!isOverride) {
@@ -593,7 +594,7 @@
 
                 if (status !== 'pindah_ruangan') {
                     actionContent += `
-                                            <button onclick="selesaiKelas(${scheduleId})"
+                                            <button onclick="selesaiKelas(${scheduleId}, ${isOverride})"
                                                 class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-blue-600 to-blue-400 rounded-lg hover:opacity-90 transition min-w-[135px]">
                                                 Selesai
                                             </button>`;
@@ -623,7 +624,8 @@
                     <div class="flex-grow w-full">
                         <p class="font-bold text-gray-800">
                             Mata Kuliah: ${schedule.course_name}
-                            ${schedule.is_override ? '<span class="ml-2 px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded-full">Kelas/Ruang Pengganti</span>' : ''}
+                            ${schedule.is_substitute ? '<span class="ml-2 px-2 py-0.5 text-xs bg-yellow-100 text-yellow-800 rounded-full">Kelas Pengganti</span>' : ''}
+                            ${schedule.is_override && !schedule.is_substitute ? '<span class="ml-2 px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded-full">Pindah Ruangan</span>' : ''}
                         </p>
                         <div class="flex items-center flex-wrap gap-2 text-sm text-gray-600 mt-2">
                             <span class="flex items-center gap-1.5 bg-gray-200 px-2 py-1 rounded-md">
@@ -746,13 +748,14 @@
                     const daySchedules = currentScheduleData.schedules[dayName] || [];
                     
                     daySchedules.forEach(schedule => {
-                        const scheduleId = schedule.schedule_id;
-                        const status = schedule.status;
                         const isOverride = schedule.is_override || false;
+                        // Fix: Use override_id for overrides, schedule_id for regular
+                        const scheduleId = isOverride ? schedule.override_id : schedule.schedule_id;
+                        const status = schedule.status;
                         const showButtons = shouldShowConfirmationButtons(schedule.time_slot, dayName);
                         const isPast = checkIsPast(schedule.time_slot, dayName);
                         
-                        const domId = schedule.is_override ? `override-${schedule.override_id}` : schedule.schedule_id;
+                        const domId = isOverride ? `override-${schedule.override_id}` : schedule.schedule_id;
                         
                         const buttonDiv = document.getElementById(`tombol-jadwal-${domId}`);
                         const scheduleDiv = document.getElementById(`jadwal-${domId}`);
@@ -802,7 +805,7 @@
             }
 
             actionContent += `
-                <button onclick="selesaiKelas(${scheduleId})"
+                <button onclick="selesaiKelas(${scheduleId}, ${isOverride})"
                     class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-blue-600 to-blue-400 rounded-lg hover:opacity-90 transition min-w-[135px]">
                     Selesai
                 </button>
@@ -1228,20 +1231,36 @@
         /**
          * Selesai Kelas - Ketika user menyelesaikan kelas
          */
-        async function selesaiKelas(scheduleId) {
+        async function selesaiKelas(scheduleId, isOverride = false) {
             if (!confirm('Tandai jadwal ini sebagai selesai?')) return;
 
-            const result = await completeScheduleAPI(scheduleId);
+            let url = `/api/schedules/${scheduleId}/complete`;
+            if (isOverride) {
+                url = `/api/schedules/override/${scheduleId}/complete`;
+            }
 
-            if (result.success) {
-                alert(' Jadwal berhasil diselesaikan!');
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                });
 
-                // 🔄 Reload halaman
-                setTimeout(() => {
-                    location.reload();
-                }, 300);
-            } else {
-                alert('❌ ' + result.message);
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('✅ Jadwal berhasil diselesaikan!');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 300);
+                } else {
+                    alert('❌ ' + (result.message || 'Gagal menyelesaikan jadwal'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Terjadi kesalahan sistem');
             }
         }
 

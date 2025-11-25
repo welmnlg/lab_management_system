@@ -87,7 +87,10 @@ class RoomScheduleService
             $daySchedules = $regularSchedules->where('day', $day);
             
             // Get overrides for this specific date
-            $dayOverrides = $overrides->where('date', $currentDate->format('Y-m-d'));
+            // Fix: Compare formatted date string to avoid Carbon object vs String mismatch
+            $dayOverrides = $overrides->filter(function ($override) use ($currentDate) {
+                return $override->date->format('Y-m-d') === $currentDate->format('Y-m-d');
+            });
             
             /// Process regular schedules
             foreach ($daySchedules as $schedule) {
@@ -107,12 +110,15 @@ class RoomScheduleService
             }
             
             // Add standalone overrides (overrides without schedule_id)
-            foreach ($dayOverrides->where('schedule_id', null) as $override) {
-                $timeSlot = $this->formatTimeSlot(
-                    $override->start_time ?? '00:00:00',
-                    $override->end_time ?? '00:00:00'
-                );
-                $calendar[$day]['schedules'][] = $this->formatScheduleForCalendar($override, $timeSlot, true);
+            // Fix: Ensure we check for null schedule_id explicitly
+            foreach ($dayOverrides as $override) {
+                if ($override->schedule_id === null) {
+                    $timeSlot = $this->formatTimeSlot(
+                        $override->start_time ?? '00:00:00',
+                        $override->end_time ?? '00:00:00'
+                    );
+                    $calendar[$day]['schedules'][] = $this->formatScheduleForCalendar($override, $timeSlot, true);
+                }
             }
         }
         

@@ -112,8 +112,23 @@ Route::middleware(['auth'])->group(function () {
         // Complete schedule
         Route::post('/{id}/complete', [ScheduleController::class, 'completeSchedule']);
         
+        // Complete override (Kelas Ganti)
+        Route::post('/override/{id}/complete', [ScheduleController::class, 'completeOverride']);
+        
         // Move to different room
         Route::post('/{id}/move-room', [ScheduleController::class, 'moveToRoom']);
+    });
+
+    // ========================================
+    // DASHBOARD API ROUTES
+    // ========================================
+    Route::prefix('api/dashboard')->group(function () {
+        Route::get('/rooms/status', [App\Http\Controllers\Api\DashboardApiController::class, 'getRoomsStatus']);
+        Route::get('/rooms/{roomId}/schedules', [App\Http\Controllers\Api\DashboardApiController::class, 'getRoomSchedules']);
+        Route::get('/rooms/{roomId}/calendar', [App\Http\Controllers\Api\DashboardApiController::class, 'getRoomWeeklyCalendar']);
+        Route::get('/form-data', [App\Http\Controllers\Api\DashboardApiController::class, 'getFormData']);
+        Route::get('/available-slots', [App\Http\Controllers\Api\DashboardApiController::class, 'getAvailableTimeSlots']);
+        Route::post('/schedule-override', [App\Http\Controllers\Api\DashboardApiController::class, 'createScheduleOverride']);
     });
 });
 
