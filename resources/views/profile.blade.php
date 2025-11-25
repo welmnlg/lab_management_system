@@ -1236,21 +1236,6 @@
             if (result.success) {
                 alert(' Jadwal berhasil diselesaikan!');
 
-                // Update UI
-                const statusBadge = document.getElementById(`status-jadwal-${scheduleId}`);
-                const scheduleDiv = document.getElementById(`jadwal-${scheduleId}`);
-                const buttonDiv = document.getElementById(`tombol-jadwal-${scheduleId}`);
-
-                if (statusBadge) {
-                    statusBadge.textContent = 'Selesai';
-                    statusBadge.className = 'px-3 py-1 text-xs font-semibold text-white bg-green-500 rounded-full';
-                }
-
-                if (scheduleDiv) {
-                    scheduleDiv.className = scheduleDiv.className.replace(/border-(gray|green|red|yellow|purple)-\d+/,
-                        'border-green-500');
-                }
-
                 // 🔄 Reload halaman
                 setTimeout(() => {
                     location.reload();

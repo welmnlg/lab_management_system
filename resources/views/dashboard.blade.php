@@ -552,6 +552,13 @@
                 bgColor = 'bg-gray-50';
                 statusBadge = 'bg-gray-500';
                 statusText = 'Selesai';
+                statusBadge = 'bg-gray-500';
+                statusText = 'Selesai';
+            } else if (schedule.status === 'moved') {
+                borderColor = 'border-gray-400';
+                bgColor = 'bg-gray-50';
+                statusBadge = 'bg-gray-500';
+                statusText = 'Pindah Ruangan';
             } else {
                 borderColor = 'border-gray-400';
                 bgColor = 'bg-gray-50';
@@ -666,12 +673,14 @@
                 
                 if (schedule) {
                     const overrideBadge = schedule.is_override ? '<span class="inline-block mt-1 px-1 py-0.5 bg-yellow-400 text-yellow-900 rounded text-xs">Ganti</span>' : '';
+                    const movedBadge = schedule.status === 'pindah_ruangan' ? '<span class="inline-block mt-1 px-1 py-0.5 bg-orange-400 text-white rounded text-xs">Pindah Ruang</span>' : '';
                     
                     calendarHTML += '<td class="px-2 py-2 border-r border-gray-200 align-top">';
                     calendarHTML += '<div class="bg-blue-100 rounded-lg p-1.5 text-xs">';
                     calendarHTML += '<div class="font-bold text-blue-900 mb-1">' + schedule.course_name + ' (' + schedule.class_name + ')' + '</div>';
                     calendarHTML += '<div class="text-blue-700">' + schedule.instructor + '</div>';
                     calendarHTML += overrideBadge;
+                    calendarHTML += movedBadge;
                     calendarHTML += '</div>';
                     calendarHTML += '</td>';
                 } else {

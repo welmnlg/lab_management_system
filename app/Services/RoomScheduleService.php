@@ -137,7 +137,8 @@ class RoomScheduleService
             'class_name' => $courseClass ? $courseClass->class_name : 'N/A',
             'instructor' => $user ? $user->name : 'N/A',
             'is_override' => $isOverride,
-            'reason' => $isOverride && isset($schedule->reason) ? $schedule->reason : null
+            'reason' => $isOverride && isset($schedule->reason) ? $schedule->reason : null,
+            'status' => $schedule->status ?? null
         ];
     }
     
@@ -290,26 +291,36 @@ class RoomScheduleService
         
         // Get overrides for this date
         $overrides = ScheduleOverride::where('room_id', $roomId)
-            ->where('date', $date)
+            ->where('date', $dateCarbon->format('Y-m-d'))
+            ->whereIn('status', ['active', 'sedang_berlangsung', 'selesai'])
             ->with(['courseClass.course', 'user'])
             ->get();
         
         // Merge and format
         $formattedSchedules = [];
         
+        $processedOverrideIds = [];
+        
         foreach ($schedules as $schedule) {
+            // Cek apakah ada override untuk schedule ini di ruangan ini (misal ganti jam di ruangan sama)
             $override = $overrides->where('schedule_id', $schedule->schedule_id)->first();
             
-            if (!$override) {
+            if ($override) {
+                // Jika ada override, gunakan override
+                $formattedSchedules[] = $this->formatSchedule($override, $dateCarbon, true);
+                $processedOverrideIds[] = $override->id;
+            } else {
+                // Jika tidak ada, gunakan jadwal asli
                 $formattedSchedules[] = $this->formatSchedule($schedule, $dateCarbon, false);
             }
         }
         
+        // Tambahkan override yang belum diproses (misal pindahan dari ruangan lain atau jadwal baru)
         foreach ($overrides as $override) {
-        if (is_null($override->schedule_id)) {
-            $formattedSchedules[] = $this->formatSchedule($override, $dateCarbon, true);
+            if (!in_array($override->id, $processedOverrideIds)) {
+                $formattedSchedules[] = $this->formatSchedule($override, $dateCarbon, true);
+            }
         }
-    }
         
         // Sort by start time
         usort($formattedSchedules, function($a, $b) {
@@ -338,12 +349,33 @@ class RoomScheduleService
         $course = $courseClass ? $courseClass->course : null;
         $user = $schedule->user;
         
-        // ✅ Pass schedule object ke determineScheduleStatus
+        // Jika override tidak punya class_id, ambil dari schedule asli
+        if ($isOverride && !$courseClass && $schedule->schedule_id) {
+            $originalSchedule = Schedule::with(['courseClass.course'])->find($schedule->schedule_id);
+            if ($originalSchedule) {
+                $courseClass = $originalSchedule->courseClass;
+                $course = $courseClass ? $courseClass->course : null;
+            }
+        }
+        
+        // Pastikan start_time dan end_time dalam format yang benar
+        $startTime = $schedule->start_time;
+        $endTime = $schedule->end_time;
+        
+        // Jika waktu adalah string lengkap dengan format H:i:s, ambil 5 karakter pertama
+        if (is_string($startTime) && strlen($startTime) >= 5) {
+            $startTime = substr($startTime, 0, 5);
+        }
+        
+        if (is_string($endTime) && strlen($endTime) >= 5) {
+            $endTime = substr($endTime, 0, 5);
+        }
+        
         $status = $this->determineScheduleStatus(
             $schedule->start_time, 
             $schedule->end_time, 
             $date,
-            $schedule  // ← Tambahan parameter
+            $schedule
         );
         
         return [
@@ -352,8 +384,8 @@ class RoomScheduleService
             'course_code' => $course ? $course->course_code : null,
             'class_name' => $courseClass ? $courseClass->class_name : 'N/A',
             'instructor' => $user ? $user->name : 'N/A',
-            'start_time' => substr($schedule->start_time, 0, 5),
-            'end_time' => substr($schedule->end_time, 0, 5),
+            'start_time' => $startTime,
+            'end_time' => $endTime,
             'date' => $date->format('d F Y'),
             'day' => $this->getIndonesianDay($date),
             'status' => $status,
@@ -370,14 +402,36 @@ class RoomScheduleService
         $scheduleDate = Carbon::parse($date);
         $currentTime = $now->format('H:i:s');
         
-        // ✅ PERBAIKAN 1: Cek apakah hari ini
+        // PERBAIKAN 1: Cek apakah hari ini
         if (!$scheduleDate->isToday()) {
             // Jika sudah lewat, status completed
             if ($scheduleDate->isPast()) {
+                // Check if it was moved
+                if ($schedule && $schedule->status === 'pindah_ruangan') {
+                    return 'moved';
+                }
                 return 'completed';
             }
             // Jika belum tiba, status scheduled
             return 'scheduled';
+        }
+
+        // PERBAIKAN 1.5: Cek status dari database untuk override yang sudah selesai
+        if ($schedule) {
+            // Untuk ScheduleOverride, cek status database langsung
+            if (get_class($schedule) === 'App\Models\ScheduleOverride') {
+                if ($schedule->status === 'selesai') {
+                    return 'completed';
+                }
+                if ($schedule->status === 'sedang_berlangsung') {
+                    return 'ongoing';
+                }
+            }
+            
+            // Cek status Pindah Ruangan (Moved)
+            if ($schedule->status === 'pindah_ruangan') {
+                return 'moved';
+            }
         }
         
         // ✅ PERBAIKAN 2: Untuk hari ini, CEK OCCUPANCY dulu

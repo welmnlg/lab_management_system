@@ -23,8 +23,6 @@ class ScheduleOverride extends Model
 
     protected $casts = [
         'date' => 'date',
-        'start_time' => 'datetime:H:i:s',
-        'end_time' => 'datetime:H:i:s',
     ];
 
     // Relasi ke Schedule (original schedule yang di-override)
