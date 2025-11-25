@@ -17,6 +17,8 @@ class ScheduleOverride extends Model
         'day',
         'start_time',
         'end_time',
+        'class_id',
+        'status',
     ];
 
     protected $casts = [

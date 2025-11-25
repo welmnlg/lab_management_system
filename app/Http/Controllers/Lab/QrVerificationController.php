@@ -7,7 +7,8 @@ use App\Models\Schedule;
 use App\Models\Room;
 use App\Models\RoomAccessLog;
 use App\Models\RoomOccupancyStatus;
-use App\Models\Logbook;  
+use App\Models\Logbook;
+use App\Models\ScheduleOverride;
 use App\Events\RoomStatusUpdated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
@@ -46,12 +47,12 @@ class QrVerificationController extends Controller
                 throw new \Exception('Token kosong');
             }
 
-            // ✅ Try Laravel Encryption first
+            // Coba dekripsi Laravel dulu
             try {
                 $decryptedData = Crypt::decryptString($token);
                 $qrData = json_decode($decryptedData, true);
             } catch (\Exception $e) {
-                // ✅ Fallback: Try base64 decode (untuk QR yang lama)
+                // Fallback: Coba base64 decode untuk QR lama
                 Log::info('Trying base64 decode fallback');
                 $decoded = base64_decode($token, true);
                 
@@ -95,92 +96,81 @@ class QrVerificationController extends Controller
         // 5. Validasi hari dan waktu
         $now = \Carbon\Carbon::now();
         $currentDay = $now->dayOfWeek;
-        $dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']; //testing minggu
-        // $dayName = $dayNames[$currentDay]; //testing minggu
+        $dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
         $currentTime = $now->format('H:i:s');
 
-        // Convert day name to number if needed
-        $dayMap = [
-            'Minggu' => 0,
-            'Senin' => 1,
-            'Selasa' => 2,
-            'Rabu' => 3,
-            'Kamis' => 4,
-            'Jumat' => 5,
-            'Sabtu' => 6
-            
-        ];
+        // Hardcoded untuk testing: Selasa
+        $dayName = 'Selasa';
 
-        // Convert day number ke nama hari (FIX MINGGU BUG)
-        $dayName = $this->convertNumberToDay($currentDay);
-
-        $schedule = Schedule::where('user_id', $user->user_id)
-            ->where('room_id', $roomId)
-            ->where('day', $dayName)  // ← FIX: use day name
-            ->first();
-
-        if (!$schedule) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Jadwal tidak ditemukan'
-            ], 404);
-        }
-
-        // ✅ NEW: CHECK STATUS BEFORE ACCEPTING SCAN
-        if (!in_array($schedule->status, ['dikonfirmasi', 'pindah_ruangan'])) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Jadwal belum dikonfirmasi atau sudah dibatalkan',
-                'current_status' => $schedule->status
-            ], 400);
-        }
-
-        // ✅ Check time window (existing logic tetap)
-        $now = \Carbon\Carbon::now();
-        $startTime = \Carbon\Carbon::parse($schedule->start_time);
-        $endTime = \Carbon\Carbon::parse($schedule->end_time);
-        $fifteenMinBefore = $startTime->copy()->subMinutes(15);
-
-        if (!$now->isBetween($fifteenMinBefore, $endTime)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Waktu scan tidak valid'
-            ], 400);
-        }
-
-        // 4. Validasi jadwal mengajar aslab pada ruangan ini
-        // $schedule = Schedule::where('user_id', $user->user_id)
-        //     ->where('room_id', $roomId)
-        //     ->where('day', $currentDay) // Hari harus sama
-        //     ->whereTime('start_time', '<=', $currentTime)
-        //     ->whereTime('end_time', '>=', $currentTime)
-        //     ->first();
-        // 4. Validasi jadwal mengajar aslab pada ruangan ini - WITH STATUS CHECK
+        // Validasi jadwal mengajar aslab pada ruangan ini
         $schedule = Schedule::where('user_id', $user->user_id)
             ->where('room_id', $roomId)
             ->where('day', $dayName)
             ->orderBy('start_time', 'asc')
             ->get();
 
-        // ✅ FILTER MANUAL DENGAN BUFFER 15 MENIT + STATUS CHECK
+        // Filter manual dengan buffer 15 menit
         $validSchedule = null;
+        $isMove = false;
+
         foreach ($schedule as $sched) {
-            // ✅ CHECK 1: Status harus dikonfirmasi atau pindah_ruangan
+            // Status harus dikonfirmasi atau pindah_ruangan
             if (!in_array($sched->status, ['dikonfirmasi', 'pindah_ruangan'])) {
-                continue; // Skip jadwal yang belum confirm atau sudah dibatalkan
+                continue; // Lewati jadwal yang belum dikonfirmasi atau sudah dibatalkan
             }
             
             $bufferStart = \Carbon\Carbon::parse($sched->start_time)->subMinutes(15)->format('H:i:s');
             $endTime = $sched->end_time;
             
-            // ✅ CHECK 2: Cek: bufferStart <= currentTime <= endTime
+            // Cek apakah jadwal hari ini sesuai
             if ($currentTime >= $bufferStart && $currentTime <= $endTime) {
                 $validSchedule = $sched;
                 break;
             }
         }
 
-        // ✅ NEW: If no schedule found, check why
+        // Jika tidak ada jadwal standar, cek status "Pindah Ruangan"
+        if (!$validSchedule) {
+            $movingSchedule = Schedule::where('user_id', $user->user_id)
+                ->where('status', 'pindah_ruangan')
+                ->where('day', $dayName)
+                ->first();
+
+            if ($movingSchedule) {
+                // Validasi waktu untuk jadwal pindah ruangan
+                $bufferStart = \Carbon\Carbon::parse($movingSchedule->start_time)->subMinutes(15)->format('H:i:s');
+                if ($currentTime >= $bufferStart && $currentTime <= $movingSchedule->end_time) {
+                    
+                    // Cek konflik di ruangan baru
+                    $conflictingSchedule = Schedule::where('room_id', $roomId)
+                        ->where('day', $dayName)
+                        ->where('status', '!=', 'dibatalkan')
+                        ->where('schedule_id', '!=', $movingSchedule->schedule_id)
+                        ->where(function($q) use ($movingSchedule) {
+                            $q->whereBetween('start_time', [$movingSchedule->start_time, $movingSchedule->end_time])
+                              ->orWhereBetween('end_time', [$movingSchedule->start_time, $movingSchedule->end_time])
+                              ->orWhere(function($sub) use ($movingSchedule) {
+                                  $sub->where('start_time', '<=', $movingSchedule->start_time)
+                                      ->where('end_time', '>=', $movingSchedule->end_time);
+                              });
+                        })
+                        ->first();
+
+                    if ($conflictingSchedule) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Ruangan tidak tersedia. Ada jadwal lain di jam ini.',
+                            'error_type' => 'room_conflict'
+                        ], 409);
+                    }
+
+                    $validSchedule = $movingSchedule;
+                    $isMove = true;
+                }
+            }
+        }
+
+        // Jika tidak ada jadwal valid, periksa penyebabnya
         if (!$validSchedule) {
             // Check apakah ada schedule tapi belum dikonfirmasi
             $unconfirmedSchedule = Schedule::where('user_id', $user->user_id)
@@ -197,6 +187,12 @@ class QrVerificationController extends Controller
                     'error_type' => 'unconfirmed_schedule'
                 ], 400);
             }
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak ada jadwal aktif untuk ruangan ini saat ini.',
+                'error_type' => 'no_schedule'
+            ], 404);
         }
 
 
@@ -214,6 +210,28 @@ class QrVerificationController extends Controller
             ], 409);
         }
 
+        // Check if room is currently occupied by ANOTHER user
+        $roomOccupied = RoomOccupancyStatus::where('room_id', $roomId)
+            ->where('current_user_id', '!=', $user->user_id)
+            ->where('is_active', true)
+            ->first();
+
+        if ($roomOccupied) {
+            $occupyingUser = \App\Models\User::find($roomOccupied->current_user_id);
+            $occupyingSchedule = Schedule::find($roomOccupied->schedule_id);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Ruangan sedang digunakan oleh pengguna lain',
+                'error_type' => 'room_occupied',
+                'details' => [
+                    'current_user' => $occupyingUser ? $occupyingUser->name : 'Unknown',
+                    'started_at' => $roomOccupied->started_at,
+                    'schedule_end_time' => $occupyingSchedule ? $occupyingSchedule->end_time : null
+                ]
+            ], 409);
+        }
+
         // 6. Jika semua valid, simpan pending log dan return info jadwal
         $log = RoomAccessLog::create([
             'user_id' => $user->user_id,
@@ -226,7 +244,8 @@ class QrVerificationController extends Controller
         session(['pending_room_entry' => [
             'room_id' => $roomId,
             'log_id' => $log->id,
-            'schedule_id' => $validSchedule->schedule_id
+            'schedule_id' => $validSchedule->schedule_id,
+            'is_move' => $isMove
         ]]);
 
         return response()->json([
@@ -239,7 +258,8 @@ class QrVerificationController extends Controller
                 'subject_name' => $validSchedule->courseClass->course->course_name ?? 'N/A',
                 'start_time' => $validSchedule->start_time,
                 'end_time' => $validSchedule->end_time,
-                'day' => $validSchedule->day
+                'day' => $validSchedule->day,
+                'is_move' => $isMove
             ]
         ]);
     }
@@ -272,8 +292,12 @@ class QrVerificationController extends Controller
         $user = auth()->user();
         $roomId = $pendingEntry['room_id'];
         $logId = $pendingEntry['log_id'];
+        $scheduleId = $pendingEntry['schedule_id'];
+        $isMove = $pendingEntry['is_move'] ?? false;
 
         try {
+            DB::beginTransaction();
+
             // Update log status menjadi success
             $log = RoomAccessLog::find($logId);
             $log->update([
@@ -281,11 +305,51 @@ class QrVerificationController extends Controller
                 'entry_time' => now()
             ]);
 
-            // Update room occupancy status
+            $schedule = Schedule::find($scheduleId);
+
+            // Backup check: Jika status adalah 'pindah_ruangan', force isMove = true
+            if ($schedule->status === 'pindah_ruangan') {
+                $isMove = true;
+            }
+
+            // Handle logic pindah ruangan
+            $overrideId = null;
+            if ($isMove) {
+                // 1. Close Old Logbook (GANTI RUANGAN)
+                Logbook::where('schedule_id', $scheduleId)
+                    ->whereNull('logout')
+                    ->update([
+                        'logout' => now()->format('H:i:s'),
+                        'status' => 'GANTI RUANGAN'
+                    ]);
+
+                // 2. Clear Old Room Occupancy
+                RoomOccupancyStatus::where('schedule_id', $scheduleId)
+                    ->where('is_active', true)
+                    ->update([
+                        'is_active' => false,
+                        'ended_at' => now()
+                    ]);
+
+                // 3. Create Schedule Override
+                $override = ScheduleOverride::create([
+                    'schedule_id' => $scheduleId,
+                    'user_id' => $user->user_id,
+                    'room_id' => $roomId,
+                    'date' => today(),
+                    'day' => $schedule->day,
+                    'start_time' => $schedule->start_time,
+                    'end_time' => $schedule->end_time,
+                    // 'class_id' removed as per user change
+                ]);
+                $overrideId = $override->id;
+            }
+
+            // Update room occupancy status for NEW room
             RoomOccupancyStatus::updateOrCreate(
                 [
                     'room_id' => $roomId,
-                    'schedule_id' => $pendingEntry['schedule_id'], // PASTIKAN INI!
+                    'schedule_id' => $scheduleId,
                     'current_user_id' => $user->user_id,
                     'is_active' => true,
                 ],
@@ -295,41 +359,36 @@ class QrVerificationController extends Controller
                 ]
             );
 
-            // Create Logbook entry
-            // ✅ UPDATE Schedule status ke sedang_berlangsung
-            $schedule = Schedule::find($pendingEntry['schedule_id']);
-            $schedule->update([
-                'status' => 'sedang_berlangsung',
-                'started_at' => now(),
-                'room_id' => $roomId
-            ]);
+            // Update status schedule ke sedang_berlangsung jika bukan pindah ruangan
+            if (!$isMove) {
+                $schedule->update([
+                    'status' => 'sedang_berlangsung',
+                    'started_at' => now(),
+                ]);
+            }
             
-            // ✅ INVALIDATE CACHE untuk profil user (agar load data terbaru)
-            // Cache::tags(['user_schedules'])->flush();
-            // Cache::forget("user_schedules_{$user->user_id}");
-
-
-            // Create Logbook entry
+            // Create Logbook entry for NEW room
             $logbook = Logbook::create([
                 'user_id' => $user->user_id,
                 'room_id' => $roomId,
-                'schedule_id' => $pendingEntry['schedule_id'],
+                'schedule_id' => $scheduleId,
+                'override_id' => $overrideId, // ✅ Link to Override
                 'course_id' => $schedule->courseClass->course_id,
                 'date' => today(),
                 'login' => now()->format('H:i:s'),
                 'activity' => 'MENGAJAR',
                 'access_log_id' => $logId,
                 'entry_method' => 'QR_SCAN',
+                // 'status' => 'AKTIF' // ❌ REMOVED: Status column only accepts 'GANTI RUANGAN' or 'SELESAI' or NULL
             ]);
 
             // Clear pending session
             session()->forget('pending_room_entry');
 
-            // ✅ FLUSH DASHBOARD CACHE (untuk room usage schedule)
-            // Cache::tags(['dashboard_usage'])->flush();
-
             // Broadcast update ke dashboard
             broadcast(new RoomStatusUpdated($roomId, true, $user->name, $user->user_id));
+
+            DB::commit();
 
             return response()->json([
                 'success' => true,
@@ -337,10 +396,11 @@ class QrVerificationController extends Controller
                 'room_id' => $roomId
             ]);
         } catch (\Exception $e) {
+            DB::rollBack();
             \Log::error('Confirm Entry Error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan'
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
             ], 500);
         }
     }

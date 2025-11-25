@@ -129,6 +129,7 @@ class ScheduleController extends Controller
                 $courseName = 'N/A';
                 $className = 'N/A';
                 $roomName = 'N/A';
+                $roomId = $schedule->room_id;
                 
                 // Get course name dari courseClass.course
                 if ($schedule->courseClass && $schedule->courseClass->course) {
@@ -145,7 +146,8 @@ class ScheduleController extends Controller
                     // Try both 'name' dan 'room_name' (tergantung column di database)
                     $roomName = $schedule->room->name ?? $schedule->room->room_name;
                 }
-                
+
+                // 1. Add Original Schedule
                 $grouped[$day][] = [
                     'schedule_id' => $schedule->schedule_id,
                     'course_name' => $courseName,
@@ -156,9 +158,40 @@ class ScheduleController extends Controller
                     'time_slot' => $this->formatTimeSlot($schedule->start_time, $schedule->end_time),
                     'start_time' => $schedule->start_time,
                     'end_time' => $schedule->end_time,
-                    'status' => $schedule->status,              // ← ADD
-                    'confirmed_at' => $schedule->confirmed_at,  // ← ADD
+                    'status' => $schedule->status,
+                    'confirmed_at' => $schedule->confirmed_at,
+                    'is_override' => false
                 ];
+
+                // 2. Check for Override (Pindah Ruangan)
+                if ($schedule->status == 'pindah_ruangan') {
+                $override = \App\Models\ScheduleOverride::where('schedule_id', $schedule->schedule_id)
+                    ->whereBetween('date', [
+                        now()->startOfWeek(),          // Senin
+                        now()->startOfWeek()->addDays(4) // Jumat
+                    ])
+                    ->whereIn('status', ['active', 'sedang_berlangsung', 'selesai'])
+                    ->with('room')
+                    ->first();
+
+                    if ($override && $override->room) {
+                        $grouped[$day][] = [
+                            'schedule_id' => $schedule->schedule_id,
+                            'course_name' => $courseName,
+                            'class_name' => $className,
+                            'room_name' => $override->room->room_name,
+                            'room_id' => $override->room_id,
+                            'day' => $schedule->day,
+                            'time_slot' => $this->formatTimeSlot($override->start_time, $override->end_time),
+                            'start_time' => $override->start_time,
+                            'end_time' => $override->end_time,
+                            'status' => $override->status === 'active' ? 'sedang_berlangsung' : $override->status,
+                            'confirmed_at' => $schedule->confirmed_at,
+                            'is_override' => true,
+                            'override_id' => $override->id
+                        ];
+                    }
+                }
             }
         }
 
@@ -349,6 +382,50 @@ class ScheduleController extends Controller
                 ->where('user_id', $user->user_id ?? $user->id)
                 ->firstOrFail();
             
+            // Handle penyelesaian override
+            if ($schedule->status == 'pindah_ruangan') {
+                $override = \App\Models\ScheduleOverride::where('schedule_id', $id)
+                    ->where('status', 'active')
+                    ->first();
+                    
+                if ($override) {
+                    $override->update([
+                        'status' => 'selesai',
+                        'end_time' => now()->format('H:i:s')
+                    ]);
+                    
+                    // Close Logbook for override
+                    \App\Models\Logbook::where('override_id', $override->id)
+                        ->whereNull('logout')
+                        ->update(['logout' => now()->format('H:i:s'), 'status' => 'SELESAI']);
+                        
+                    // Close Occupancy for override room
+                    \App\Models\RoomOccupancyStatus::where('room_id', $override->room_id)
+                        ->where('is_active', true)
+                        ->update(['is_active' => false, 'ended_at' => now()]);
+
+                        
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Kelas (Pindah Ruangan) berhasil diselesaikan',
+                        'data' => [
+                            'id' => $schedule->schedule_id,
+                            'status' => 'selesai'
+                        ]
+                    ]);
+                } else {
+                    // Tidak ada override aktif - sudah selesai atau tidak valid
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Kelas pengganti sudah diselesaikan',
+                        'data' => [
+                            'id' => $schedule->schedule_id,
+                            'status' => 'selesai'
+                        ]
+                    ]);
+                }
+            }
+
             // Validasi: Hanya bisa complete jika sedang berlangsung
             if ($schedule->status !== 'sedang_berlangsung') {
                 return response()->json([

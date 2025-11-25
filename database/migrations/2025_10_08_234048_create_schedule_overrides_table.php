@@ -27,7 +27,7 @@ return new class extends Migration
             
             // TAMBAHAN: field reason dan status
             $table->string('reason', 500)->nullable();
-            $table->enum('status', ['active', 'cancelled'])->default('active');
+            $table->enum('status', ['active', 'cancelled', 'selesai', 'sedang_berlangsung'])->default('active');
             
             $table->timestamps();
             
