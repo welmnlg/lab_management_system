@@ -28,10 +28,13 @@ Route::middleware(['auth'])->group(function () {
         return view('scanqr');
     })->name('scanqr');
     
-    // Logbook
+    // ✅ Logbook API & Export
     Route::get('/logbook', function () {
         return view('logbook');
     })->name('logbook');
+    Route::get('/api/logbook/data', [App\Http\Controllers\LogbookController::class, 'getLogbookData'])->name('api.logbook.data');
+    Route::get('/api/logbook/filters', [App\Http\Controllers\LogbookController::class, 'getFilterOptions'])->name('api.logbook.filters');
+    Route::get('/logbook/export', [App\Http\Controllers\LogbookController::class, 'exportLogbook'])->name('logbook.export');
 
     // Ambil Jadwal - UNTUK ASLAB (User biasa)
     Route::get('/ambil-jadwal', function () {
