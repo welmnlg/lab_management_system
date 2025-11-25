@@ -71,10 +71,29 @@ class ScheduleController extends Controller
             }
             
             $now = \Carbon\Carbon::now();
-            $startTime = \Carbon\Carbon::parse($schedule->start_time);
-            $fifteenMinAfter = $startTime->copy()->addMinutes(15);
             
-            // Jika sekarang sudah lewat 15 menit setelah jadwal mulai
+            // Map day names to Carbon day indices
+            $dayNames = ['Minggu' => 0, 'Senin' => 1, 'Selasa' => 2, 'Rabu' => 3, 'Kamis' => 4, 'Jumat' => 5, 'Sabtu' => 6];
+            
+            if (!isset($dayNames[$schedule->day])) {
+                continue;
+            }
+            
+            $scheduleDayIndex = $dayNames[$schedule->day];
+            $currentDayIndex = $now->dayOfWeek;
+            
+            // Calculate days difference
+            $daysUntilSchedule = $scheduleDayIndex - $currentDayIndex;
+            
+            // Create the schedule datetime for this week
+            $scheduleDateTime = $now->copy()->addDays($daysUntilSchedule);
+            $scheduleDateTime->setTimeFromTimeString($schedule->start_time);
+            
+            // Calculate 15 minutes after schedule start
+            $fifteenMinAfter = $scheduleDateTime->copy()->addMinutes(15);
+            
+            // Only auto-cancel if NOW is AFTER the 15-minute window
+            // This means the schedule is truly in the past
             if ($now->isAfter($fifteenMinAfter)) {
                 // Auto-cancel
                 $schedule->update([

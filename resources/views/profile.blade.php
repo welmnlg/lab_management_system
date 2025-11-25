@@ -297,6 +297,81 @@
         return now >= oneHourBefore && now <= fifteenMinutesAfter;
     }
 
+    /**
+     * Check if the schedule time has passed (more than 15 mins after start)
+     */
+    function checkIsPast(timeSlot, dayName) {
+        const now = new Date();
+        const currentDay = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][now.getDay()];
+        
+        // If not the same day, check if it's a past or future day
+        if (currentDay !== dayName) {
+            const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            const todayIdx = now.getDay();
+            const scheduleDayIdx = days.indexOf(dayName);
+            
+            // If schedule day index is less than today (e.g., Monday < Wednesday), it's past
+            // But we need to handle week wraparound (e.g., Sunday is 0, but could be future)
+            // For simplicity: if scheduleDayIdx < todayIdx, it's past in this week
+            if (scheduleDayIdx < todayIdx) {
+                return true; // Past day this week
+            } else {
+                return false; // Future day this week
+            }
+        }
+        
+        // Same day - check time
+        const startTimeStr = timeSlot.split(' - ')[0];
+        const [hours, minutes] = startTimeStr.replace('.', ':').split(':').map(Number);
+        
+        const scheduleTime = new Date();
+        scheduleTime.setHours(hours, minutes, 0, 0);
+        
+        const fifteenMinutesAfter = new Date(scheduleTime);
+        fifteenMinutesAfter.setMinutes(fifteenMinutesAfter.getMinutes() + 15);
+        
+        return now > fifteenMinutesAfter;
+    }
+
+    /**
+     * Get HTML badge for status
+     */
+    function getStatusBadge(status) {
+        let colorClass = 'bg-gray-200 text-gray-800';
+        let label = formatStatus(status);
+        
+        switch(status) {
+            case 'terjadwal':
+                colorClass = 'bg-gray-200 text-gray-800';
+                break;
+            case 'dikonfirmasi':
+                colorClass = 'bg-blue-100 text-blue-800';
+                break;
+            case 'sedang_berlangsung':
+                colorClass = 'bg-yellow-100 text-yellow-800';
+                break;
+            case 'selesai':
+                colorClass = 'bg-green-100 text-green-800';
+                break;
+            case 'dibatalkan':
+                colorClass = 'bg-red-100 text-red-800';
+                break;
+            case 'pindah_ruangan':
+                colorClass = 'bg-purple-100 text-purple-800';
+                break;
+        }
+        
+        return `<span class="px-3 py-1 text-xs font-semibold rounded-full ${colorClass}">${label}</span>`;
+    }
+
+    /**
+     * Format status string to readable text
+     */
+    function formatStatus(status) {
+        if (!status) return 'N/A';
+        return status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    }
+
     // ==========================================
     // SCHEDULE LOADING FUNCTIONS
     // ==========================================
@@ -463,7 +538,37 @@
                     <div class="space-y-3">
                         ${daySchedules.map((schedule, idx) => {
                             const showButtons = shouldShowConfirmationButtons(schedule.time_slot, day);
-                            const scheduleId = schedule.schedule_id;;
+                            const scheduleId = schedule.schedule_id;
+                            const status = schedule.status;
+                            
+                            // Determine what to show in the action area
+                            let actionContent = '';
+                            
+                            const isPast = checkIsPast(schedule.time_slot, day);
+
+                            if (status === 'terjadwal') {
+                                if (showButtons) {
+                                    actionContent = `
+                                        <button onclick="konfirmasiBatal(${scheduleId})"
+                                            class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-red-600 to-red-400 rounded-lg hover:opacity-90 transition min-w-[135px]">
+                                            Batal
+                                        </button>
+                                        <button onclick="konfirmasiAjar(${scheduleId})"
+                                            class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-green-600 to-green-400 rounded-lg hover:opacity-90 transition min-w-[135px]">
+                                            Konfirmasi
+                                        </button>
+                                    `;
+                                } else if (isPast) {
+                                    // If past and still 'terjadwal', show status badge
+                                    actionContent = getStatusBadge(status);
+                                } else {
+                                    // Future - show "Belum waktunya konfirmasi"
+                                    actionContent = `<span class="text-xs text-gray-500 text-center py-2">Belum waktunya konfirmasi</span>`;
+                                }
+                            } else {
+                                // For all other statuses (dikonfirmasi, selesai, dibatalkan, etc.), show the status badge
+                                actionContent = getStatusBadge(status);
+                            }
                             
                             return `
                             <div id="jadwal-${scheduleId}" 
@@ -485,26 +590,14 @@
                                     <div class="mt-3">
                                         <span id="status-jadwal-${scheduleId}" 
                                             class="px-3 py-1 text-xs font-semibold text-gray-800 bg-gray-200 rounded-full">
-                                            Terjadwal
+                                            ${formatStatus(status)}
                                         </span>
                                     </div>
                                 </div>
                                 {{-- Bagian Kanan (Tombol) - Button akan berubah sesuai status --}}
                                 <div id="tombol-jadwal-${scheduleId}" 
-                                    class="flex-shrink-0 flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                                    ${showButtons ? `
-                                        <!-- Default: Batal dan Konfirmasi (sebelum scan QR) -->
-                                        <button onclick="konfirmasiBatal(${scheduleId})"
-                                            class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-red-600 to-red-400 rounded-lg hover:opacity-90 transition min-w-[135px]">
-                                            Batal
-                                        </button>
-                                        <button onclick="konfirmasiAjar(${scheduleId})"
-                                            class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-green-600 to-green-400 rounded-lg hover:opacity-90 transition min-w-[135px]">
-                                            Konfirmasi
-                                        </button>
-                                    ` : `
-                                        <span class="text-xs text-gray-500 text-center py-2">Belum waktunya konfirmasi</span>
-                                    `}
+                                    class="flex-shrink-0 flex flex-col sm:flex-row gap-2 w-full sm:w-auto items-center justify-center">
+                                    ${actionContent}
                                 </div>
                             </div>
                         `;
@@ -588,6 +681,54 @@
         }
         
         hariAktif = hari;
+        
+        // ✅ REFRESH: Update status dan tombol untuk hari yang dipilih
+        refreshDaySchedules(hari);
+    }
+
+    /**
+     * Refresh schedule buttons and status for a specific day
+     */
+    function refreshDaySchedules(dayName) {
+        // Get schedules for this day from currentScheduleData
+        if (!currentScheduleData || !currentScheduleData.schedules) return;
+        
+        const daySchedules = currentScheduleData.schedules[dayName] || [];
+        
+        daySchedules.forEach(schedule => {
+            const scheduleId = schedule.schedule_id;
+            const status = schedule.status;
+            const showButtons = shouldShowConfirmationButtons(schedule.time_slot, dayName);
+            const isPast = checkIsPast(schedule.time_slot, dayName);
+            
+            const buttonDiv = document.getElementById(`tombol-jadwal-${scheduleId}`);
+            if (!buttonDiv) return;
+            
+            let actionContent = '';
+            
+            if (status === 'terjadwal') {
+                if (showButtons) {
+                    actionContent = `
+                        <button onclick="konfirmasiBatal(${scheduleId})"
+                            class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-red-600 to-red-400 rounded-lg hover:opacity-90 transition min-w-[135px]">
+                            Batal
+                        </button>
+                        <button onclick="konfirmasiAjar(${scheduleId})"
+                            class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-green-600 to-green-400 rounded-lg hover:opacity-90 transition min-w-[135px]">
+                            Konfirmasi
+                        </button>
+                    `;
+                } else if (isPast) {
+                    actionContent = getStatusBadge(status);
+                } else {
+                    actionContent = `<span class="text-xs text-gray-500 text-center py-2">Belum waktunya konfirmasi</span>`;
+                }
+            } else {
+                actionContent = getStatusBadge(status);
+            }
+            
+            buttonDiv.innerHTML = actionContent;
+        });
     }
 
     // ==========================================
