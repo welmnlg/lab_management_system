@@ -115,6 +115,12 @@ Route::middleware(['auth'])->group(function () {
         // Complete override (Kelas Ganti)
         Route::post('/override/{id}/complete', [ScheduleController::class, 'completeOverride']);
         
+        // Confirm override
+        Route::post('/override/{id}/confirm', [ScheduleController::class, 'confirmOverride']);
+        
+        // Cancel override
+        Route::post('/override/{id}/cancel', [ScheduleController::class, 'cancelOverride']);
+        
         // Move to different room
         Route::post('/{id}/move-room', [ScheduleController::class, 'moveToRoom']);
     });

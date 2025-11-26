@@ -61,7 +61,7 @@ class LogbookController extends Controller
 
             $logbooks = Logbook::where('user_id', $user->user_id ?? $user->id)
                 ->whereDate('date', $today)
-                ->with(['user', 'room', 'course', 'schedule'])
+                ->with(['user', 'room', 'course', 'schedule', 'scheduleOverride.courseClass'])
                 ->orderBy('login', 'desc')
                 ->get();
 
@@ -72,12 +72,14 @@ class LogbookController extends Controller
                     'user_name' => $logbook->user->name ?? 'N/A',
                     'nim' => $logbook->user->nim ?? 'N/A',
                     'course_name' => $logbook->course->course_name ?? 'N/A',
-                    'class_name' => $logbook->schedule->courseClass->class_name ?? 'N/A',
+                    'class_name' => $logbook->schedule 
+                        ? ($logbook->schedule->courseClass->class_name ?? 'N/A')
+                        : ($logbook->scheduleOverride->courseClass->class_name ?? 'N/A'),
                     'room_name' => $logbook->room->room_name ?? 'N/A',
                     'date' => $logbook->date->format('d/m/Y'),
                     'schedule_time' => $logbook->schedule 
                         ? $logbook->schedule->start_time . ' - ' . $logbook->schedule->end_time
-                        : 'N/A',
+                        : ($logbook->scheduleOverride ? $logbook->scheduleOverride->start_time . ' - ' . $logbook->scheduleOverride->end_time : 'N/A'),
                     'login' => $logbook->login,
                     'logout' => $logbook->logout ?? '-',
                     'duration' => $this->calculateDuration($logbook->login, $logbook->logout),
@@ -236,7 +238,7 @@ class LogbookController extends Controller
     public function getLogbookData(Request $request)
     {
         try {
-            $query = Logbook::with(['user', 'room', 'course', 'schedule']);
+            $query = Logbook::with(['user', 'room', 'course', 'schedule', 'scheduleOverride.courseClass']);
 
             // Filter Period
             if ($request->period === 'week') {
@@ -291,9 +293,13 @@ class LogbookController extends Controller
                     'name' => $log->user->name ?? '-',
                     'nim' => $log->user->nim ?? '-',
                     'course' => $log->course->course_name ?? '-',
-                    'class' => $log->schedule->courseClass->class_name ?? '-',
+                    'class' => $log->schedule 
+                        ? ($log->schedule->courseClass->class_name ?? '-')
+                        : ($log->scheduleOverride->courseClass->class_name ?? '-'),
                     'room' => $log->room->room_name ?? '-',
-                    'schedule' => $log->schedule ? ($log->schedule->day . ' / ' . $log->schedule->start_time . ' - ' . $log->schedule->end_time) : '-',
+                    'schedule' => $log->schedule 
+                        ? ($log->schedule->day . ' / ' . $log->schedule->start_time . ' - ' . $log->schedule->end_time) 
+                        : ($log->scheduleOverride ? ($log->scheduleOverride->day . ' / ' . $log->scheduleOverride->start_time . ' - ' . $log->scheduleOverride->end_time) : '-'),
                     // ✅ FIX: Format Time Only (H:i:s)
                     'login' => $log->login ? \Carbon\Carbon::parse($log->login)->format('H:i:s') : '-',
                     'logout' => $log->logout ? \Carbon\Carbon::parse($log->logout)->format('H:i:s') : '-',

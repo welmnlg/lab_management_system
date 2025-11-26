@@ -298,7 +298,7 @@ class RoomScheduleService
         // Get overrides for this date
         $overrides = ScheduleOverride::where('room_id', $roomId)
             ->where('date', $dateCarbon->format('Y-m-d'))
-            ->whereIn('status', ['active', 'sedang_berlangsung', 'selesai'])
+            ->whereIn('status', ['active', 'dikonfirmasi', 'pindah_ruangan', 'sedang_berlangsung', 'selesai'])
             ->with(['courseClass.course', 'user'])
             ->get();
         

@@ -224,27 +224,21 @@ class DashboardApiController extends Controller
                 // 1. Cek jadwal reguler
                 $regularConflict = Schedule::where('room_id', $roomId)
                     ->where('day', $day)
+                    ->where('status', '!=', 'dibatalkan') // Tambahkan cek status dibatalkan
                     ->where(function ($query) use ($slot) {
-                        $query->whereBetween('start_time', [$slot['start'], $slot['end']])
-                            ->orWhereBetween('end_time', [$slot['start'], $slot['end']])
-                            ->orWhere(function ($q) use ($slot) {
-                                $q->where('start_time', '<=', $slot['start'])
-                                ->where('end_time', '>=', $slot['end']);
-                            });
+                        $query->where('start_time', '<', $slot['end'])
+                              ->where('end_time', '>', $slot['start']);
                     })
                     ->exists();
 
                 // 2. Cek override
                 $overrideConflict = ScheduleOverride::where('room_id', $roomId)
                     ->where('date', $date)
-                    ->where('status', 'active')
+                    ->whereIn('status', ['active', 'dikonfirmasi', 'pindah_ruangan', 'sedang_berlangsung', 'selesai']) // Cek semua status aktif
+                    ->where('status', '!=', 'cancelled')
                     ->where(function ($query) use ($slot) {
-                        $query->whereBetween('start_time', [$slot['start'], $slot['end']])
-                            ->orWhereBetween('end_time', [$slot['start'], $slot['end']])
-                            ->orWhere(function ($q) use ($slot) {
-                                $q->where('start_time', '<=', $slot['start'])
-                                ->where('end_time', '>=', $slot['end']);
-                            });
+                        $query->where('start_time', '<', $slot['end'])
+                              ->where('end_time', '>', $slot['start']);
                     })
                     ->exists();
 
@@ -344,12 +338,8 @@ class DashboardApiController extends Controller
                 ->where('date', $overrideDate->format('Y-m-d'))
                 ->where('status', 'active')
                 ->where(function ($query) use ($request) {
-                    $query->whereBetween('start_time', [$request->start_time, $request->end_time])
-                        ->orWhereBetween('end_time', [$request->start_time, $request->end_time])
-                        ->orWhere(function ($q) use ($request) {
-                            $q->where('start_time', '<=', $request->start_time)
-                            ->where('end_time', '>=', $request->end_time);
-                        });
+                    $query->where('start_time', '<', $request->end_time)
+                          ->where('end_time', '>', $request->start_time);
                 })
                 ->with(['user', 'courseClass.course'])
                 ->first();
@@ -368,6 +358,7 @@ class DashboardApiController extends Controller
                 'room_id' => $request->room_id,
                 'class_id' => $request->class_id,
                 'date' => $overrideDate->format('Y-m-d'),
+                'day' => $request->day,
                 'start_time' => $request->start_time,
                 'end_time' => $request->end_time,
                 'reason' => $request->reason ?? "Kelas ganti",
@@ -451,12 +442,8 @@ private function getWeekInfo($date)
         $conflictSchedule = Schedule::where('room_id', $roomId)
             ->where('day', $day)
             ->where(function ($query) use ($startTime, $endTime) {
-                $query->whereBetween('start_time', [$startTime, $endTime])
-                    ->orWhereBetween('end_time', [$startTime, $endTime])
-                    ->orWhere(function ($q) use ($startTime, $endTime) {
-                        $q->where('start_time', '<=', $startTime)
-                        ->where('end_time', '>=', $endTime);
-                    });
+                $query->where('start_time', '<', $endTime)
+                      ->where('end_time', '>', $startTime);
             })
             ->with(['user', 'room', 'courseClass.course'])
             ->first();

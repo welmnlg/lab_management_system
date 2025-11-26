@@ -160,7 +160,9 @@ class ScheduleController extends Controller
                     'end_time' => $schedule->end_time,
                     'status' => $schedule->status,
                     'confirmed_at' => $schedule->confirmed_at,
-                    'is_override' => false
+                    'is_override' => false,
+                    'child_override' => ($schedule->status == 'pindah_ruangan' && isset($override) && $override) ? true : false,
+                    'schedule_override_id' => null
                 ];
 
                 // 2. Check for Override (Pindah Ruangan)
@@ -188,7 +190,9 @@ class ScheduleController extends Controller
                             'status' => $override->status === 'active' ? 'sedang_berlangsung' : $override->status,
                             'confirmed_at' => $schedule->confirmed_at,
                             'is_override' => true,
-                            'override_id' => $override->id
+                            'override_id' => $override->id,
+                            'child_override' => false,
+                            'schedule_override_id' => $override->schedule_override_id
                         ];
                     }
                 }
@@ -199,39 +203,71 @@ class ScheduleController extends Controller
 
         // 3. Ambil Kelas Ganti (schedule_id IS NULL)
         $substituteClasses = \App\Models\ScheduleOverride::where('user_id', auth()->id())
-            ->whereNull('schedule_id') // Hanya yang murni kelas ganti
+            ->whereNull('schedule_id') // Hanya yang murni kelas ganti (Top Level)
+            ->whereNull('schedule_override_id') // Bukan child override
             ->whereBetween('date', [
                 now()->startOfWeek(),
                 now()->startOfWeek()->addDays(4)
             ])
-            ->whereIn('status', ['active', 'sedang_berlangsung', 'selesai'])
-            ->with(['room', 'courseClass.course'])
+            // Fetch all relevant statuses
+            ->whereIn('status', ['active', 'dikonfirmasi', 'sedang_berlangsung', 'selesai', 'pindah_ruangan', 'cancelled'])
+            ->with(['room', 'courseClass.course', 'childOverride.room']) // Eager load child override
             ->get();
 
         foreach ($substituteClasses as $sub) {
             $day = $sub->day;
             
             if (in_array($day, $days)) {
+                
+                // DATA UTAMA (Parent)
                 $courseName = $sub->courseClass && $sub->courseClass->course ? $sub->courseClass->course->course_name : 'N/A';
                 $className = $sub->courseClass ? $sub->courseClass->class_name : 'N/A';
-                $roomName = $sub->room ? $sub->room->room_name : 'N/A';
-
+                
+                // 1. Add Parent Substitute Class
                 $grouped[$day][] = [
-                    'schedule_id' => null, // Penanda ini kelas ganti murni
+                    'schedule_id' => null,
                     'course_name' => $courseName,
                     'class_name' => $className,
-                    'room_name' => $roomName,
+                    'room_name' => $sub->room ? $sub->room->room_name : 'N/A',
                     'room_id' => $sub->room_id,
                     'day' => $sub->day,
                     'time_slot' => $this->formatTimeSlot($sub->start_time, $sub->end_time),
                     'start_time' => $sub->start_time,
                     'end_time' => $sub->end_time,
-                    'status' => $sub->status === 'active' ? 'sedang_berlangsung' : $sub->status,
-                    'confirmed_at' => null, // Biasanya null kalau baru dibuat
+                    'status' => $sub->status, // active, dikonfirmasi, sedang_berlangsung, selesai, pindah_ruangan, cancelled
+                    'confirmed_at' => null,
                     'is_override' => true,
-                    'is_substitute' => true, // Flag khusus
-                    'override_id' => $sub->id
+                    'is_substitute' => true,
+                    'override_id' => $sub->id,
+                    'child_override' => $sub->childOverride ? true : false,
+                    'schedule_override_id' => $sub->schedule_override_id
                 ];
+
+                // 2. Check for Child Override (Pindah Ruangan)
+                if ($sub->status == 'pindah_ruangan' && $sub->childOverride) {
+                    $child = $sub->childOverride;
+                    $grouped[$day][] = [
+                        'schedule_id' => null,
+                        'course_name' => $courseName,
+                        'class_name' => $className,
+                        'room_name' => $child->room ? $child->room->room_name : 'N/A',
+                        'room_id' => $child->room_id,
+                        'day' => $child->day,
+                        'time_slot' => $this->formatTimeSlot($child->start_time, $child->end_time),
+                        'start_time' => $child->start_time,
+                        'end_time' => $child->end_time,
+                        'status' => $child->status === 'active' ? 'sedang_berlangsung' : $child->status, // Child active = waiting for QR (sedang berlangsung contextually or menungggu scan) -> let's keep it 'active' or map to 'dikonfirmasi' logic? 
+                        // Actually for moved room, 'active' usually means 'Menunggu Scan QR' in frontend logic if we reuse 'dikonfirmasi' logic or 'active' logic.
+                        // Let's pass raw status and handle in frontend.
+                        'confirmed_at' => null,
+                        'is_override' => true,
+                        'is_substitute' => true,
+                        'is_substitute' => true,
+                        'override_id' => $child->id,
+                        'child_override' => false,
+                        'schedule_override_id' => $child->schedule_override_id
+                    ];
+                }
             }
         }
 
@@ -438,6 +474,13 @@ class ScheduleController extends Controller
                 ->where('is_active', true)
                 ->update(['is_active' => false, 'ended_at' => now()]);
 
+            \App\Models\RoomAccessLog::where('user_id', $user->user_id ?? $user->id)
+                ->where('room_id', $override->room_id)
+                ->whereNull('exit_time')
+                ->latest()
+                ->first()
+                ?->update(['exit_time' => now()]);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Kelas ganti berhasil diselesaikan',
@@ -452,6 +495,77 @@ class ScheduleController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menyelesaikan kelas ganti',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Confirm override (Konfirmasi Kelas Ganti)
+     * Route: POST /api/schedules/override/{id}/confirm
+     */
+    public function confirmOverride($id)
+    {
+        try {
+            $user = Auth::user();
+
+            $override = \App\Models\ScheduleOverride::where('id', $id)
+                ->where('user_id', $user->user_id ?? $user->id)
+                ->firstOrFail();
+
+            if ($override->status !== 'active') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Jadwal tidak dapat dikonfirmasi'
+                ], 400);
+            }
+
+            $override->update([
+                'status' => 'dikonfirmasi'
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Kelas ganti berhasil dikonfirmasi',
+                'data' => $override
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengkonfirmasi kelas ganti',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Cancel override (Batalkan Kelas Ganti)
+     * Route: POST /api/schedules/override/{id}/cancel
+     */
+    public function cancelOverride($id)
+    {
+        try {
+            $user = Auth::user();
+
+            $override = \App\Models\ScheduleOverride::where('id', $id)
+                ->where('user_id', $user->user_id ?? $user->id)
+                ->firstOrFail();
+
+            $override->update([
+                'status' => 'cancelled' // Menggunakan 'cancelled' sesuai enum
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Kelas ganti berhasil dibatalkan',
+                'data' => $override
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal membatalkan kelas ganti',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -493,6 +607,13 @@ class ScheduleController extends Controller
                         ->where('is_active', true)
                         ->update(['is_active' => false, 'ended_at' => now()]);
 
+                    // Update RoomAccessLog exit_time
+                    \App\Models\RoomAccessLog::where('user_id', $user->user_id ?? $user->id)
+                        ->where('room_id', $override->room_id)
+                        ->whereNull('exit_time')
+                        ->latest()
+                        ->first()
+                        ?->update(['exit_time' => now()]);
                         
                     return response()->json([
                         'success' => true,
@@ -528,6 +649,18 @@ class ScheduleController extends Controller
             $schedule->completed_at = now();
             $schedule->save();
 
+            \App\Models\RoomOccupancyStatus::where('room_id', $schedule->room_id)
+                ->where('is_active', true)
+                ->update(['is_active' => false, 'ended_at' => now()]);
+
+            // Update RoomAccessLog exit_time
+            \App\Models\RoomAccessLog::where('user_id', $user->user_id ?? $user->id)
+                ->where('room_id', $schedule->room_id)
+                ->whereNull('exit_time')
+                ->latest()
+                ->first()
+                ?->update(['exit_time' => now()]);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Jadwal berhasil diselesaikan',
@@ -554,8 +687,35 @@ class ScheduleController extends Controller
     public function moveToRoom(Request $request, $id)
     {
         try {
-            $user = Auth::user();
+            $request->validate([
+                'reason' => 'nullable|string'
+            ]);
 
+            $user = Auth::user();
+            $reason = $request->reason;
+
+            // CHECK IF THIS IS AN OVERRIDE (SUBSTITUTE CLASS)
+            if (str_starts_with($id, 'override-')) {
+                $overrideId = str_replace('override-', '', $id);
+                $parentOverride = \App\Models\ScheduleOverride::where('id', $overrideId)
+                    ->where('user_id', $user->user_id ?? $user->id)
+                    ->firstOrFail();
+
+                // Update Parent Status to pindah_ruangan
+                // The actual new room assignment (child override) will be handled by QR Scan
+                $parentOverride->update([
+                    'status' => 'pindah_ruangan',
+                    'reason' => $reason
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Status berubah menjadi Pindah Ruangan. Silakan scan QR di ruangan baru.',
+                    'data' => $parentOverride
+                ]);
+            }
+
+            // REGULAR SCHEDULE LOGIC
             $schedule = Schedule::where('schedule_id', $id)
                 ->where('user_id', $user->user_id ?? $user->id)
                 ->firstOrFail();
