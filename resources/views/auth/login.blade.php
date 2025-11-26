@@ -51,7 +51,7 @@
                     @enderror
                 </div>
                 <div class="text-right">
-                    <button type="button" onclick="openModal('forgot-password-modal')" class="text-sm text-white/80 hover:text-white hover:underline transition">
+                    <button type="button" onclick="openModalForgotPassword()" class="text-sm text-white/80 hover:text-white hover:underline transition">
                         Lupa Kata Sandi?
                     </button>
                 </div>
@@ -67,90 +67,758 @@
 @endsection
 
 @section('modals')
-{{-- Modal 1: lupa password --}}
+{{-- Modal 1: Input Email untuk Lupa Password --}}
 <div id="forgot-password-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden p-4">
     <div class="bg-white rounded-xl shadow-xl w-full max-w-md transform transition-all overflow-hidden">
         <div class="bg-gradient-to-r from-blue-900 to-red-700 p-4 flex justify-between items-center">
             <h2 class="text-xl font-bold text-white">Lupa Kata Sandi</h2>
-            <button onclick="closeModal('forgot-password-modal')" class="text-2xl font-bold text-white hover:text-gray-200">&times;</button>
+            <button onclick="closeModalForgotPassword()" class="text-2xl font-bold text-white hover:text-gray-200">&times;</button>
         </div>
         <div class="p-8">
-             <p class="text-gray-600 mb-4">Masukkan Alamat E-mail agar kami dapat mengirimkan kode untuk verifikasi</p>
-            <input type="email" placeholder="Masukkan Alamat E-mail" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-            <button onclick="openModal('verification-code-modal'); closeModal('forgot-password-modal')" class="w-full mt-6 py-3 bg-gradient-to-r from-blue-900 to-red-700 text-white font-semibold rounded-lg hover:opacity-90">
+            <p class="text-gray-600 mb-4">Masukkan Alamat E-mail agar kami dapat mengirimkan kode untuk verifikasi</p>
+            <div class="relative">
+                <input type="email" id="forgot-email" placeholder="Masukkan Alamat E-mail" 
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                <p id="forgot-email-error" class="mt-2 text-sm text-red-500 hidden"></p>
+            </div>
+            <button onclick="sendOTP()" id="btn-send-otp"
+                class="w-full mt-6 py-3 bg-gradient-to-r from-blue-900 to-red-700 text-white font-semibold rounded-lg hover:opacity-90 transition">
                 Lanjut
             </button>
         </div>
     </div>
 </div>
-{{-- Modal 2: Kode verifikasi --}}
+
+{{-- Modal 2: Input Kode OTP --}}
 <div id="verification-code-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden p-4">
     <div class="bg-white rounded-xl shadow-xl w-full max-w-md transform transition-all overflow-hidden">
         <div class="bg-gradient-to-r from-blue-900 to-red-700 p-4 flex justify-between items-center">
-            <h2 class="text-xl font-bold text-white">Lupa Kata Sandi</h2>
-            <button onclick="closeModal('verification-code-modal')" class="text-2xl font-bold text-white hover:text-gray-200">&times;</button>
+            <h2 class="text-xl font-bold text-white">Verifikasi Kode OTP</h2>
+            <button onclick="closeModalOTP()" class="text-2xl font-bold text-white hover:text-gray-200">&times;</button>
         </div>
         <div class="p-8">
             <p class="text-gray-600 mb-6">Masukkan kode yang dikirimkan ke Alamat E-mail</p>
-            <div class="flex justify-center gap-2">
-                @for ($i = 0; $i < 6; $i++)
-                    <input type="text" maxlength="1" class="w-12 h-12 text-center text-2xl border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                @endfor
+            
+            {{-- Countdown Timer --}}
+            <div class="text-center mb-4">
+                <p class="text-sm text-gray-600">Kode berlaku dalam:</p>
+                <div class="text-3xl font-bold text-blue-900" id="countdown-timer">10:00</div>
+                <p id="timer-expired-msg" class="text-sm text-red-500 hidden mt-2">⏱️ Kode OTP telah kadaluarsa</p>
             </div>
-            <button onclick="openModal('new-password-modal'); closeModal('verification-code-modal')" class="w-full mt-6 py-3 bg-gradient-to-r from-blue-900 to-red-700 text-white font-semibold rounded-lg hover:opacity-90">
-                Lanjut
-            </button>
+
+            {{-- OTP Input --}}
+            <div class="flex justify-center gap-2 mb-6">
+                <input type="text" maxlength="1" class="otp-input w-12 h-12 text-center text-2xl border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                <input type="text" maxlength="1" class="otp-input w-12 h-12 text-center text-2xl border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                <input type="text" maxlength="1" class="otp-input w-12 h-12 text-center text-2xl border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                <input type="text" maxlength="1" class="otp-input w-12 h-12 text-center text-2xl border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                <input type="text" maxlength="1" class="otp-input w-12 h-12 text-center text-2xl border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                <input type="text" maxlength="1" class="otp-input w-12 h-12 text-center text-2xl border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+            </div>
+
+            <p id="otp-error" class="text-sm text-red-500 mb-4 hidden"></p>
+
+            {{-- Buttons --}}
+            <div class="space-y-3">
+                <button onclick="verifyOTP()" id="btn-verify-otp"
+                    class="w-full py-3 bg-gradient-to-r from-blue-900 to-red-700 text-white font-semibold rounded-lg hover:opacity-90 transition">
+                    Verifikasi
+                </button>
+                <button onclick="resendOTP()" id="btn-resend-otp"
+                    class="w-full py-3 bg-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-400 transition cursor-not-allowed"
+                    disabled>
+                    Kirim Ulang OTP (<span id="resend-countdown">60</span>s)
+                </button>
+            </div>
         </div>
     </div>
 </div>
-{{-- Modal 3: Sandi baru --}}
+
+{{-- Modal 3: Input Password Baru --}}
 <div id="new-password-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden p-4">
     <div class="bg-white rounded-xl shadow-xl w-full max-w-md transform transition-all overflow-hidden">
         <div class="bg-gradient-to-r from-blue-900 to-red-700 p-4 flex justify-between items-center">
             <h2 class="text-xl font-bold text-white">Buat Kata Sandi Baru</h2>
-            <button onclick="closeModal('new-password-modal')" class="text-2xl font-bold text-white hover:text-gray-200">&times;</button>
+            <button onclick="closeModalNewPassword()" class="text-2xl font-bold text-white hover:text-gray-200">&times;</button>
         </div>
         <div class="p-8">
             <p class="text-gray-600 mb-4 text-sm">Kata sandi akan dipakai untuk masuk ke ITLG Lab Management System</p>
             <div class="space-y-4">
-                <input type="password" placeholder="Kata sandi baru" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                <div class="text-xs text-gray-500 space-y-1">
-                    <p class="flex items-center gap-2"><svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg> 9 - 12 Karakter</p>
-                    <p class="flex items-center gap-2"><svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg> Angka</p>
-                    <p class="flex items-center gap-2"><svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg> Huruf besar dan kecil</p>
-                    <p class="flex items-center gap-2"><svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg> Karakter spesial</p>
+                {{-- Password Baru --}}
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Kata Sandi Baru</label>
+                    <input type="password" id="new-password" placeholder="Masukkan kata sandi baru" 
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    
+                    {{-- Password Strength Indicators --}}
+                    <div class="mt-3 space-y-1">
+                        <div class="flex items-center text-xs">
+                            <span id="indicator-length" class="w-3 h-3 rounded-full bg-gray-300 mr-2"></span>
+                            <span id="text-length" class="text-gray-600">Minimal 6 karakter</span>
+                        </div>
+                        <div class="flex items-center text-xs">
+                            <span id="indicator-letter" class="w-3 h-3 rounded-full bg-gray-300 mr-2"></span>
+                            <span id="text-letter" class="text-gray-600">Mengandung huruf</span>
+                        </div>
+                        <div class="flex items-center text-xs">
+                            <span id="indicator-number" class="w-3 h-3 rounded-full bg-gray-300 mr-2"></span>
+                            <span id="text-number" class="text-gray-600">Mengandung angka</span>
+                        </div>
+                        <div class="flex items-center text-xs">
+                            <span id="indicator-special" class="w-3 h-3 rounded-full bg-gray-300 mr-2"></span>
+                            <span id="text-special" class="text-gray-600">Mengandung karakter khusus (!$@%)</span>
+                        </div>
+                    </div>
+                    <p id="error-new-password" class="text-red-500 text-xs mt-2 hidden"></p>
                 </div>
-                <input type="password" placeholder="Konfirmasi kata sandi" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+
+                {{-- Konfirmasi Password --}}
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Konfirmasi Kata Sandi</label>
+                    <input type="password" id="confirm-password" placeholder="Tulis ulang kata sandi baru" 
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    <p id="error-confirm-password" class="text-red-500 text-xs mt-2 hidden"></p>
+                </div>
             </div>
-            <button onclick="closeModal('new-password-modal')" class="w-full mt-6 py-3 bg-gradient-to-r from-blue-900 to-red-700 text-white font-semibold rounded-lg hover:opacity-90">
-                Simpan
-            </button>
+
+            {{-- Buttons --}}
+            <div class="flex justify-end gap-3 pt-6">
+                <button type="button" onclick="closeModalNewPassword()" 
+                    class="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition">
+                    Batal
+                </button>
+                <button type="button" onclick="submitNewPassword()" id="btn-submit-password"
+                    class="px-4 py-2 text-sm font-semibold text-white bg-gray-400 rounded-lg cursor-not-allowed transition"
+                    disabled>
+                    Simpan
+                </button>
+            </div>
         </div>
     </div>
 </div>
+
+{{-- Modal Success --}}
+<div id="modal-success-reset" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-xl p-6 max-w-sm w-full mx-4 text-center">
+        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+        </div>
+        <h3 class="text-lg font-bold text-gray-800 mb-2">Berhasil!</h3>
+        <p class="text-gray-600 mb-6" id="success-message">Kata sandi berhasil direset. Silakan login dengan password baru.</p>
+        <button onclick="redirectToLogin()" 
+            class="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-blue-900 to-red-700 rounded-lg hover:opacity-90 transition w-full">
+            Kembali ke Login
+        </button>
+    </div>
+</div>
+
+{{-- Modal Error --}}
+<div id="modal-error-reset" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-xl p-6 max-w-sm w-full mx-4 text-center">
+        <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </div>
+        <h3 class="text-lg font-bold text-gray-800 mb-2">Gagal!</h3>
+        <p class="text-gray-600 mb-6" id="error-message">Terjadi kesalahan. Silakan coba lagi.</p>
+        <button onclick="closeModalError()" 
+            class="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-red-700 to-orange-500 rounded-lg hover:opacity-90 transition w-full">
+            Tutup
+        </button>
+    </div>
+</div>
+
 @endsection
 
 @section('scripts')
 <script>
-function togglePassword() {
-    const passwordInput = document.getElementById('password');
-    const eyeOpen = document.getElementById('eye-open');
-    const eyeClosed = document.getElementById('eye-closed');
-    if (passwordInput.type === 'password') {
-        passwordInput.type = 'text';
-        eyeOpen.classList.add('hidden');
-        eyeClosed.classList.remove('hidden');
-    } else {
-        passwordInput.type = 'password';
-        eyeOpen.classList.remove('hidden');
-        eyeClosed.classList.add('hidden');
+    // ==========================================
+    // GLOBAL VARIABLES
+    // ==========================================
+    let forgotEmail = '';
+    let otpToken = '';
+    let otpTimerInterval = null;
+    let resendTimerInterval = null;
+    let otpExpiresIn = 0;
+    let resendCountdown = 0;
+    let isPasswordValid = false;
+    let isConfirmValid = false;
+
+    // ==========================================
+    // PASSWORD TOGGLE
+    // ==========================================
+    function togglePassword() {
+        const passwordInput = document.getElementById('password');
+        const eyeOpen = document.getElementById('eye-open');
+        const eyeClosed = document.getElementById('eye-closed');
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            eyeOpen.classList.add('hidden');
+            eyeClosed.classList.remove('hidden');
+        } else {
+            passwordInput.type = 'password';
+            eyeOpen.classList.remove('hidden');
+            eyeClosed.classList.add('hidden');
+        }
+    }
+
+    // ==========================================
+    // MODAL FUNCTIONS - FORGOT PASSWORD FLOW
+    // ==========================================
+    function openModalForgotPassword() {
+        document.getElementById('forgot-password-modal').classList.remove('hidden');
+        document.getElementById('forgot-email').focus();
+        clearForgotPasswordForm();
+    }
+
+    function closeModalForgotPassword() {
+        document.getElementById('forgot-password-modal').classList.add('hidden');
+        clearForgotPasswordForm();
+    }
+
+    function clearForgotPasswordForm() {
+        document.getElementById('forgot-email').value = '';
+        document.getElementById('forgot-email-error').classList.add('hidden');
+        document.getElementById('forgot-email-error').textContent = '';
+    }
+
+    function closeModalOTP() {
+        document.getElementById('verification-code-modal').classList.add('hidden');
+        clearOTPTimer();
+        clearResendTimer();
+    }
+
+    function closeModalNewPassword() {
+        document.getElementById('new-password-modal').classList.add('hidden');
+        clearPasswordForm();
+    }
+
+    // ==========================================
+    // STEP 1: SEND OTP
+    // ==========================================
+    async function sendOTP() {
+        const email = document.getElementById('forgot-email').value.trim();
+        const errorEl = document.getElementById('forgot-email-error');
+        const btn = document.getElementById('btn-send-otp');
+
+        // Validate email
+        if (!email) {
+            showError(errorEl, 'Email harus diisi');
+            return;
+        }
+
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            showError(errorEl, 'Email tidak valid');
+            return;
+        }
+
+        // Disable button
+        btn.disabled = true;
+        btn.textContent = 'Mengirim...';
+
+        try {
+            const response = await fetch('{{ route("forgot-password.send-otp") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({ email })
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                forgotEmail = email;
+                hideError(errorEl);
+                
+                // Move to OTP verification modal
+                closeModalForgotPassword();
+                openModalOTP();
+                
+                // Start countdown - PERBAIKAN: Langsung pakai integer dari backend
+                otpExpiresIn = result.data.otp_expires_in;
+                startOTPTimer();
+                startResendTimer();
+            } else {
+                if (result.field_error) {
+                    showError(errorEl, result.message);
+                } else {
+                    showErrorModal(result.message);
+                }
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showErrorModal('Terjadi kesalahan. Silakan coba lagi.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Lanjut';
+        }
+    }
+
+    function openModalOTP() {
+        document.getElementById('verification-code-modal').classList.remove('hidden');
+        // Focus first OTP input
+        setTimeout(() => {
+            document.querySelector('.otp-input').focus();
+        }, 100);
+    }
+
+    // ==========================================
+    // OTP INPUT HANDLING
+    // ==========================================
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('otp-input')) {
+            const input = e.target;
+            
+            // Only allow digits
+            input.value = input.value.replace(/[^0-9]/g, '');
+
+            // Move to next input
+            if (input.value.length === 1) {
+                const next = input.nextElementSibling;
+                if (next && next.classList.contains('otp-input')) {
+                    next.focus();
+                }
+            }
+        }
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.target.classList.contains('otp-input')) {
+            const input = e.target;
+            
+            // Handle backspace
+            if (e.key === 'Backspace' && input.value === '') {
+                const prev = input.previousElementSibling;
+                if (prev && prev.classList.contains('otp-input')) {
+                    prev.focus();
+                }
+            }
+        }
+    });
+
+    // ==========================================
+    // STEP 2: VERIFY OTP
+    // ==========================================
+    async function verifyOTP() {
+        const otpInputs = document.querySelectorAll('.otp-input');
+        const otp = Array.from(otpInputs).map(input => input.value).join('');
+        const errorEl = document.getElementById('otp-error');
+        const btn = document.getElementById('btn-verify-otp');
+
+        if (otp.length !== 6) {
+            showError(errorEl, 'Kode OTP harus 6 digit');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Memverifikasi...';
+
+        try {
+            const response = await fetch('{{ route("forgot-password.verify-otp") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: forgotEmail,
+                    otp: otp
+                })
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                otpToken = result.data.token;
+                hideError(errorEl);
+                clearOTPTimer();
+                clearResendTimer();
+                
+                // Move to new password modal
+                closeModalOTP();
+                openModalNewPassword();
+            } else {
+                if (result.is_expired) {
+                    document.getElementById('timer-expired-msg').classList.remove('hidden');
+                    document.getElementById('countdown-timer').classList.add('hidden');
+                    enableResendButton();
+                }
+                showError(errorEl, result.message);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showErrorModal('Terjadi kesalahan. Silakan coba lagi.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Verifikasi';
+        }
+    }
+
+    // ==========================================
+    // RESEND OTP
+    // ==========================================
+    async function resendOTP() {
+        const btn = document.getElementById('btn-resend-otp');
+        
+        if (btn.disabled) return;
+
+        btn.disabled = true;
+        btn.textContent = 'Mengirim...';
+
+        try {
+            const response = await fetch('{{ route("forgot-password.resend-otp") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({ email: forgotEmail })
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                // Hide error messages
+                document.getElementById('otp-error').classList.add('hidden');
+                document.getElementById('timer-expired-msg').classList.add('hidden');
+                document.getElementById('countdown-timer').classList.remove('hidden');
+                
+                // Clear OTP inputs
+                document.querySelectorAll('.otp-input').forEach(input => input.value = '');
+                
+                // PERBAIKAN: Reset countdown dengan waktu baru dari server
+                otpExpiresIn = result.data.otp_expires_in;
+                startOTPTimer();
+                startResendTimer();
+                
+                document.querySelector('.otp-input').focus();
+                
+                // PERBAIKAN: Reset button text setelah berhasil
+                btn.textContent = 'Kirim Ulang OTP';
+            } else {
+                showErrorModal(result.message);
+                btn.textContent = 'Kirim Ulang OTP';
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showErrorModal('Terjadi kesalahan. Silakan coba lagi.');
+            btn.textContent = 'Kirim Ulang OTP';
+        }
+    }
+
+    // ==========================================
+    // TIMER FUNCTIONS
+    // ==========================================
+    function startOTPTimer() {
+        clearOTPTimer();
+        
+        otpTimerInterval = setInterval(() => {
+            otpExpiresIn--;
+            
+            // PERBAIKAN: Format waktu tanpa desimal
+            const minutes = Math.floor(otpExpiresIn / 60);
+            const seconds = otpExpiresIn % 60;
+            const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            document.getElementById('countdown-timer').textContent = timeString;
+            
+            if (otpExpiresIn <= 0) {
+                clearOTPTimer();
+                document.getElementById('timer-expired-msg').classList.remove('hidden');
+                document.getElementById('countdown-timer').classList.add('hidden');
+                document.getElementById('btn-verify-otp').disabled = true;
+                enableResendButton();
+        }
+    }, 1000);
+}
+
+function clearOTPTimer() {
+    if (otpTimerInterval) {
+        clearInterval(otpTimerInterval);
+        otpTimerInterval = null;
     }
 }
-function openModal(modalId) {
-    document.getElementById(modalId).classList.remove('hidden');
+
+function startResendTimer() {
+    clearResendTimer();
+    
+    resendCountdown = 60;
+    const btn = document.getElementById('btn-resend-otp');
+    const countdownSpan = document.getElementById('resend-countdown');
+    
+    // PERBAIKAN: Disable button dengan styling abu-abu
+    btn.disabled = true;
+    btn.className = 'w-full py-3 bg-gray-300 text-gray-700 font-semibold rounded-lg cursor-not-allowed transition';
+    
+    resendTimerInterval = setInterval(() => {
+        resendCountdown--;
+        countdownSpan.textContent = resendCountdown;
+        
+        if (resendCountdown <= 0) {
+            clearResendTimer();
+            enableResendButton();
+        }
+    }, 1000);
 }
-function closeModal(modalId) {
-    document.getElementById(modalId).classList.add('hidden');
+
+function clearResendTimer() {
+    if (resendTimerInterval) {
+        clearInterval(resendTimerInterval);
+        resendTimerInterval = null;
+    }
+}
+
+// PERBAIKAN: Function untuk enable button resend dengan styling gradasi
+function enableResendButton() {
+    const btn = document.getElementById('btn-resend-otp');
+    btn.disabled = false;
+    btn.className = 'w-full py-3 bg-gradient-to-r from-blue-700 to-teal-600 text-white font-semibold rounded-lg hover:opacity-90 transition';
+    btn.innerHTML = 'Kirim Ulang OTP';
+}
+
+// ==========================================
+// PASSWORD VALIDATION
+// ==========================================
+function openModalNewPassword() {
+    document.getElementById('new-password-modal').classList.remove('hidden');
+    resetPasswordValidation();
+    setTimeout(() => {
+        document.getElementById('new-password').focus();
+    }, 100);
+}
+
+function clearPasswordForm() {
+    document.getElementById('new-password').value = '';
+    document.getElementById('confirm-password').value = '';
+    resetPasswordValidation();
+}
+
+function resetPasswordValidation() {
+    isPasswordValid = false;
+    isConfirmValid = false;
+    
+    // Reset indicators
+    const indicators = ['length', 'letter', 'number', 'special'];
+    indicators.forEach(id => {
+        document.getElementById(`indicator-${id}`).className = 'w-3 h-3 rounded-full bg-gray-300 mr-2';
+        document.getElementById(`text-${id}`).className = 'text-gray-600';
+    });
+    
+    // Hide errors
+    document.getElementById('error-new-password').classList.add('hidden');
+    document.getElementById('error-confirm-password').classList.add('hidden');
+    
+    // Disable submit button
+    updateSubmitButton();
+}
+
+// Real-time validation untuk password baru
+document.addEventListener('DOMContentLoaded', function() {
+    const newPasswordInput = document.getElementById('new-password');
+    const confirmPasswordInput = document.getElementById('confirm-password');
+    
+    if (newPasswordInput) {
+        newPasswordInput.addEventListener('input', function() {
+            validateNewPassword(this.value);
+            validateConfirmPassword();
+        });
+    }
+    
+    if (confirmPasswordInput) {
+        confirmPasswordInput.addEventListener('input', function() {
+            validateConfirmPassword();
+        });
+    }
+});
+
+function validateNewPassword(password) {
+    const errorEl = document.getElementById('error-new-password');
+    
+    // Check length (min 6 characters)
+    const isLengthValid = password.length >= 6;
+    updateIndicator('length', isLengthValid);
+    
+    // Check letter
+    const hasLetter = /[a-zA-Z]/.test(password);
+    updateIndicator('letter', hasLetter);
+    
+    // Check number
+    const hasNumber = /[0-9]/.test(password);
+    updateIndicator('number', hasNumber);
+    
+    // Check special character (!$@%)
+    const hasSpecial = /[!$@%]/.test(password);
+    updateIndicator('special', hasSpecial);
+    
+    // Overall validation
+    isPasswordValid = isLengthValid && hasLetter && hasNumber && hasSpecial;
+    
+    if (password.length === 0) {
+        hideError(errorEl);
+    } else if (!isPasswordValid) {
+        showError(errorEl, 'Password tidak memenuhi semua persyaratan');
+    } else {
+        hideError(errorEl);
+    }
+    
+    updateSubmitButton();
+}
+
+function validateConfirmPassword() {
+    const newPassword = document.getElementById('new-password').value;
+    const confirmPassword = document.getElementById('confirm-password').value;
+    const errorEl = document.getElementById('error-confirm-password');
+    
+    if (confirmPassword.length === 0) {
+        hideError(errorEl);
+        isConfirmValid = false;
+    } else if (confirmPassword !== newPassword) {
+        showError(errorEl, 'Konfirmasi password tidak cocok');
+        isConfirmValid = false;
+    } else {
+        hideError(errorEl);
+        isConfirmValid = true;
+    }
+    
+    updateSubmitButton();
+}
+
+function updateIndicator(type, isValid) {
+    const indicator = document.getElementById(`indicator-${type}`);
+    const text = document.getElementById(`text-${type}`);
+    
+    if (isValid) {
+        indicator.className = 'w-3 h-3 rounded-full bg-green-500 mr-2';
+        text.className = 'text-green-600';
+    } else {
+        indicator.className = 'w-3 h-3 rounded-full bg-red-500 mr-2';
+        text.className = 'text-red-600';
+    }
+}
+
+function updateSubmitButton() {
+    const btn = document.getElementById('btn-submit-password');
+    
+    if (isPasswordValid && isConfirmValid) {
+        btn.disabled = false;
+        btn.className = 'px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-blue-900 to-red-700 rounded-lg hover:opacity-90 transition';
+    } else {
+        btn.disabled = true;
+        btn.className = 'px-4 py-2 text-sm font-semibold text-white bg-gray-400 rounded-lg cursor-not-allowed transition';
+    }
+}
+
+// ==========================================
+// STEP 3: SUBMIT NEW PASSWORD
+// ==========================================
+async function submitNewPassword() {
+    const newPassword = document.getElementById('new-password').value;
+    const confirmPassword = document.getElementById('confirm-password').value;
+    const btn = document.getElementById('btn-submit-password');
+    
+    // Final validation
+    if (!isPasswordValid || !isConfirmValid) {
+        showErrorModal('Harap lengkapi semua field dengan benar.');
+        return;
+    }
+    
+    btn.disabled = true;
+    btn.textContent = 'Menyimpan...';
+    
+    try {
+        const response = await fetch('{{ route("forgot-password.reset") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({
+                email: forgotEmail,
+                token: otpToken,
+                password: newPassword,
+                password_confirmation: confirmPassword
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            closeModalNewPassword();
+            showSuccessModal(result.message);
+        } else {
+            if (result.errors) {
+                let errorMessage = '';
+                for (let key in result.errors) {
+                    errorMessage += result.errors[key][0] + '\n';
+                }
+                showErrorModal(errorMessage || result.message);
+            } else {
+                showErrorModal(result.message);
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showErrorModal('Terjadi kesalahan. Silakan coba lagi.');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Simpan';
+        updateSubmitButton();
+    }
+}
+
+// ==========================================
+// HELPER FUNCTIONS
+// ==========================================
+function showError(element, message) {
+    element.textContent = message;
+    element.classList.remove('hidden');
+}
+
+function hideError(element) {
+    element.classList.add('hidden');
+    element.textContent = '';
+}
+
+function showSuccessModal(message) {
+    document.getElementById('success-message').textContent = message;
+    document.getElementById('modal-success-reset').classList.remove('hidden');
+    document.getElementById('modal-success-reset').classList.add('flex');
+}
+
+function showErrorModal(message) {
+    document.getElementById('error-message').textContent = message;
+    document.getElementById('modal-error-reset').classList.remove('hidden');
+    document.getElementById('modal-error-reset').classList.add('flex');
+}
+
+function closeModalError() {
+    document.getElementById('modal-error-reset').classList.add('hidden');
+    document.getElementById('modal-error-reset').classList.remove('flex');
+}
+
+function redirectToLogin() {
+    // Clear all modals
+    closeModalNewPassword();
+    document.getElementById('modal-success-reset').classList.add('hidden');
+    document.getElementById('modal-success-reset').classList.remove('flex');
+    
+    // Reset all variables
+    forgotEmail = '';
+    otpToken = '';
+    clearOTPTimer();
+    clearResendTimer();
+    
+    // Reload page to go back to login
+    window.location.reload();
 }
 </script>
 @endsection

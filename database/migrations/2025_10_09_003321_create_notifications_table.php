@@ -16,6 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('user_id');
             $table->unsignedBigInteger('schedule_id'); // menyimpan jadwal terkait
             $table->text('message'); // Isi pesan notifikasi
+            $table->string('title')->default('Pengingat Jadwal');
             $table->enum('class_status', ['waiting', 'confirmed', 'canceled'])->default('waiting');
             $table->timestamp('notified_at')->nullable(); // waktu notif muncul
             $table->timestamp('confirmed_at')->nullable(); // waktu user konfirmasi

@@ -403,4 +403,27 @@ class UserController extends Controller
             ], 500);
         }
     }
+
+    public function getUsers(Request $request)
+    {
+        try {
+            $role = $request->get('role', 'aslab');
+            
+            $users = User::whereHas('roles', function($q) use ($role) {
+                $q->where('status', $role);
+            })->select('user_id', 'name', 'nim', 'email')
+            ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $users
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error getting users: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data user'
+            ], 500);
+        }
+    }
 }
