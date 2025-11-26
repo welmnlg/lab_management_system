@@ -11,18 +11,19 @@ class ScheduleOverride extends Model
 
     protected $fillable = [
         'schedule_id',
+        'schedule_override_id',
         'user_id',
         'room_id',
         'date',
         'day',
         'start_time',
         'end_time',
+        'class_id',
+        'status',
     ];
 
     protected $casts = [
         'date' => 'date',
-        'start_time' => 'datetime:H:i:s',
-        'end_time' => 'datetime:H:i:s',
     ];
 
     // Relasi ke Schedule (original schedule yang di-override)
@@ -65,5 +66,17 @@ class ScheduleOverride extends Model
     public function scopeBySchedule($query, $scheduleId)
     {
         return $query->where('schedule_id', $scheduleId);
+    }
+
+    // Recursive Relationship: Parent Override
+    public function parentOverride()
+    {
+        return $this->belongsTo(ScheduleOverride::class, 'schedule_override_id');
+    }
+
+    // Recursive Relationship: Child Override (Moved Room)
+    public function childOverride()
+    {
+        return $this->hasOne(ScheduleOverride::class, 'schedule_override_id');
     }
 }

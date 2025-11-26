@@ -28,10 +28,13 @@ Route::middleware(['auth'])->group(function () {
         return view('scanqr');
     })->name('scanqr');
     
-    // Logbook
+    // Logbook API & Export
     Route::get('/logbook', function () {
         return view('logbook');
     })->name('logbook');
+    Route::get('/api/logbook/data', [App\Http\Controllers\LogbookController::class, 'getLogbookData'])->name('api.logbook.data');
+    Route::get('/api/logbook/filters', [App\Http\Controllers\LogbookController::class, 'getFilterOptions'])->name('api.logbook.filters');
+    Route::get('/logbook/export', [App\Http\Controllers\LogbookController::class, 'exportLogbook'])->name('logbook.export');
 
     // Ambil Jadwal - UNTUK ASLAB (User biasa)
     Route::get('/ambil-jadwal', function () {
@@ -109,8 +112,29 @@ Route::middleware(['auth'])->group(function () {
         // Complete schedule
         Route::post('/{id}/complete', [ScheduleController::class, 'completeSchedule']);
         
+        // Complete override (Kelas Ganti)
+        Route::post('/override/{id}/complete', [ScheduleController::class, 'completeOverride']);
+        
+        // Confirm override
+        Route::post('/override/{id}/confirm', [ScheduleController::class, 'confirmOverride']);
+        
+        // Cancel override
+        Route::post('/override/{id}/cancel', [ScheduleController::class, 'cancelOverride']);
+        
         // Move to different room
         Route::post('/{id}/move-room', [ScheduleController::class, 'moveToRoom']);
+    });
+
+    // ========================================
+    // DASHBOARD API ROUTES
+    // ========================================
+    Route::prefix('api/dashboard')->group(function () {
+        Route::get('/rooms/status', [App\Http\Controllers\Api\DashboardApiController::class, 'getRoomsStatus']);
+        Route::get('/rooms/{roomId}/schedules', [App\Http\Controllers\Api\DashboardApiController::class, 'getRoomSchedules']);
+        Route::get('/rooms/{roomId}/calendar', [App\Http\Controllers\Api\DashboardApiController::class, 'getRoomWeeklyCalendar']);
+        Route::get('/form-data', [App\Http\Controllers\Api\DashboardApiController::class, 'getFormData']);
+        Route::get('/available-slots', [App\Http\Controllers\Api\DashboardApiController::class, 'getAvailableTimeSlots']);
+        Route::post('/schedule-override', [App\Http\Controllers\Api\DashboardApiController::class, 'createScheduleOverride']);
     });
 });
 
