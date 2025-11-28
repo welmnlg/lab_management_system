@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\Lab\QrVerificationController;
+use App\Http\Controllers\Api\ScheduleController;
 use Illuminate\Support\Facades\Route;
 
 // Root route
@@ -27,10 +28,13 @@ Route::middleware(['auth'])->group(function () {
         return view('scanqr');
     })->name('scanqr');
     
-    // Logbook
+    // Logbook API & Export
     Route::get('/logbook', function () {
         return view('logbook');
     })->name('logbook');
+    Route::get('/api/logbook/data', [App\Http\Controllers\LogbookController::class, 'getLogbookData'])->name('api.logbook.data');
+    Route::get('/api/logbook/filters', [App\Http\Controllers\LogbookController::class, 'getFilterOptions'])->name('api.logbook.filters');
+    Route::get('/logbook/export', [App\Http\Controllers\LogbookController::class, 'exportLogbook'])->name('logbook.export');
 
     // Ambil Jadwal - UNTUK ASLAB (User biasa)
     Route::get('/ambil-jadwal', function () {
@@ -75,6 +79,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::post('/profile', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
     
     // ========================================
     // KELOLA MATA KULIAH (Hanya untuk Admin/BPH)
@@ -90,6 +95,46 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/qr-verify', [QrVerificationController::class, 'verifyQrCode'])->name('api.lab.qr-verify');
         Route::post('/confirm-entry', [QrVerificationController::class, 'confirmEntry'])->name('api.lab.confirm-entry');
         Route::post('/exit-room', [QrVerificationController::class, 'exitRoom'])->name('api.lab.exit-room');
+    });
+    Route::prefix('api/schedules')->group(function () {
+        // Get user's schedules
+        Route::get('/my-schedules', [ScheduleController::class, 'getMySchedules']);
+        
+        // Get schedule detail
+        Route::get('/{id}', [ScheduleController::class, 'getScheduleDetail']);
+        
+        // Cancel schedule
+        Route::post('/{id}/cancel', [ScheduleController::class, 'cancelSchedule']);
+        
+        // Confirm schedule
+        Route::post('/{id}/confirm', [ScheduleController::class, 'confirmSchedule']);
+        
+        // Complete schedule
+        Route::post('/{id}/complete', [ScheduleController::class, 'completeSchedule']);
+        
+        // Complete override (Kelas Ganti)
+        Route::post('/override/{id}/complete', [ScheduleController::class, 'completeOverride']);
+        
+        // Confirm override
+        Route::post('/override/{id}/confirm', [ScheduleController::class, 'confirmOverride']);
+        
+        // Cancel override
+        Route::post('/override/{id}/cancel', [ScheduleController::class, 'cancelOverride']);
+        
+        // Move to different room
+        Route::post('/{id}/move-room', [ScheduleController::class, 'moveToRoom']);
+    });
+
+    // ========================================
+    // DASHBOARD API ROUTES
+    // ========================================
+    Route::prefix('api/dashboard')->group(function () {
+        Route::get('/rooms/status', [App\Http\Controllers\Api\DashboardApiController::class, 'getRoomsStatus']);
+        Route::get('/rooms/{roomId}/schedules', [App\Http\Controllers\Api\DashboardApiController::class, 'getRoomSchedules']);
+        Route::get('/rooms/{roomId}/calendar', [App\Http\Controllers\Api\DashboardApiController::class, 'getRoomWeeklyCalendar']);
+        Route::get('/form-data', [App\Http\Controllers\Api\DashboardApiController::class, 'getFormData']);
+        Route::get('/available-slots', [App\Http\Controllers\Api\DashboardApiController::class, 'getAvailableTimeSlots']);
+        Route::post('/schedule-override', [App\Http\Controllers\Api\DashboardApiController::class, 'createScheduleOverride']);
     });
 });
 

@@ -18,12 +18,57 @@ class Schedule extends Model
         'day',
         'start_time',
         'end_time',
+        'status',           // ← ADD
+        'confirmed_at',     // ← ADD
+        'cancelled_at',     // ← ADD
+        'started_at',       // ← ADD
+        'completed_at',     // ← ADD
+        'moved_at',         // ← ADD
     ];
 
     protected $casts = [
         'start_time' => 'string',
         'end_time' => 'string',
+        'confirmed_at' => 'datetime',   // ← ADD
+        'cancelled_at' => 'datetime',   // ← ADD
+        'started_at' => 'datetime',     // ← ADD
+        'completed_at' => 'datetime',   // ← ADD
+        'moved_at' => 'datetime',       // ← ADD
     ];
+
+    // ✅ Status Validation Methods
+    public function canConfirm(): bool
+    {
+        // Can confirm only if status is 'terjadwal'
+        return $this->status === 'terjadwal';
+    }
+
+    public function canScanQR(): bool
+    {
+        // Can scan only if confirmed or pindah_ruangan
+        return in_array($this->status, ['dikonfirmasi', 'pindah_ruangan']);
+    }
+
+    public function hasExpiredConfirmationWindow(): bool
+    {
+        $now = \Carbon\Carbon::now();
+        $startTime = \Carbon\Carbon::parse($this->start_time);
+        
+        // If more than 15 minutes after start time
+        return $now->diffInMinutes($startTime, false) > 15;
+    }
+
+    public function isConfirmationWindowOpen(): bool
+    {
+        $now = \Carbon\Carbon::now();
+        $startTime = \Carbon\Carbon::parse($this->start_time);
+        
+        // 1 hour before start until 15 min after start
+        $oneHourBefore = $startTime->copy()->subHours(1);
+        $fifteenMinAfter = $startTime->copy()->addMinutes(15);
+        
+        return $now->isBetween($oneHourBefore, $fifteenMinAfter);
+    }
 
     // Relasi ke CourseClass
     public function courseClass()

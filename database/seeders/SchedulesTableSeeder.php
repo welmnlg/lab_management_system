@@ -93,7 +93,7 @@ class SchedulesTableSeeder extends Seeder
                 'user_id' => 3, // Kim Mingyu
                 'room_id' => 2, // Jaringan 2
                 'day' => 'Senin',
-                'start_time' => '08:00:00',
+                'start_time' => '07:30:00',
                 'end_time' => '09:40:00',
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -137,8 +137,8 @@ class SchedulesTableSeeder extends Seeder
                 'user_id' => 3, // Kim Mingyu
                 'room_id' => 2, // Jaringan 2
                 'day' => 'Senin',
-                'start_time' => '14:40:00',
-                'end_time' => '16:20:00',
+                'start_time' => '20:50:00',
+                'end_time' => '23:20:00',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],

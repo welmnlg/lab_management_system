@@ -11,6 +11,8 @@ use App\Http\Controllers\Lab\QrVerificationController;
 |--------------------------------------------------------------------------
 */
 
+
+
 Route::prefix('dashboard')->group(function () {
     
     // Status Ruangan
