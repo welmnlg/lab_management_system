@@ -33,13 +33,13 @@ class RoomScheduleService
         
         // Get all schedules for this room
         $regularSchedules = Schedule::where('room_id', $roomId)
-            ->with(['courseClass.course', 'user'])
+            ->with(['class.course', 'user'])  // Fixed: use class instead of courseClass
             ->get();
         
         // Get schedule overrides for this week
         $overrides = ScheduleOverride::where('room_id', $roomId)
             ->whereBetween('date', [$monday->format('Y-m-d'), $friday->format('Y-m-d')])
-            ->with(['courseClass.course', 'user'])
+            ->with(['class.course', 'user'])  // Fixed: use class instead of courseClass
             ->get();
         
         // Build calendar structure
@@ -130,7 +130,7 @@ class RoomScheduleService
      */
     private function formatScheduleForCalendar($schedule, $timeSlot, $isOverride = false)
     {
-        $courseClass = $schedule->courseClass;
+        $courseClass = $schedule->class;  // Fixed: use class instead of courseClass
         $course = $courseClass ? $courseClass->course : null;
         $user = $schedule->user ?? null;
         
@@ -245,7 +245,7 @@ class RoomScheduleService
      */
     private function formatCurrentSchedule($schedule)
     {
-        $courseClass = $schedule->courseClass;
+        $courseClass = $schedule->class;  // Fixed: use class instead of courseClass
         $course = $courseClass ? $courseClass->course : null;
         $user = $schedule->user;
         
@@ -351,15 +351,15 @@ class RoomScheduleService
      */
     private function formatSchedule($schedule, $date, $isOverride)
     {
-        $courseClass = $schedule->courseClass;
+        $courseClass = $schedule->class;  // Fixed: use class instead of courseClass
         $course = $courseClass ? $courseClass->course : null;
         $user = $schedule->user;
         
         // Jika override tidak punya class_id, ambil dari schedule asli
         if ($isOverride && !$courseClass && $schedule->schedule_id) {
-            $originalSchedule = Schedule::with(['courseClass.course'])->find($schedule->schedule_id);
+            $originalSchedule = Schedule::with(['class.course'])->find($schedule->schedule_id);  // Fixed: use class
             if ($originalSchedule) {
-                $courseClass = $originalSchedule->courseClass;
+                $courseClass = $originalSchedule->class;  // Fixed: use class
                 $course = $courseClass ? $courseClass->course : null;
             }
         }

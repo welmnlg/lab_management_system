@@ -25,7 +25,7 @@ class ScheduleController extends Controller
             }
             
             $schedules = Schedule::where('user_id', $user->user_id ?? $user->id)
-                ->with(['courseClass', 'courseClass.course', 'room', 'user'])
+                ->with(['class', 'class.course', 'room', 'user'])  // Fixed: use class instead of courseClass
                 ->orderBy('day')
                 ->orderBy('start_time')
                 ->get();
@@ -131,14 +131,14 @@ class ScheduleController extends Controller
                 $roomName = 'N/A';
                 $roomId = $schedule->room_id;
                 
-                // Get course name dari courseClass.course
-                if ($schedule->courseClass && $schedule->courseClass->course) {
-                    $courseName = $schedule->courseClass->course->course_name;
+                // Get course name dari class.course
+                if ($schedule->class && $schedule->class->course) {
+                    $courseName = $schedule->class->course->course_name;
                 }
                 
-                // Get class name dari courseClass
-                if ($schedule->courseClass) {
-                    $className = $schedule->courseClass->class_name;
+                // Get class name
+                if ($schedule->class) {
+                    $className = $schedule->class->class_name;
                 }
                 
                 // Get room name dari room
@@ -211,7 +211,7 @@ class ScheduleController extends Controller
             ])
             // Fetch all relevant statuses
             ->whereIn('status', ['active', 'dikonfirmasi', 'sedang_berlangsung', 'selesai', 'pindah_ruangan', 'cancelled'])
-            ->with(['room', 'courseClass.course', 'childOverride.room']) // Eager load child override
+            ->with(['room', 'class.course', 'childOverride.room']) // Eager load child override
             ->get();
 
         foreach ($substituteClasses as $sub) {
@@ -220,8 +220,8 @@ class ScheduleController extends Controller
             if (in_array($day, $days)) {
                 
                 // DATA UTAMA (Parent)
-                $courseName = $sub->courseClass && $sub->courseClass->course ? $sub->courseClass->course->course_name : 'N/A';
-                $className = $sub->courseClass ? $sub->courseClass->class_name : 'N/A';
+                $courseName = $sub->class && $sub->class->course ? $sub->class->course->course_name : 'N/A';
+                $className = $sub->class ? $sub->class->class_name : 'N/A';
                 
                 // 1. Add Parent Substitute Class
                 $grouped[$day][] = [
@@ -328,7 +328,7 @@ class ScheduleController extends Controller
                 'success' => true,
                 'data' => [
                     'id' => $schedule->schedule_id,
-                    'course_name' => $schedule->courseClass->course->course_name,
+                    'course_name' => $schedule->class->course->course_name,
                     'class_name' => $schedule->class->name,
                     'room_name' => $schedule->room->name,
                     'room_id' => $schedule->room_id,

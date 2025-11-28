@@ -110,6 +110,35 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::post('/profile', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
     
+    Route::prefix('api/lab')->group(function () {
+        Route::post('/qr-verify', [QrVerificationController::class, 'verifyQrCode'])->name('api.lab.qr-verify');
+        Route::post('/confirm-entry', [QrVerificationController::class, 'confirmEntry'])->name('api.lab.confirm-entry');
+        Route::post('/exit-room', [QrVerificationController::class, 'exitRoom'])->name('api.lab.exit-room');
+    });
+
+    Route::prefix('api/schedules')->group(function () {
+        // Get user's schedules
+        Route::get('/my-schedules', [ScheduleController::class, 'getMySchedules']);
+        
+        // Get schedule detail
+        Route::get('/{id}', [ScheduleController::class, 'getScheduleDetail']);
+        
+        // Cancel schedule
+        Route::post('/{id}/cancel', [ScheduleController::class, 'cancelSchedule']);
+        
+        // Confirm schedule
+        Route::post('/{id}/confirm', [ScheduleController::class, 'confirmSchedule']);
+        
+        // Complete schedule
+        Route::post('/{id}/complete', [ScheduleController::class, 'completeSchedule']);
+        
+        // Complete override (Kelas Ganti)
+        Route::post('/override/{id}/complete', [ScheduleController::class, 'completeOverride']);
+        
+        // Move to different room
+        Route::post('/{id}/move-room', [ScheduleController::class, 'moveToRoom']);
+    });
+
 
     // ========================================
     // NOTIFICATION ROUTES
@@ -187,29 +216,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/generate/{roomId}', [QRController::class, 'generate'])->name('qr.generate');
     });
 
-    Route::prefix('api/schedules')->group(function () {
-        // Get user's schedules
-        Route::get('/my-schedules', [ScheduleController::class, 'getMySchedules']);
-        
-        // Get schedule detail
-        Route::get('/{id}', [ScheduleController::class, 'getScheduleDetail']);
-        
-        // Cancel schedule
-        Route::post('/{id}/cancel', [ScheduleController::class, 'cancelSchedule']);
-        
-        // Confirm schedule
-        Route::post('/{id}/confirm', [ScheduleController::class, 'confirmSchedule']);
-        
-        // Complete schedule
-        Route::post('/{id}/complete', [ScheduleController::class, 'completeSchedule']);
-        
-        // Complete override (Kelas Ganti)
-        Route::post('/override/{id}/complete', [ScheduleController::class, 'completeOverride']);
-        
-        // Move to different room
-        Route::post('/{id}/move-room', [ScheduleController::class, 'moveToRoom']);
-    });
-
+    
     // ========================================
     // API ROUTES (untuk AJAX calls)
     // ========================================
@@ -318,16 +325,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/semester', function () {
             return view('settings.semester');
         })->name('settings.semester');
-    });
-
-    // ========================================
-    // LAB API ROUTES
-    // ========================================
-    Route::prefix('api/lab')->group(function () {
-        Route::post('/qr-verify', [QrVerificationController::class, 'verifyQrCode'])->name('api.lab.qr-verify');
-        Route::post('/confirm-entry', [QrVerificationController::class, 'confirmEntry'])->name('api.lab.confirm-entry');
-        Route::post('/exit-room', [QrVerificationController::class, 'exitRoom'])->name('api.lab.exit-room');
-    });
+    });    
 
     // ========================================
     // SCHEDULES API ROUTES (Additional)

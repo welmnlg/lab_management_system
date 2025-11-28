@@ -1653,11 +1653,11 @@
             try {
                 console.log('Mengirim request ganti password...');
 
-                const response = await fetch('{{ route('profile.password.update') }}', {
+                const response = await fetch(`{{ route('profile.password.update') }}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'X-CSRF-TOKEN': `{{ csrf_token() }}`,
                         'Accept': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest'
                     },

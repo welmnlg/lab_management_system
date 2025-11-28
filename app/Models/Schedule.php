@@ -82,9 +82,7 @@ class Schedule extends Model
         return $this->belongsTo(SemesterPeriod::class, 'period_id', 'period_id');
     }
     // public function semesterPeriod()
-    // {
-    //     return $this->belongsTo(SemesterPeriod::class, 'period_id', 'period_id');
-    // }
+    // {\n    //     return $this->belongsTo(SemesterPeriod::class, 'period_id', 'period_id');\n    // }
 
     /**
      * Relationship with user (lecturer)
@@ -111,20 +109,17 @@ class Schedule extends Model
     // }
 
     /**
-     * Relationship with course
-     */
-    public function course()
-    {
-        return $this->belongsTo(Course::class, 'course_id', 'course_id');
-    }
-
-    /**
      * Relationship with class
      */
     public function class()
     {
         return $this->belongsTo(CourseClass::class, 'class_id', 'class_id');
     }
+
+    /**
+     * Get course through class relationship
+     * Use: $schedule->class->course
+     */
 
     /**
      * Scope for active period schedules
