@@ -19,10 +19,10 @@ return new class extends Migration
             $table->time('end_time');
             $table->timestamps();
             
-            // Indexes for better performance
-            $table->index(['period_id', 'room_id', 'day']);
-            $table->index(['period_id', 'user_id']);
-            $table->index(['period_id', 'course_id']);
+            // Indexes for better performance (only for columns that exist)
+            $table->index(['room_id', 'day']);
+            $table->index('user_id');
+            $table->index('class_id');
         });
     }
 

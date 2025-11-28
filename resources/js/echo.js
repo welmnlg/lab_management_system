@@ -3,29 +3,43 @@ import Pusher from 'pusher-js';
 
 window.Pusher = Pusher;
 
-window.Echo = new Echo({
-    broadcaster: 'pusher',
-    key: import.meta.env.VITE_PUSHER_APP_KEY,
-    cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER,
-    forceTLS: true,
-    enabledTransports: ['ws', 'wss'],
-});
+// Only initialize Echo if Pusher credentials are provided
+const pusherKey = import.meta.env.VITE_PUSHER_APP_KEY;
+const pusherCluster = import.meta.env.VITE_PUSHER_APP_CLUSTER || 'ap1';
 
-// Test connection
-window.Echo.connector.pusher.connection.bind('connected', () => {
-    console.log('✅ Pusher connected');
-});
+if (pusherKey) {
+    window.Echo = new Echo({
+        broadcaster: 'pusher',
+        key: pusherKey,
+        cluster: pusherCluster,
+        forceTLS: true,
+        enabledTransports: ['ws', 'wss'],
+    });
 
-window.Echo.connector.pusher.connection.bind('disconnected', () => {
-    console.log('❌ Pusher disconnected');
-});
+    // Test connection
+    window.Echo.connector.pusher.connection.bind('connected', () => {
+        console.log('✅ Pusher connected');
+    });
 
-window.Echo.connector.pusher.connection.bind('error', (error) => {
-    console.error('❌ Pusher error:', error);
-});
-```
+    window.Echo.connector.pusher.connection.bind('disconnected', () => {
+        console.log('❌ Pusher disconnected');
+    });
 
-**File: `.env.example`** (Update)
-```
-VITE_PUSHER_APP_KEY="${PUSHER_APP_KEY}"
-VITE_PUSHER_APP_CLUSTER="${PUSHER_APP_CLUSTER}"
+    window.Echo.connector.pusher.connection.bind('error', (error) => {
+        console.error('❌ Pusher error:', error);
+    });
+} else {
+    console.warn('⚠️ Pusher is not configured. Real-time features will be disabled.');
+    // Create a dummy Echo object to prevent errors
+    window.Echo = {
+        channel: () => ({
+            listen: () => { },
+            notification: () => { },
+        }),
+        private: () => ({
+            listen: () => { },
+            notification: () => { },
+        }),
+        leave: () => { },
+    };
+}

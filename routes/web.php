@@ -105,11 +105,11 @@ Route::middleware(['auth'])->group(function () {
     // ========================================
     // Profile routes
     // ========================================
-    Route::prefix('profile')->group(function () {
-        Route::put('/password', [ProfileController::class, 'updatePassword']);
-        Route::get('/', [ProfileController::class, 'getProfile']);
-        Route::put('/', [ProfileController::class, 'updateProfile']);
-    });
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::post('/profile', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+    
 
     // ========================================
     // NOTIFICATION ROUTES
@@ -185,6 +185,29 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/login', [QRController::class, 'login'])->name('qr.login');
         Route::post('/logout', [QRController::class, 'logout'])->name('qr.logout');
         Route::get('/generate/{roomId}', [QRController::class, 'generate'])->name('qr.generate');
+    });
+
+    Route::prefix('api/schedules')->group(function () {
+        // Get user's schedules
+        Route::get('/my-schedules', [ScheduleController::class, 'getMySchedules']);
+        
+        // Get schedule detail
+        Route::get('/{id}', [ScheduleController::class, 'getScheduleDetail']);
+        
+        // Cancel schedule
+        Route::post('/{id}/cancel', [ScheduleController::class, 'cancelSchedule']);
+        
+        // Confirm schedule
+        Route::post('/{id}/confirm', [ScheduleController::class, 'confirmSchedule']);
+        
+        // Complete schedule
+        Route::post('/{id}/complete', [ScheduleController::class, 'completeSchedule']);
+        
+        // Complete override (Kelas Ganti)
+        Route::post('/override/{id}/complete', [ScheduleController::class, 'completeOverride']);
+        
+        // Move to different room
+        Route::post('/{id}/move-room', [ScheduleController::class, 'moveToRoom']);
     });
 
     // ========================================
