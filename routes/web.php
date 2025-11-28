@@ -7,10 +7,11 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\SemesterPeriodController;
-use App\Http\Controllers\ScheduleController;
+// use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\LogbookController;
 use App\Http\Controllers\QRController;
+use App\Http\Controllers\Api\ScheduleController;
 use App\Http\Controllers\Lab\QrVerificationController;
 use Illuminate\Support\Facades\Route;
 
