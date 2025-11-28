@@ -8,11 +8,10 @@ use Illuminate\Support\Facades\DB;
 
 class RoomsTableSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
+        // No need to check for buildings as we use location string directly
+
         DB::table('rooms')->insert([
         ['room_name' => 'Jaringan 1', 'location' => 'Gedung C', 'created_at' => now(), 'updated_at' => now()],
         ['room_name' => 'Jaringan 2', 'location' => 'Gedung C', 'created_at' => now(), 'updated_at' => now()],

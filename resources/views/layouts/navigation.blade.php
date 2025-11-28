@@ -1,3 +1,5 @@
+{{-- navigation blade --}}
+
 <nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -18,8 +20,29 @@
                 </div>
             </div>
 
-            <!-- Settings Dropdown -->
-            <div class="hidden sm:flex sm:items-center sm:ms-6">
+            <!-- Settings Dropdown & Notification Bell -->
+            <div class="hidden sm:flex sm:items-center sm:ms-6 space-x-4">
+                
+                <!-- Notification Bell Icon -->
+                <div class="relative">
+                    <a href="{{ route('notifikasi') }}" class="relative inline-flex items-center text-gray-600 hover:text-gray-900 transition group">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                        </svg>
+                        
+                        <!-- Badge dengan count -->
+                        <span id="notificationBadge" class="hidden absolute -top-2 -right-3 inline-flex items-center justify-center min-w-5 h-5 px-1.5 py-0.5 text-xs font-bold text-white bg-red-600 rounded-full animate-pulse">
+                            <span id="badgeCount">0</span>
+                        </span>
+                    </a>
+                    
+                    <!-- Hover tooltip -->
+                    <div class="hidden group-hover:block absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-full mt-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap z-50">
+                        Notifikasi
+                    </div>
+                </div>
+
+                <!-- User Dropdown -->
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
                         <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
@@ -84,6 +107,10 @@
                     {{ __('Profile') }}
                 </x-responsive-nav-link>
 
+                <x-responsive-nav-link :href="route('notifikasi')">
+                    {{ __('Notifikasi') }}
+                </x-responsive-nav-link>
+
                 <!-- Authentication -->
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
@@ -98,3 +125,38 @@
         </div>
     </div>
 </nav>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    updateNotificationBadge();
+    // Update badge setiap 10 detik
+    setInterval(updateNotificationBadge, 10000);
+});
+
+function updateNotificationBadge() {
+    fetch('/api/notifications/unread-count')
+        .then(response => response.json())
+        .then(data => {
+            const badge = document.getElementById('notificationBadge');
+            const badgeCount = document.getElementById('badgeCount');
+            
+            if (data.success && data.count > 0) {
+                badgeCount.textContent = data.count;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        })
+        .catch(error => console.error('Error updating badge:', error));
+}
+
+// Listen to real-time updates jika ada
+if (window.Echo) {
+    const userId = {{ Auth::user()->user_id }};
+    window.Echo.private(`notification.${userId}`)
+        .listen('ScheduleReminderNotification', (event) => {
+            console.log('📬 Notification received via Pusher');
+            updateNotificationBadge();
+        });
+}
+</script>

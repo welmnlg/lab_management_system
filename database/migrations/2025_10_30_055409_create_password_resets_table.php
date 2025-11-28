@@ -11,9 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('password_resets', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+        // Drop yang lama jika ada
+        Schema::dropIfExists('password_reset_tokens');
+        
+        // Buat tabel baru untuk password reset dengan OTP
+        Schema::create('password_reset_tokens', function (Blueprint $table) {
+            $table->string('email')->primary();
+            $table->string('otp', 6); // Kode OTP 6 digit
+            $table->string('token'); // Token untuk security
+            $table->timestamp('otp_expires_at'); // Waktu kadaluarsa OTP (berlaku 10 menit)
+            $table->timestamp('created_at')->nullable();
+            $table->boolean('is_verified')->default(false); // Flag apakah OTP sudah diverifikasi
+            
+            // Index untuk query yang lebih cepat
+            $table->index('email');
+            $table->index('otp_expires_at');
         });
     }
 
@@ -22,6 +34,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('password_resets');
+        Schema::dropIfExists('password_reset_tokens');
     }
 };

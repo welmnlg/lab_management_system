@@ -23,6 +23,23 @@ class Kernel extends ConsoleKernel
             ->everyFiveMinutes()
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/schedule-expire.log'));
+        // Run every minute to check for schedules
+        $schedule->command('schedule:send-reminders')
+            ->everyMinute()
+            ->name('schedule_reminders')
+            ->withoutOverlapping()
+            ->onFailure(function () {
+                \Log::error('SendScheduleReminders command failed');
+            })
+            ->onSuccess(function () {
+                \Log::info('SendScheduleReminders command executed successfully');
+            });
+
+        // Process queued jobs
+        $schedule->command('queue:work --max-jobs=1000 --max-time=3600')
+            ->everyFiveMinutes()
+            ->name('queue_worker')
+            ->withoutOverlapping();
     }
 
     /**

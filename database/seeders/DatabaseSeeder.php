@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             RolesTableSeeder::class,
             UsersTableSeeder::class,
             RoomsTableSeeder::class,
+            SemesterPeriodsSeeder::class,
             RoleUserTableSeeder::class,
             CoursesTableSeeder::class,
             CourseClassesTableSeeder::class,

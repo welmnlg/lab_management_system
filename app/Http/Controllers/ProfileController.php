@@ -173,7 +173,7 @@ class ProfileController extends Controller
                             'course_code' => $schedule->course->course_code ?? '',
                             'class_name' => $schedule->class->class_name ?? '',
                             'room_name' => $schedule->room->room_name ?? 'Unknown Room',
-                            // 'building_name' => $schedule->room->building->building_name ?? 'Unknown Building',
+                            'location' => $schedule->room->location ?? 'Unknown Location',
                             'time_slot' => $schedule->time_slot,
                             'start_time' => $schedule->start_time,
                             'end_time' => $schedule->end_time,

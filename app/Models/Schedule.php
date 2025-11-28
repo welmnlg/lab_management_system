@@ -4,18 +4,24 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Schedule extends Model
 {
     use HasFactory;
 
+    protected $table = 'schedules';
     protected $primaryKey = 'schedule_id';
 
     protected $fillable = [
-        'class_id',
+        'period_id',
         'user_id',
         'room_id',
+        'course_id',
+        'class_id',
         'day',
+        'time_slot',
         'start_time',
         'end_time',
         'status',           // ← ADD
@@ -73,47 +79,83 @@ class Schedule extends Model
     // Relasi ke CourseClass
     public function courseClass()
     {
-        return $this->belongsTo(CourseClass::class, 'class_id', 'class_id');
+        return $this->belongsTo(SemesterPeriod::class, 'period_id', 'period_id');
     }
+    // public function semesterPeriod()
+    // {
+    //     return $this->belongsTo(SemesterPeriod::class, 'period_id', 'period_id');
+    // }
 
-    // Relasi ke User (instructor/asisten)
+    /**
+     * Relationship with user (lecturer)
+     */
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id', 'user_id');
     }
 
-    // Relasi ke Room
+    /**
+     * Relationship with room
+     */
     public function room()
     {
         return $this->belongsTo(Room::class, 'room_id', 'room_id');
     }
 
-    // Relasi ke Logbooks
-    public function logbooks()
+    /**
+     * Relationship with building through room
+     */
+    // public function building()
+    // {
+    //     return $this->hasOneThrough(Building::class, Room::class, 'room_id', 'building_id', 'room_id', 'building_id');
+    // }
+
+    /**
+     * Relationship with course
+     */
+    public function course()
     {
-        return $this->hasMany(Logbook::class, 'schedule_id', 'schedule_id');
+        return $this->belongsTo(Course::class, 'course_id', 'course_id');
     }
 
-    // Relasi ke ScheduleOverrides
-    public function overrides()
+    /**
+     * Relationship with class
+     */
+    public function class()
     {
-        return $this->hasMany(ScheduleOverride::class, 'schedule_id', 'schedule_id');
+        return $this->belongsTo(CourseClass::class, 'class_id', 'class_id');
     }
 
-    // Scope untuk filter berdasarkan hari
-    public function scopeByDay($query, $day)
+    /**
+     * Scope for active period schedules
+     */
+    public function scopeActivePeriod($query)
     {
-        return $query->where('day', $day);
+        return $query->whereHas('semesterPeriod', function($q) {
+            $q->where('is_active', true);
+        });
     }
 
-    // Scope untuk filter berdasarkan ruangan
-    public function scopeByRoom($query, $roomId)
+    /**
+     * Relationship dengan notifications
+     */
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(Notification::class, 'schedule_id', 'schedule_id');
+    }
+
+    /**
+     * Scope for specific room
+     */
+    public function scopeForRoom($query, $roomId)
     {
         return $query->where('room_id', $roomId);
     }
 
-    // Scope untuk filter berdasarkan user
-    public function scopeByUser($query, $userId)
+    /**
+     * Scope for specific user
+     */
+    public function scopeForUser($query, $userId)
     {
         return $query->where('user_id', $userId);
     }

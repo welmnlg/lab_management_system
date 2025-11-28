@@ -74,140 +74,142 @@
             <h3 class="text-lg font-bold text-gray-800 mb-4" id="modal-title">Konfirmasi</h3>
             <p class="text-gray-600 mb-6" id="modal-message">Apakah Anda yakin?</p>
             <div class="flex justify-end gap-3">
-                <button id="modal-batal"
+                <button id="modal-batal" class="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition">
+                Batal
+            </button>
+            <button id="modal-ya" class="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-blue-900 to-red-700 rounded-lg hover:opacity-90 transition">
+                Ya
+            </button>
+        </div>
+    </div>
+</div>
+
+{{-- Modal Ganti Kata Sandi --}}
+<div id="modal-ganti-sandi" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4" onclick="event.stopPropagation()">
+        {{-- Header --}}
+        <div class="mb-6">
+            <h2 class="text-xl font-bold text-gray-800">Ganti Kata Sandi</h2>
+            <p class="text-sm text-gray-600 mt-2">
+                Kata sandi harus memiliki minimal 6 karakter dan harus mengandung huruf, angka, dan karakter khusus (!$@%).
+            </p>
+        </div>
+
+        {{-- Form --}}
+        <form id="form-ganti-sandi" class="space-y-4">
+            @csrf
+            @method('PUT')
+            {{-- Kata Sandi Lama --}}
+            <div>
+                <label for="sandi-lama" class="block text-sm font-medium text-gray-700 mb-2">
+                    Kata Sandi Lama
+                </label>
+                <input type="password" id="sandi-lama" name="current_password" 
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    placeholder="Masukkan kata sandi lama"
+                    required
+                    autocomplete="current-password">
+                <div id="error-sandi-lama" class="text-red-500 text-xs mt-1 hidden"></div>
+            </div>
+
+            {{-- Kata Sandi Baru --}}
+            <div>
+                <label for="sandi-baru" class="block text-sm font-medium text-gray-700 mb-2">
+                    Kata Sandi Baru
+                </label>
+                <input type="password" id="sandi-baru" name="new_password" 
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    placeholder="Masukkan kata sandi baru"
+                    required
+                    autocomplete="new-password">
+                
+                {{-- Indikator Kekuatan Kata Sandi --}}
+                <div class="mt-2 space-y-1">
+                    <div class="flex items-center text-xs">
+                        <span id="indicator-length" class="w-3 h-3 rounded-full bg-gray-300 mr-2"></span>
+                        <span id="text-length" class="text-gray-600">Minimal 6 karakter</span>
+                    </div>
+                    <div class="flex items-center text-xs">
+                        <span id="indicator-letter" class="w-3 h-3 rounded-full bg-gray-300 mr-2"></span>
+                        <span id="text-letter" class="text-gray-600">Mengandung huruf</span>
+                    </div>
+                    <div class="flex items-center text-xs">
+                        <span id="indicator-number" class="w-3 h-3 rounded-full bg-gray-300 mr-2"></span>
+                        <span id="text-number" class="text-gray-600">Mengandung angka</span>
+                    </div>
+                    <div class="flex items-center text-xs">
+                        <span id="indicator-special" class="w-3 h-3 rounded-full bg-gray-300 mr-2"></span>
+                        <span id="text-special" class="text-gray-600">Mengandung karakter khusus (!$@%)</span>
+                    </div>
+                </div>
+                
+                <div id="error-sandi-baru" class="text-red-500 text-xs mt-1 hidden"></div>
+            </div>
+
+            {{-- Konfirmasi Kata Sandi Baru --}}
+            <div>
+                <label for="konfirmasi-sandi" class="block text-sm font-medium text-gray-700 mb-2">
+                    Tulis Ulang Kata Sandi Baru
+                </label>
+                <input type="password" id="konfirmasi-sandi" name="new_password_confirmation" 
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    placeholder="Tulis ulang kata sandi baru"
+                    required
+                    autocomplete="new-password">
+                <div id="error-konfirmasi-sandi" class="text-red-500 text-xs mt-1 hidden"></div>
+            </div>
+
+            {{-- Tombol Aksi --}}
+            <div class="flex justify-end gap-3 pt-4">
+                <button type="button" onclick="tutupModalGantiSandi()" 
                     class="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition">
                     Batal
                 </button>
-                <button id="modal-ya"
-                    class="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-blue-900 to-red-700 rounded-lg hover:opacity-90 transition">
-                    Ya
+                <button type="submit" id="submit-ganti-sandi"
+                    class="px-4 py-2 text-sm font-semibold text-white bg-gray-400 rounded-lg cursor-not-allowed transition"
+                    disabled>
+                    Ganti Kata Sandi
                 </button>
             </div>
-        </div>
+        </form>
     </div>
+</div>
 
-    {{-- Modal Ganti Kata Sandi --}}
-    <div id="modal-ganti-sandi" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4" onclick="event.stopPropagation()">
-            {{-- Header --}}
-            <div class="mb-6">
-                <h2 class="text-xl font-bold text-gray-800">Ganti Kata Sandi</h2>
-                <p class="text-sm text-gray-600 mt-2">
-                    Kata sandi harus memiliki minimal 6 karakter dan harus mengandung huruf, angka, dan karakter khusus
-                    (!$@%).
-                </p>
-            </div>
-
-            {{-- Form --}}
-            <form id="form-ganti-sandi" class="space-y-4">
-                @csrf
-                @method('PUT')
-                {{-- Kata Sandi Lama --}}
-                <div>
-                    <label for="sandi-lama" class="block text-sm font-medium text-gray-700 mb-2">
-                        Kata Sandi Lama
-                    </label>
-                    <input type="password" id="sandi-lama" name="current_password"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                        placeholder="Masukkan kata sandi lama" required autocomplete="current-password">
-                    <div id="error-sandi-lama" class="text-red-500 text-xs mt-1 hidden"></div>
-                </div>
-
-                {{-- Kata Sandi Baru --}}
-                <div>
-                    <label for="sandi-baru" class="block text-sm font-medium text-gray-700 mb-2">
-                        Kata Sandi Baru
-                    </label>
-                    <input type="password" id="sandi-baru" name="new_password"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                        placeholder="Masukkan kata sandi baru" required autocomplete="new-password">
-
-                    {{-- Indikator Kekuatan Kata Sandi --}}
-                    <div class="mt-2 space-y-1">
-                        <div class="flex items-center text-xs">
-                            <span id="indicator-length" class="w-3 h-3 rounded-full bg-gray-300 mr-2"></span>
-                            <span id="text-length" class="text-gray-600">Minimal 6 karakter</span>
-                        </div>
-                        <div class="flex items-center text-xs">
-                            <span id="indicator-letter" class="w-3 h-3 rounded-full bg-gray-300 mr-2"></span>
-                            <span id="text-letter" class="text-gray-600">Mengandung huruf</span>
-                        </div>
-                        <div class="flex items-center text-xs">
-                            <span id="indicator-number" class="w-3 h-3 rounded-full bg-gray-300 mr-2"></span>
-                            <span id="text-number" class="text-gray-600">Mengandung angka</span>
-                        </div>
-                        <div class="flex items-center text-xs">
-                            <span id="indicator-special" class="w-3 h-3 rounded-full bg-gray-300 mr-2"></span>
-                            <span id="text-special" class="text-gray-600">Mengandung karakter khusus (!$@%)</span>
-                        </div>
-                    </div>
-
-                    <div id="error-sandi-baru" class="text-red-500 text-xs mt-1 hidden"></div>
-                </div>
-
-                {{-- Konfirmasi Kata Sandi Baru --}}
-                <div>
-                    <label for="konfirmasi-sandi" class="block text-sm font-medium text-gray-700 mb-2">
-                        Tulis Ulang Kata Sandi Baru
-                    </label>
-                    <input type="password" id="konfirmasi-sandi" name="new_password_confirmation"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                        placeholder="Tulis ulang kata sandi baru" required autocomplete="new-password">
-                    <div id="error-konfirmasi-sandi" class="text-red-500 text-xs mt-1 hidden"></div>
-                </div>
-
-                {{-- Tombol Aksi --}}
-                <div class="flex justify-end gap-3 pt-4">
-                    <button type="button" onclick="tutupModalGantiSandi()"
-                        class="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition">
-                        Batal
-                    </button>
-                    <button type="submit" id="submit-ganti-sandi"
-                        class="px-4 py-2 text-sm font-semibold text-white bg-gray-400 rounded-lg cursor-not-allowed transition"
-                        disabled>
-                        Ganti Kata Sandi
-                    </button>
-                </div>
-            </form>
+{{-- Modal Sukses --}}
+<div id="modal-sukses" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-xl p-6 max-w-sm w-full mx-4 text-center" onclick="event.stopPropagation()">
+        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
         </div>
+        <h3 class="text-lg font-bold text-gray-800 mb-2" id="sukses-title">Berhasil!</h3>
+        <p class="text-gray-600 mb-6" id="sukses-message">Kata sandi berhasil diganti.</p>
+        <button onclick="tutupModalSukses()"
+            class="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-blue-900 to-red-700 rounded-lg hover:opacity-90 transition w-full">
+            Tutup
+        </button>
     </div>
+</div>
 
-    {{-- Modal Sukses --}}
-    <div id="modal-sukses" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-xl p-6 max-w-sm w-full mx-4 text-center" onclick="event.stopPropagation()">
-            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-            </div>
-            <h3 class="text-lg font-bold text-gray-800 mb-2" id="sukses-title">Berhasil!</h3>
-            <p class="text-gray-600 mb-6" id="sukses-message">Kata sandi berhasil diganti.</p>
-            <button onclick="tutupModalSukses()"
-                class="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-blue-900 to-red-700 rounded-lg hover:opacity-90 transition w-full">
-                Tutup
-            </button>
+{{-- Modal Error --}}
+<div id="modal-error" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-xl p-6 max-w-sm w-full mx-4 text-center" onclick="event.stopPropagation()">
+        <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
         </div>
+        <h3 class="text-lg font-bold text-gray-800 mb-2" id="error-title">Gagal!</h3>
+        <p class="text-gray-600 mb-6" id="error-message">Terjadi kesalahan saat mengganti kata sandi.</p>
+        <button onclick="tutupModalError()"
+            class="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-red-700 to-orange-500 rounded-lg hover:opacity-90 transition w-full">
+            Tutup
+        </button>
     </div>
+</div>
 
-    {{-- Modal Error --}}
-    <div id="modal-error" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-xl p-6 max-w-sm w-full mx-4 text-center" onclick="event.stopPropagation()">
-            <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
-                    </path>
-                </svg>
-            </div>
-            <h3 class="text-lg font-bold text-gray-800 mb-2" id="error-title">Gagal!</h3>
-            <p class="text-gray-600 mb-6" id="error-message">Terjadi kesalahan saat mengganti kata sandi.</p>
-            <button onclick="tutupModalError()"
-                class="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-red-700 to-orange-500 rounded-lg hover:opacity-90 transition w-full">
-                Tutup
-            </button>
-        </div>
-    </div>
-
-    <script>
+<script>
         // ==========================================
         // GLOBAL VARIABLES
         // ==========================================
@@ -672,9 +674,58 @@
                         ${actionContent}
                     </div>
                 </div>
-            `;
-        }).join('')
+                        }).join('')}
+                    </div>
+                `;
+            } else {
+                contentPanel.innerHTML = `
+                    <div class="bg-gray-50 rounded-lg p-8 text-center">
+                        <p class="text-gray-600 text-lg">Tidak ada kelas mengajar hari ini</p>
+                    </div>
+                `;
+            }
+
+            scheduleContentContainer.appendChild(contentPanel);
+        });
+
+        if (days.length > 0) {
+            hariAktif = days[0];
+        }
     }
+
+    /**
+     * Show empty state ketika tidak ada jadwal
+     */
+    function showEmptyScheduleState() {
+        const scheduleTabsContainer = document.getElementById('schedule-tabs');
+        const scheduleContentContainer = document.getElementById('schedule-content');
+        
+        if (scheduleTabsContainer) {
+            scheduleTabsContainer.innerHTML = '';
+        }
+        
+        if (scheduleContentContainer) {
+            scheduleContentContainer.innerHTML = `
+                <div class="text-center py-12 text-gray-500">
+                    <svg class="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    <p class="text-lg font-medium">Belum ada jadwal</p>
+                    <p class="text-sm">Silakan ambil jadwal terlebih dahulu</p>
+                </div>
+            `;
+        }
+    }
+
+    // ==========================================
+    // TAB SWITCHING FUNCTION
+    // ==========================================
+    
+    /**
+     * Fungsi untuk mengubah hari yang aktif
+     */
+    function ubahHari(hari) {
                     </div>
                 `;
                         } else {
@@ -974,42 +1025,176 @@
             modal.classList.remove('flex');
         }
 
-        /**
-         * Buka modal ganti kata sandi
-         */
-        function bukaModalGantiSandi() {
-            const modal = document.getElementById('modal-ganti-sandi');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            resetValidasi();
+    /**
+     * Tampilkan modal sukses
+     */
+    function tampilkanModalSukses(title, message) {
+        document.getElementById('sukses-title').textContent = title;
+        document.getElementById('sukses-message').textContent = message;
+        const modal = document.getElementById('modal-sukses');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
 
-            // Focus ke input pertama
-            setTimeout(() => {
-                document.getElementById('sandi-lama').focus();
-            }, 100);
-        }
+    /**
+     * Tutup modal sukses
+     */
+    function tutupModalSukses() {
+        const modal = document.getElementById('modal-sukses');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
 
-        /**
-         * Tutup modal ganti kata sandi
-         */
-        function tutupModalGantiSandi() {
-            const modal = document.getElementById('modal-ganti-sandi');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-            document.getElementById('form-ganti-sandi').reset();
-            resetValidasi();
-        }
+    /**
+     * Tampilkan modal error
+     */
+    function tampilkanModalError(title, message) {
+        document.getElementById('error-title').textContent = title;
+        document.getElementById('error-message').textContent = message;
+        const modal = document.getElementById('modal-error');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
 
-        // ==========================================
-        // PASSWORD VALIDATION FUNCTIONS
-        // ==========================================
+    /**
+     * Tutup modal error
+     */
+    function tutupModalError() {
+        const modal = document.getElementById('modal-error');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
 
-        /**
-         * Reset semua validasi
-         */
-        function resetValidasi() {
+    /**
+     * Buka modal ganti kata sandi
+     */
+    function bukaModalGantiSandi() {
+        const modal = document.getElementById('modal-ganti-sandi');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        resetValidasi();
+        
+        // Focus ke input pertama
+        setTimeout(() => {
+            document.getElementById('sandi-lama').focus();
+        }, 100);
+    }
+
+    /**
+     * Tutup modal ganti kata sandi
+     */
+    function tutupModalGantiSandi() {
+        const modal = document.getElementById('modal-ganti-sandi');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.getElementById('form-ganti-sandi').reset();
+        resetValidasi();
+    }
+
+    // ==========================================
+    // PASSWORD VALIDATION FUNCTIONS
+    // ==========================================
+    
+    /**
+     * Reset semua validasi
+     */
+    function resetValidasi() {
+        isSandiLamaValid = false;
+        isSandiBaruValid = false;
+        isKonfirmasiValid = false;
+        updateSubmitButton();
+        
+        // Reset semua indikator
+        const indicators = document.querySelectorAll('[id^="indicator-"]');
+        indicators.forEach(indicator => {
+            indicator.className = 'w-3 h-3 rounded-full bg-gray-300 mr-2';
+        });
+        
+        const texts = document.querySelectorAll('[id^="text-"]');
+        texts.forEach(text => {
+            if (text.id === 'text-length' || text.id === 'text-letter' || 
+                text.id === 'text-number' || text.id === 'text-special') {
+                text.className = 'text-gray-600';
+            }
+        });
+        
+        // Reset error messages
+        const errorElements = document.querySelectorAll('[id^="error-"]');
+        errorElements.forEach(error => {
+            error.classList.add('hidden');
+            error.textContent = '';
+        });
+    }
+
+    /**
+     * Validasi kata sandi lama
+     */
+    function validateSandiLama(sandi) {
+        const errorElement = document.getElementById('error-sandi-lama');
+        
+        if (sandi.length === 0) {
+            showError(errorElement, 'Kata sandi lama harus diisi');
             isSandiLamaValid = false;
+        } else if (sandi.length < 3) {
+            showError(errorElement, 'Kata sandi lama terlalu pendek');
+            isSandiLamaValid = false;
+        } else {
+            hideError(errorElement);
+            isSandiLamaValid = true;
+        }
+        
+        updateSubmitButton();
+    }
+
+    /**
+     * Validasi kata sandi baru
+     */
+    function validateSandiBaru(sandi) {
+        const errorElement = document.getElementById('error-sandi-baru');
+        
+        // Validasi panjang
+        const isLengthValid = sandi.length >= 6;
+        updateIndicator('length', isLengthValid, 'Minimal 6 karakter');
+        
+        // Validasi huruf
+        const hasLetter = /[a-zA-Z]/.test(sandi);
+        updateIndicator('letter', hasLetter, 'Mengandung huruf');
+        
+        // Validasi angka
+        const hasNumber = /[0-9]/.test(sandi);
+        updateIndicator('number', hasNumber, 'Mengandung angka');
+        
+        // Validasi karakter khusus (!$@%)
+        const hasSpecial = /[!$@%]/.test(sandi);
+        updateIndicator('special', hasSpecial, 'Mengandung karakter khusus (!$@%)');
+        
+        // Overall validation
+        const isValid = isLengthValid && hasLetter && hasNumber && hasSpecial;
+        
+        if (sandi.length === 0) {
+            hideError(errorElement);
             isSandiBaruValid = false;
+        } else if (!isValid) {
+            showError(errorElement, 'Kata sandi tidak memenuhi semua persyaratan');
+            isSandiBaruValid = false;
+        } else {
+            hideError(errorElement);
+            isSandiBaruValid = true;
+        }
+        
+        updateSubmitButton();
+    }
+
+    /**
+     * Validasi konfirmasi kata sandi
+     */
+    function validateKonfirmasiSandi() {
+        const sandiBaru = document.getElementById('sandi-baru').value;
+        const konfirmasi = document.getElementById('konfirmasi-sandi').value;
+        const errorElement = document.getElementById('error-konfirmasi-sandi');
+        
+        if (konfirmasi.length === 0) {
+            hideError(errorElement);
             isKonfirmasiValid = false;
             updateSubmitButton();
 
@@ -1035,24 +1220,19 @@
             });
         }
 
-        /**
-         * Validasi kata sandi lama
-         */
-        function validateSandiLama(sandi) {
-            const errorElement = document.getElementById('error-sandi-lama');
-
-            if (sandi.length === 0) {
-                showError(errorElement, 'Kata sandi lama harus diisi');
-                isSandiLamaValid = false;
-            } else if (sandi.length < 3) {
-                showError(errorElement, 'Kata sandi lama terlalu pendek');
-                isSandiLamaValid = false;
-            } else {
-                hideError(errorElement);
-                isSandiLamaValid = true;
-            }
-
-            updateSubmitButton();
+    /**
+     * Update indikator visual untuk validasi password
+     */
+    function updateIndicator(type, isValid, text) {
+        const indicator = document.getElementById(`indicator-${type}`);
+        const textElement = document.getElementById(`text-${type}`);
+        
+        if (isValid) {
+            indicator.className = 'w-3 h-3 rounded-full bg-green-500 mr-2';
+            textElement.className = 'text-green-600';
+        } else {
+            indicator.className = 'w-3 h-3 rounded-full bg-red-500 mr-2';
+            textElement.className = 'text-red-600';
         }
 
         /**
