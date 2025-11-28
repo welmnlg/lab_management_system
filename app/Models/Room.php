@@ -34,6 +34,14 @@ class Room extends Model
         return $this->hasMany(ScheduleOverride::class, 'room_id', 'room_id');
     }
 
+    /**
+     * Relasi ke Building (room belongs to building)
+     */
+    public function building()
+    {
+        return $this->belongsTo(Building::class, 'building_id', 'building_id');
+    }
+
     // Scope untuk mencari ruangan berdasarkan nama
     public function scopeByName($query, $name)
     {

@@ -131,7 +131,7 @@
             100% { opacity: 1; transform: scale(1); }
         }
 
-        /* FIX DROPDOWN DOUBLE ARROW */
+        /* FIX DROPDOWN DOUBLE ARROW - IMPROVED */
         select {
             appearance: none;
             background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
@@ -144,6 +144,17 @@
         /* Remove default arrow in IE */
         select::-ms-expand {
             display: none;
+        }
+
+        /* HIDE CUSTOM DROPDOWN ARROW FOR SELECT ELEMENTS */
+        .select-no-custom-arrow {
+            background-image: none !important;
+            padding-right: 0.75rem !important;
+        }
+
+        /* Ensure custom dropdown buttons don't have double arrows */
+        .dropdown-kom-toggle {
+            background-image: none !important;
         }
 
         /* FIX MODAL POSITION */

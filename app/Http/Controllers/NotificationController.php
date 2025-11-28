@@ -18,7 +18,7 @@ class NotificationController extends Controller
             $userId = Auth::id();
             $limit = $request->get('limit', 50);
 
-            $notifications = Notification::with(['schedule.course', 'schedule.class', 'schedule.room'])
+            $notifications = \App\Models\Notification::with(['schedule.course', 'schedule.class', 'schedule.room'])
                 ->where('user_id', $userId)
                 ->orderBy('created_at', 'desc')
                 ->limit($limit)
@@ -154,7 +154,6 @@ class NotificationController extends Controller
         }
     }
 
-// FILE: app/Http/Controllers/NotificationController.php - METHOD destroy SAJA
 
     /**
      * Delete notification

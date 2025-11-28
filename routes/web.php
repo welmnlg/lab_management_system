@@ -194,6 +194,7 @@ Route::middleware(['auth'])->group(function () {
     // ========================================
     // API ROUTES (untuk AJAX calls)
     // ========================================
+    
     Route::prefix('api')->group(function () {
         // Buildings API
         Route::get('/buildings', [BuildingController::class, 'index']);
@@ -348,6 +349,55 @@ Route::post('/forgot-password/verify-otp', [ForgotPasswordController::class, 've
 Route::post('/forgot-password/reset', [ForgotPasswordController::class, 'resetPassword'])->name('forgot-password.reset');
 Route::post('/forgot-password/resend-otp', [ForgotPasswordController::class, 'resendOTP'])->name('forgot-password.resend-otp');
 
+
+// TESTING ROUTES - Hapus setelah testing selesai
+Route::get('/test-notification', function () {
+    $user = Auth::user();
+    
+    // Cari jadwal user hari ini
+    $today = \Carbon\Carbon::now('Asia/Jakarta');
+    $dayMap = [
+        'Monday' => 'Senin',
+        'Tuesday' => 'Selasa',
+        'Wednesday' => 'Rabu',
+        'Thursday' => 'Kamis',
+        'Friday' => 'Jumat',
+    ];
+    $currentDay = $dayMap[$today->format('l')];
+    
+    $schedule = \App\Models\Schedule::with(['course', 'class', 'room'])
+        ->where('user_id', $user->user_id)
+        ->where('day', $currentDay)
+        ->where('status', 'active')
+        ->first();
+    
+    if (!$schedule) {
+        return response()->json([
+            'error' => 'No schedule found for today',
+            'day' => $currentDay
+        ]);
+    }
+    
+    // Create test notification
+    $notif = \App\Models\Notification::create([
+        'user_id' => $user->user_id,
+        'schedule_id' => $schedule->schedule_id,
+        'title' => 'TEST Pengingat Jadwal',
+        'message' => "TEST: Anda mengajar {$schedule->course->course_name} di ruang {$schedule->room->room_name}",
+        'class_status' => 'waiting',
+        'notified_at' => now()
+    ]);
+    
+    // Send notification
+    $user->notify(new \App\Notifications\ScheduleReminderNotification($schedule, $notif));
+    
+    return response()->json([
+        'success' => true,
+        'message' => 'Test notification sent',
+        'notification_id' => $notif->notification_id,
+        'schedule' => $schedule->course->course_name
+    ]);
+})->middleware('auth');
 
 // Health Check
 Route::get('/health', function () {

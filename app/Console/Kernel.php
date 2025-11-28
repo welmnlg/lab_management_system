@@ -12,23 +12,21 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // Run every minute to check for schedules
+        // Test command - runs every minute
+        $schedule->command('test:scheduler')
+            ->everyMinute()
+            ->appendOutputTo(storage_path('logs/test.log'));
+            
+        // Original command
         $schedule->command('schedule:send-reminders')
             ->everyMinute()
-            ->name('schedule_reminders')
             ->withoutOverlapping()
-            ->onFailure(function () {
-                \Log::error('SendScheduleReminders command failed');
-            })
-            ->onSuccess(function () {
-                \Log::info('SendScheduleReminders command executed successfully');
-            });
+            ->appendOutputTo(storage_path('logs/scheduler.log'));
 
-        // Process queued jobs
-        $schedule->command('queue:work --max-jobs=1000 --max-time=3600')
-            ->everyFiveMinutes()
-            ->name('queue_worker')
-            ->withoutOverlapping();
+        $schedule->command('notifications:cleanup')
+            ->daily()
+            ->at('02:00')
+            ->appendOutputTo(storage_path('logs/cleanup.log'));
     }
 
     /**

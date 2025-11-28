@@ -7,7 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class Notification extends Model
 {
     protected $primaryKey = 'notification_id';
-    protected $table = 'notifications';
+    protected $table = 'notifications'; // Tabel custom
+    // protected $table = 'notifications';
 
     protected $fillable = [
         'user_id',
