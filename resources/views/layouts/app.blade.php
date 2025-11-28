@@ -59,9 +59,9 @@
                 <span class="font-medium whitespace-nowrap text-base">AMBIL JADWAL</span>
             </a>
 
-            <a href="{{ route('profil') }}" 
+            <a href="{{ route('profile.edit') }}" 
                class="flex items-center space-x-4 mobile-nav-item rounded-xl transition-all duration-200
-                      {{ request()->routeIs('profil') ? 'mobile-nav-active' : 'text-gray-700 hover:bg-gray-100 active:bg-gray-200' }}">
+                      {{ request()->routeIs('profile.edit') ? 'mobile-nav-active' : 'text-gray-700 hover:bg-gray-100 active:bg-gray-200' }}">
                 <svg class="w-6 h-6 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
                 </svg>
@@ -172,9 +172,9 @@
                 <span class="font-medium whitespace-nowrap">AMBIL JADWAL</span>
             </a>
 
-            <a href="{{ route('profil') }}" 
+            <a href="{{ route('profile.edit') }}" 
                class="flex items-center space-x-3 px-4 py-3 rounded-lg
-                      {{ request()->routeIs('profil') ? 'bg-gradient-to-r from-blue-900 to-red-700 text-white' : 'text-gray-700 hover:bg-gray-100' }}">
+                      {{ request()->routeIs('profile.edit') ? 'bg-gradient-to-r from-blue-900 to-red-700 text-white' : 'text-gray-700 hover:bg-gray-100' }}">
                 <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
                 </svg>
