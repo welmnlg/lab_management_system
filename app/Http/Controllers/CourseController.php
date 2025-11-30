@@ -131,7 +131,7 @@ class CourseController extends Controller
             $validated = $request->validate([
                 'course_code' => 'required|string|max:20',
                 'course_name' => 'required|string|max:255',
-                'kom' => 'required|string|max:50',
+                'kom' => 'required|string|max:50|in:Kom A1,Kom A2,Kom B1,Kom B2,Kom C1,Kom C2',
                 'semester' => 'required|in:Ganjil,Genap',
                 'lecturer' => 'required|string|max:255'
             ]);
@@ -141,7 +141,7 @@ class CourseController extends Controller
             $user = auth()->user();
             $programId = $user->program_studi;
 
-            // VALIDASI 1: Cek apakah sudah ada mata kuliah dengan course_code yang sama tapi course_name berbeda
+            // VALIDASI: Cek konflik course_code / course_name / semester
             $existingCourseWithDifferentName = DB::table('courses')
                 ->where('course_code', $validated['course_code'])
                 ->where('semester', $validated['semester'])
@@ -157,7 +157,6 @@ class CourseController extends Controller
                 ], 422);
             }
 
-            // VALIDASI 2: Cek apakah mata kuliah dengan nama sama sudah punya kode berbeda
             $existingCourseWithDifferentCode = DB::table('courses')
                 ->where('course_name', $validated['course_name'])
                 ->where('semester', $validated['semester'])
@@ -173,14 +172,13 @@ class CourseController extends Controller
                 ], 422);
             }
 
-            // VALIDASI BARU: Cek apakah data sudah ada lengkap (semua field sama)
             $existingCompleteData = DB::table('courses')
                 ->join('course_classes', 'courses.course_id', '=', 'course_classes.course_id')
                 ->where('courses.course_code', $validated['course_code'])
                 ->where('courses.course_name', $validated['course_name'])
                 ->where('courses.semester', $validated['semester'])
                 ->where('courses.program_id', $programId)
-                ->where('course_classes.class_name', $validated['kom'])
+                ->where('course_classes.class_name', str_replace('Kom ', '', $validated['kom']))
                 ->where('course_classes.lecturer', $validated['lecturer'])
                 ->exists();
 
@@ -192,7 +190,6 @@ class CourseController extends Controller
                 ], 422);
             }
 
-            // VALIDASI BARU: Cek apakah kode dan nama sama tapi semester beda
             $existingCourseDifferentSemester = DB::table('courses')
                 ->where('course_code', $validated['course_code'])
                 ->where('course_name', $validated['course_name'])
@@ -226,8 +223,6 @@ class CourseController extends Controller
                 ]);
             } else {
                 $courseId = $course->course_id;
-                
-                // Update nama course jika berbeda
                 if ($course->course_name !== $validated['course_name']) {
                     DB::table('courses')
                         ->where('course_id', $courseId)
@@ -238,10 +233,13 @@ class CourseController extends Controller
                 }
             }
 
-            // VALIDASI 3: Cek apakah kelas sudah ada
+            // Format: hapus "Kom " → "A1", "B2", dll.
+            $className = str_replace('Kom ', '', $validated['kom']);
+
+            // Cek apakah kelas ini sudah ada
             $existingClass = DB::table('course_classes')
                 ->where('course_id', $courseId)
-                ->where('class_name', $validated['kom'])
+                ->where('class_name', $className)
                 ->first();
 
             if ($existingClass) {
@@ -252,32 +250,46 @@ class CourseController extends Controller
                 ], 422);
             }
 
-            // VALIDASI 4: Cek pairing rules (A1<->A2, B1<->B2, C1<->C2)
-            $pairedClass = $this->getPairedClass($validated['kom']);
-            
-            if ($pairedClass) {
-                $pairedClassData = DB::table('course_classes')
-                    ->where('course_id', $courseId)
-                    ->where('class_name', $pairedClass)
-                    ->first();
-
-                if ($pairedClassData && $pairedClassData->lecturer !== $validated['lecturer']) {
-                    DB::rollBack();
-                    return response()->json([
-                        'success' => false,
-                        'message' => "Tidak dapat menambahkan kelas ini. Kelas {$pairedClass} sudah memiliki dosen: {$pairedClassData->lecturer}. Kelas berpasangan ({$validated['kom']} dan {$pairedClass}) harus memiliki dosen yang sama."
-                    ], 422);
-                }
-            }
-
-            // Insert course class
+            // Simpan kelas yang dipilih
             DB::table('course_classes')->insert([
                 'course_id' => $courseId,
-                'class_name' => $validated['kom'],
+                'class_name' => $className,
                 'lecturer' => $validated['lecturer'],
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
+
+            // OTOMATIS buat kelas pasangan jika relevan (A1↔A2, B1↔B2, C1↔C2)
+            $pairedClass = $this->getPairedClass($validated['kom']); // Misal: "Kom A2"
+            if ($pairedClass) {
+                $pairedClassName = str_replace('Kom ', '', $pairedClass); // → "A2"
+
+                // Cek apakah kelas pasangan sudah ada
+                $pairedExists = DB::table('course_classes')
+                    ->where('course_id', $courseId)
+                    ->where('class_name', $pairedClassName)
+                    ->first();
+
+                if ($pairedExists) {
+                    // Jika sudah ada, pastikan dosen sama
+                    if ($pairedExists->lecturer !== $validated['lecturer']) {
+                        DB::rollBack();
+                        return response()->json([
+                            'success' => false,
+                            'message' => "Kelas {$pairedClass} sudah ada dengan dosen berbeda: {$pairedExists->lecturer}. Kelas berpasangan harus memiliki dosen yang sama."
+                        ], 422);
+                    }
+                } else {
+                    // Belum ada → buat otomatis
+                    DB::table('course_classes')->insert([
+                        'course_id' => $courseId,
+                        'class_name' => $pairedClassName,
+                        'lecturer' => $validated['lecturer'], // sama
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+                }
+            }
 
             DB::commit();
 
@@ -318,7 +330,7 @@ class CourseController extends Controller
                     'courses.course_code',
                     'courses.course_name',
                     'courses.semester',
-                    'course_classes.class_name as kom',
+                    'course_classes.class_name as class_name',
                     'course_classes.lecturer'
                 )
                 ->where('course_classes.class_id', $classId)
@@ -330,6 +342,8 @@ class CourseController extends Controller
                     'message' => 'Data tidak ditemukan'
                 ], 404);
             }
+
+            $data->kom = 'Kom ' . $data->class_name;
 
             // Cek apakah ada kelas berpasangan
             $pairedClass = $this->getPairedClass($data->kom);
@@ -389,6 +403,8 @@ class CourseController extends Controller
             }
 
             $validated = $validator->validated();
+            // Mendeklarasikan $className
+            $className = str_replace('Kom ', '', $validated['class_name']);
 
             DB::beginTransaction();
 
@@ -486,7 +502,7 @@ class CourseController extends Controller
             DB::table('course_classes')
                 ->where('class_id', $classId)
                 ->update([
-                    'class_name' => $validated['class_name'],
+                    'class_name' => $className,
                     'lecturer' => $validated['lecturer'],
                     'updated_at' => now()
                 ]);
@@ -496,7 +512,7 @@ class CourseController extends Controller
             if ($pairedClass) {
                 DB::table('course_classes')
                     ->where('course_id', $courseClass->course_id)
-                    ->where('class_name', $pairedClass)
+                    ->where('class_name', str_replace('Kom ', '', $pairedClass))
                     ->update([
                         'lecturer' => $validated['lecturer'],
                         'updated_at' => now()

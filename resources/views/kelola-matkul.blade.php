@@ -35,7 +35,7 @@ view Kelola matkul
         <table class="w-full min-w-[800px] md:min-w-0">
             <thead class="bg-gray-50 border-b border-gray-200">
                 <tr>
-                    <th class="w-12 md:w-16 px-2 py-2 md:px-2 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
+                    <th class="w-12 md:w-16 px-2 py-2 md:px-2 md:py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
                     <th class="px-3 py-2 md:px-4 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kode Matkul</th>
                     <th class="px-3 py-2 md:px-4 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mata Kuliah</th>
                     <th class="px-3 py-2 md:px-4 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">KOM</th>
@@ -110,13 +110,13 @@ view Kelola matkul
         </table>
     </div>
 
-    <!-- Tombol Submit untuk Semua Device -->
+    {{-- <!-- Tombol Submit untuk Semua Device -->
     <div class="px-4 md:px-6 py-4 border-t border-gray-200 flex justify-center sm:justify-end">
         <button id="submitButton" class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-900 to-red-700 text-white rounded-md hover:from-blue-800 hover:to-red-600 transition-all duration-200 shadow-md hover:shadow-lg font-medium text-sm md:text-base w-full sm:w-auto justify-center">
             <i class="bi bi-check-lg mr-2"></i>
             Submit
         </button>
-    </div>
+    </div> --}}
 </div>
 
 <!-- CSRF Token for AJAX -->
@@ -197,10 +197,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    const submitButton = document.getElementById('submitButton');
-    submitButton.addEventListener('click', function() {
-        showSubmitConfirmationModal();
-    });
+    // const submitButton = document.getElementById('submitButton');
+    // submitButton.addEventListener('click', function() {
+    //     showSubmitConfirmationModal();
+    // });
 
     document.addEventListener('click', function(e) {
         if (e.target.closest('.edit-btn')) {
@@ -443,57 +443,57 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function showSubmitConfirmationModal() {
-        const modal = createModal(`
-            <div class="bg-white rounded-lg shadow-lg max-w-md w-full mx-4 my-8">
-                <div class="p-4 md:p-6">
-                    <div class="text-center">
-                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-                            <i class="bi bi-check-lg text-green-600 text-xl"></i>
-                        </div>
-                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Konfirmasi Submit</h3>
-                        <p class="text-sm text-gray-500 mb-4">Anda akan mengirim semua data mata kuliah. Lanjutkan?</p>
-                    </div>
-                    <div class="mt-6 flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-3">
-                        <button id="cancelSubmitButton" class="inline-flex items-center justify-center px-4 py-2 md:px-6 md:py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-all duration-200 shadow-md hover:shadow-lg font-medium text-sm md:text-base w-full sm:w-auto">Batal</button>
-                        <button id="confirmSubmitButton" class="inline-flex items-center justify-center px-4 py-2 md:px-6 md:py-2 bg-gradient-to-r from-blue-900 to-red-700 text-white rounded-md hover:from-blue-800 hover:to-red-600 transition-all duration-200 shadow-md hover:shadow-lg font-medium text-sm md:text-base w-full sm:w-auto"><i class="bi bi-check-lg mr-2"></i>Ya, Submit</button>
-                    </div>
-                </div>
-            </div>
-        `);
+    // function showSubmitConfirmationModal() {
+    //     const modal = createModal(`
+    //         <div class="bg-white rounded-lg shadow-lg max-w-md w-full mx-4 my-8">
+    //             <div class="p-4 md:p-6">
+    //                 <div class="text-center">
+    //                     <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+    //                         <i class="bi bi-check-lg text-green-600 text-xl"></i>
+    //                     </div>
+    //                     <h3 class="text-lg font-semibold text-gray-900 mb-2">Konfirmasi Submit</h3>
+    //                     <p class="text-sm text-gray-500 mb-4">Anda akan mengirim semua data mata kuliah. Lanjutkan?</p>
+    //                 </div>
+    //                 <div class="mt-6 flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-3">
+    //                     <button id="cancelSubmitButton" class="inline-flex items-center justify-center px-4 py-2 md:px-6 md:py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-all duration-200 shadow-md hover:shadow-lg font-medium text-sm md:text-base w-full sm:w-auto">Batal</button>
+    //                     <button id="confirmSubmitButton" class="inline-flex items-center justify-center px-4 py-2 md:px-6 md:py-2 bg-gradient-to-r from-blue-900 to-red-700 text-white rounded-md hover:from-blue-800 hover:to-red-600 transition-all duration-200 shadow-md hover:shadow-lg font-medium text-sm md:text-base w-full sm:w-auto"><i class="bi bi-check-lg mr-2"></i>Ya, Submit</button>
+    //                 </div>
+    //             </div>
+    //         </div>
+    //     `);
         
-        document.getElementById('cancelSubmitButton').addEventListener('click', () => document.body.removeChild(modal));
-        document.getElementById('confirmSubmitButton').addEventListener('click', function() {
-            document.body.removeChild(modal);
-            submitMatkul();
-        });
-    }
+    //     document.getElementById('cancelSubmitButton').addEventListener('click', () => document.body.removeChild(modal));
+    //     document.getElementById('confirmSubmitButton').addEventListener('click', function() {
+    //         document.body.removeChild(modal);
+    //         submitMatkul();
+    //     });
+    // }
 
-    function submitMatkul() {
-        const processingModal = showProcessingModal('Sedang mengirim data mata kuliah...');
+    // function submitMatkul() {
+    //     const processingModal = showProcessingModal('Sedang mengirim data mata kuliah...');
         
-        fetch('/kelola-matkul/submit', {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            document.body.removeChild(processingModal);
-            if (data.success) {
-                showSuccessModal(data.message, false);
-            } else {
-                showAlertModal('Error', data.message);
-            }
-        })
-        .catch(error => {
-            document.body.removeChild(processingModal);
-            showAlertModal('Error', 'Terjadi kesalahan saat mengirim data');
-            console.error('Error:', error);
-        });
-    }
+    //     fetch('/kelola-matkul/submit', {
+    //         method: 'POST',
+    //         headers: {
+    //             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+    //             'Content-Type': 'application/json'
+    //         }
+    //     })
+    //     .then(response => response.json())
+    //     .then(data => {
+    //         document.body.removeChild(processingModal);
+    //         if (data.success) {
+    //             showSuccessModal(data.message, false);
+    //         } else {
+    //             showAlertModal('Error', data.message);
+    //         }
+    //     })
+    //     .catch(error => {
+    //         document.body.removeChild(processingModal);
+    //         showAlertModal('Error', 'Terjadi kesalahan saat mengirim data');
+    //         console.error('Error:', error);
+    //     });
+    // }
 
     function showDeleteConfirmationModal(classId, matkulNama) {
         const modal = createModal(`
