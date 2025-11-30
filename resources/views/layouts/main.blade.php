@@ -140,6 +140,11 @@
             background-size: 1.5em 1.5em;
             padding-right: 2.5rem;
         }
+        
+        .select-no-custom-arrow {
+            background-image: none !important;
+            padding-right: 0.75rem !important;
+        }
 
         /* Remove default arrow in IE */
         select::-ms-expand {

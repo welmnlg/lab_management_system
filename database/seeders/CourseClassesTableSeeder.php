@@ -8,41 +8,40 @@ use Illuminate\Support\Facades\DB;
 
 class CourseClassesTableSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-       DB::table('course_classes')->insert([
-        // Austin Butler, BPH+ASLAB, TI, TIF2207 - Minerva Mcgonaggal - Selasa
-        ['class_name' => 'Kom A1', 'course_id' => 1, 'lecturer' => 'Minerva Mcgonaggal', 'created_at' => now(), 'updated_at' => now()],
-        ['class_name' => 'Kom A2', 'course_id' => 1, 'lecturer' => 'Minerva Mcgonaggal', 'created_at' => now(), 'updated_at' => now()],
-        ['class_name' => 'Kom B1', 'course_id' => 1, 'lecturer' => 'Minerva Mcgonaggal', 'created_at' => now(), 'updated_at' => now()],
-        ['class_name' => 'Kom B2', 'course_id' => 1, 'lecturer' => 'Minerva Mcgonaggal', 'created_at' => now(), 'updated_at' => now()],
+        DB::table('course_classes')->insert([
+            // Praktikum Kecerdasan Buatan (course_id=1)
+            ['course_id' => 1, 'class_name' => 'A1', 'lecturer' => 'Minerva Mcgonaggal'],
+            ['course_id' => 1, 'class_name' => 'A2', 'lecturer' => 'Minerva Mcgonaggal'],
+            ['course_id' => 1, 'class_name' => 'B1', 'lecturer' => 'Minerva Mcgonaggal'],
+            ['course_id' => 1, 'class_name' => 'B2', 'lecturer' => 'Minerva Mcgonaggal'],
+            ['course_id' => 1, 'class_name' => 'C1', 'lecturer' => 'Minerva Mcgonaggal'],
+            ['course_id' => 1, 'class_name' => 'C2', 'lecturer' => 'Minerva Mcgonaggal'],
 
-        // Kim Mingyu, ASLAB only, TI, TIF2209 - Filius Flitwick - Rabu
-        ['class_name' => 'Kom A1', 'course_id' => 2, 'lecturer' => 'Filius Flitwick', 'created_at' => now(), 'updated_at' => now()],
-        ['class_name' => 'Kom A2', 'course_id' => 2, 'lecturer' => 'Filius Flitwick', 'created_at' => now(), 'updated_at' => now()],
-        ['class_name' => 'Kom C1', 'course_id' => 2, 'lecturer' => 'Filius Flitwick', 'created_at' => now(), 'updated_at' => now()],
-        ['class_name' => 'Kom C2', 'course_id' => 2, 'lecturer' => 'Filius Flitwick', 'created_at' => now(), 'updated_at' => now()],
+            // Praktikum Keamanan Server dan Jaringan (course_id=2)
+            ['course_id' => 2, 'class_name' => 'A1', 'lecturer' => 'Filius Flitwick'],
+            ['course_id' => 2, 'class_name' => 'A2', 'lecturer' => 'Filius Flitwick'],
+            ['course_id' => 2, 'class_name' => 'B1', 'lecturer' => 'Albus Dumbledore'],
+            ['course_id' => 2, 'class_name' => 'B2', 'lecturer' => 'Albus Dumbledore'],
+            ['course_id' => 2, 'class_name' => 'C1', 'lecturer' => 'Filius Flitwick'],
+            ['course_id' => 2, 'class_name' => 'C2', 'lecturer' => 'Filius Flitwick'],
 
-        // Wil Ohmsford, ASLAB only, TI, TIF2209 - Albus Dumbledore - Selasa
-        ['class_name' => 'Kom B1', 'course_id' => 2, 'lecturer' => 'Albus Dumbledore', 'created_at' => now(), 'updated_at' => now()],
-        ['class_name' => 'Kom B2', 'course_id' => 2, 'lecturer' => 'Albus Dumbledore', 'created_at' => now(), 'updated_at' => now()],
+            // Praktikum Sistem Basis Data (course_id=3)
+            ['course_id' => 3, 'class_name' => 'A1', 'lecturer' => 'Severus Snape'],
+            ['course_id' => 3, 'class_name' => 'A2', 'lecturer' => 'Severus Snape'],
+            ['course_id' => 3, 'class_name' => 'B1', 'lecturer' => 'Severus Snape'],
+            ['course_id' => 3, 'class_name' => 'B2', 'lecturer' => 'Severus Snape'],
+            ['course_id' => 3, 'class_name' => 'C1', 'lecturer' => 'Severus Snape'],
+            ['course_id' => 3, 'class_name' => 'C2', 'lecturer' => 'Severus Snape'],
 
-        // Karina, BPH+ASLAB, TI, TIF1206 - Severus Snape
-        ['class_name' => 'Kom A1', 'course_id' => 3, 'lecturer' => 'Severus Snape', 'created_at' => now(), 'updated_at' => now()],
-        ['class_name' => 'Kom A2', 'course_id' => 3, 'lecturer' => 'Severus Snape', 'created_at' => now(), 'updated_at' => now()],
-
-        // Hermione, BPH+ASLAB, TI, TIF1206 & TIF2207 - Severus Snape & Minerva Mcgonaggal
-        ['class_name' => 'Kom B1', 'course_id' => 3, 'lecturer' => 'Severus Snape', 'created_at' => now(), 'updated_at' => now()],
-        ['class_name' => 'Kom B2', 'course_id' => 3, 'lecturer' => 'Severus Snape', 'created_at' => now(), 'updated_at' => now()],
-        ['class_name' => 'Kom A1', 'course_id' => 1, 'lecturer' => 'Minerva Mcgonaggal', 'created_at' => now(), 'updated_at' => now()],
-        ['class_name' => 'Kom A2', 'course_id' => 1, 'lecturer' => 'Minerva Mcgonaggal', 'created_at' => now(), 'updated_at' => now()],
-
-        // Feyd Rautha, Ilmu Komputer, ILK1206 - Albus Dumbledore
-        ['class_name' => 'Kom B1', 'course_id' => 4, 'lecturer' => 'Albus Dumbledore', 'created_at' => now(), 'updated_at' => now()],
-        ['class_name' => 'Kom B2', 'course_id' => 4, 'lecturer' => 'Albus Dumbledore', 'created_at' => now(), 'updated_at' => now()],
-    ]);
+            // Praktikum Computer Vision (course_id=4)
+            ['course_id' => 4, 'class_name' => 'A1', 'lecturer' => 'Albus Dumbledore'],
+            ['course_id' => 4, 'class_name' => 'A2', 'lecturer' => 'Albus Dumbledore'],
+            ['course_id' => 4, 'class_name' => 'B1', 'lecturer' => 'Albus Dumbledore'],
+            ['course_id' => 4, 'class_name' => 'B2', 'lecturer' => 'Albus Dumbledore'],
+            ['course_id' => 4, 'class_name' => 'C1', 'lecturer' => 'Albus Dumbledore'],
+            ['course_id' => 4, 'class_name' => 'C2', 'lecturer' => 'Albus Dumbledore'],
+        ]);
     }
 }

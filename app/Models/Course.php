@@ -33,7 +33,7 @@ class Course extends Model
      */
     public function program()
     {
-        return $this->belongsTo(Program::class, 'program_id', 'program_id');
+        return $this->belongsTo(Program::class, 'program_id', 'id');
     }
 
 

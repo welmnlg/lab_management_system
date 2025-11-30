@@ -24,19 +24,16 @@
             </div>
         </div>
     </div>
-    
     @if(session('success'))
     <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4 mx-4 mt-4" role="alert">
         <span class="block sm:inline">{{ session('success') }}</span>
     </div>
     @endif
-
     @if(session('error'))
     <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 mx-4 mt-4" role="alert">
         <span class="block sm:inline">{{ session('error') }}</span>
     </div>
     @endif
-
     <!-- Table -->
     <div class="overflow-x-auto">
         <table class="w-full min-w-[800px] md:min-w-0">
@@ -135,7 +132,6 @@
                                 })->values()->toArray()) }}">
                                 <i class="bi bi-pencil-square text-sm"></i>
                             </button>
-
                             <!-- Tombol Hapus -->
                             <button type="button"
                                 class="delete-single-btn inline-flex items-center justify-center w-8 h-8 bg-gradient-to-r from-blue-900 to-red-700 text-white rounded-md hover:from-blue-800 hover:to-red-600 transition-all duration-200 shadow-md hover:shadow-lg flex-shrink-0"
@@ -154,24 +150,19 @@
     </div>
 </div>
 @endsection
-
 <script>
   window.coursesMaster = @json($coursesMaster);
   window.csrfToken = '{{ csrf_token() }}';
 </script>
-
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Toggle buttons untuk select multiple users
     const toggleButtons = document.querySelectorAll('.toggle-btn');
-    
     toggleButtons.forEach(button => {
         button.addEventListener('click', function() {
             const icon = this.querySelector('i');
-            
             this.classList.toggle('active');
-            
             if (this.classList.contains('active')) {
                 this.classList.remove('bg-gray-200', 'text-gray-400');
                 this.classList.add('bg-gradient-to-r', 'from-blue-900', 'to-red-700', 'text-white', 'shadow-md');
@@ -181,17 +172,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.classList.add('bg-gray-200', 'text-gray-400');
                 icon.classList.add('hidden');
             }
-            
             // Update button hapus state
             updateHapusButtonState();
         });
     });
-
     // Update state button hapus berdasarkan selection
     function updateHapusButtonState() {
         const hapusButton = document.getElementById('hapusButton');
         const selectedUsers = document.querySelectorAll('.toggle-btn.active');
-        
         if (selectedUsers.length > 0) {
             hapusButton.disabled = false;
             hapusButton.classList.remove('opacity-50', 'cursor-not-allowed');
@@ -200,10 +188,8 @@ document.addEventListener('DOMContentLoaded', function() {
             hapusButton.classList.add('opacity-50', 'cursor-not-allowed');
         }
     }
-
     // Initialize button state
     updateHapusButtonState();
-
     // Tombol Hapus Multiple
     const hapusButton = document.getElementById('hapusButton');
     if (hapusButton) {
@@ -211,7 +197,6 @@ document.addEventListener('DOMContentLoaded', function() {
             showMultipleDeleteConfirmationModal();
         });
     }
-
     // Event listener untuk tombol edit
     const editButtons = document.querySelectorAll('.edit-btn');
     editButtons.forEach(button => {
@@ -230,7 +215,6 @@ document.addEventListener('DOMContentLoaded', function() {
             showEditModal(userData);
         });
     });
-
     // Event listener untuk tombol hapus individual
     const deleteSingleButtons = document.querySelectorAll('.delete-single-btn');
     deleteSingleButtons.forEach(button => {
@@ -242,22 +226,17 @@ document.addEventListener('DOMContentLoaded', function() {
             showSingleDeleteConfirmationModal(userId, userName, actionUrl);
         });
     });
-
-    // FUNGSI EDIT MODAL - DENGAN 3 MATA KULIAH
+    // FUNGSI EDIT MODAL - DENGAN 3 MATA KULIAH DAN VALIDASI PASANGAN KELAS
     function showEditModal(userData) {
         console.log('Opening Edit Modal with data:', userData);
-        
         const userCourses = userData.userCourses || [];
-        
         // Prepare courses data untuk 3 mata kuliah
         const mk1 = userCourses[0] || { courseId: '', courseName: '', kelasIds: [] };
         const mk2 = userCourses[1] || { courseId: '', courseName: '', kelasIds: [] };
         const mk3 = userCourses[2] || { courseId: '', courseName: '', kelasIds: [] };
-
         // Hitung jumlah karakter password asli
         const passwordLength = userData.password ? userData.password.length : 10;
         const passwordDots = '•'.repeat(Math.min(passwordLength, 15));
-
         const modal = document.createElement('div');
         modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
         modal.innerHTML = `
@@ -266,32 +245,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="bg-gradient-to-r from-blue-900 to-red-700 px-6 py-4">
                     <h1 class="text-xl md:text-2xl font-bold text-white">Edit Pengguna</h1>
                 </div>
-                
                 <!-- Form -->
                 <form id="userEditForm" class="p-6 space-y-6">
                     <input type="hidden" name="user_id" value="${userData.id}">
-                    
                     <!-- Nama Lengkap -->
                     <div class="space-y-2">
                         <label class="block text-sm font-medium text-gray-700">Nama Lengkap <span class="text-red-500">*</span></label>
                         <input type="text" name="name" value="${userData.nama || ''}" required placeholder="Masukkan nama lengkap"
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 sm:px-4 sm:py-3">
                     </div>
-
                     <!-- NIM -->
                     <div class="space-y-2">
                         <label class="block text-sm font-medium text-gray-700">NIM <span class="text-red-500">*</span></label>
                         <input type="text" name="nim" value="${userData.nim || ''}" required placeholder="Masukkan NIM"
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 sm:px-4 sm:py-3">
                     </div>
-
                     <!-- Email -->
                     <div class="space-y-2">
                         <label class="block text-sm font-medium text-gray-700">Email <span class="text-red-500">*</span></label>
                         <input type="email" name="email" value="${userData.email || ''}" required placeholder="Masukkan alamat email"
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 sm:px-4 sm:py-3">
                     </div>
-
                     <!-- Kata Sandi - DISABLED dan SENSOR -->
                     <div class="space-y-2">
                         <label class="block text-sm font-medium text-gray-700">Kata Sandi</label>
@@ -304,21 +278,18 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <p class="text-xs text-gray-500 italic">Password tidak dapat diedit untuk keamanan</p>
                     </div>
-
                     <!-- Garis Pemisah -->
                     <div class="border-t border-gray-200 my-4 sm:my-6"></div>
-
                     <!-- Mata Kuliah Section -->
                     <div class="space-y-4">
                         <h3 class="text-lg font-medium text-gray-900">Mata Kuliah</h3>
-                        
                         <!-- MATA KULIAH 1 -->
                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <!-- Mata Kuliah 1 -->
                             <div class="space-y-2">
                                 <label class="block text-sm font-medium text-gray-700">Mata Kuliah 1 <span class="text-red-500">*</span></label>
                                 <div class="relative">
-                                    <select name="mata_kuliah_1" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white sm:px-4 sm:py-3">
+                                    <select name="mata_kuliah_1" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white sm:px-4 sm:py-3 select-no-custom-arrow">
                                         <option value="">Pilih mata kuliah...</option>
                                         ${window.coursesMaster.map(course => 
                                             `<option value="${course.course_id}" ${mk1.courseId == course.course_id ? 'selected' : ''}>${course.course_name}</option>`
@@ -329,7 +300,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                     </div>
                                 </div>
                             </div>
-                            
                             <!-- KOM MK 1 -->
                             <div class="space-y-2">
                                 <label class="block text-sm font-medium text-gray-700">KOM MK 1 <span class="text-red-500">*</span></label>
@@ -356,14 +326,13 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </div>
                             </div>
                         </div>
-
                         <!-- MATA KULIAH 2 -->
                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <!-- Mata Kuliah 2 -->
                             <div class="space-y-2">
                                 <label class="block text-sm font-medium text-gray-700">Mata Kuliah 2</label>
                                 <div class="relative">
-                                    <select name="mata_kuliah_2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white sm:px-4 sm:py-3">
+                                    <select name="mata_kuliah_2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white sm:px-4 sm:py-3 select-no-custom-arrow">
                                         <option value="">Pilih mata kuliah...</option>
                                         ${window.coursesMaster.map(course => 
                                             `<option value="${course.course_id}" ${mk2.courseId == course.course_id ? 'selected' : ''}>${course.course_name}</option>`
@@ -374,7 +343,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                     </div>
                                 </div>
                             </div>
-                            
                             <!-- KOM MK 2 -->
                             <div class="space-y-2">
                                 <label class="block text-sm font-medium text-gray-700">KOM MK 2</label>
@@ -401,14 +369,13 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </div>
                             </div>
                         </div>
-
                         <!-- MATA KULIAH 3 -->
                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <!-- Mata Kuliah 3 -->
                             <div class="space-y-2">
                                 <label class="block text-sm font-medium text-gray-700">Mata Kuliah 3</label>
                                 <div class="relative">
-                                    <select name="mata_kuliah_3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white sm:px-4 sm:py-3">
+                                    <select name="mata_kuliah_3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white sm:px-4 sm:py-3 select-no-custom-arrow">
                                         <option value="">Pilih mata kuliah...</option>
                                         ${window.coursesMaster.map(course => 
                                             `<option value="${course.course_id}" ${mk3.courseId == course.course_id ? 'selected' : ''}>${course.course_name}</option>`
@@ -419,7 +386,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                     </div>
                                 </div>
                             </div>
-                            
                             <!-- KOM MK 3 -->
                             <div class="space-y-2">
                                 <label class="block text-sm font-medium text-gray-700">KOM MK 3</label>
@@ -447,10 +413,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                         </div>
                     </div>
-
                     <!-- Garis Pemisah -->
                     <div class="border-t border-gray-200 my-4 sm:my-6"></div>
-
                     <!-- Peran - PRIORITAS BPH -->
                     <div class="space-y-4">
                         <h3 class="text-lg font-medium text-gray-900">Peran <span class="text-red-500">*</span></h3>
@@ -468,10 +432,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             </label>
                         </div>
                     </div>
-
                     <!-- Garis Pemisah -->
                     <div class="border-t border-gray-200 my-4 sm:my-6"></div>
-
                     <!-- Button Simpan dan Batal -->
                     <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                         <!-- Button Batal -->
@@ -490,25 +452,53 @@ document.addEventListener('DOMContentLoaded', function() {
                 </form>
             </div>
         `;
-
         document.body.appendChild(modal);
-
         // Initialize dropdown KOM functionality
         initializeKomDropdownsInModal(modal);
-
         // Event: Batal
         modal.querySelector('#cancelEditButton').onclick = () => document.body.removeChild(modal);
-
         // Event: Submit Form
         modal.querySelector('#userEditForm').onsubmit = function(e) {
             e.preventDefault();
             const formData = new FormData(this);
-            
             // Collect kelas data from checkboxes
             const kelas1 = Array.from(modal.querySelectorAll('.kom-checkbox[data-target="kom1"]:checked')).map(cb => cb.value);
             const kelas2 = Array.from(modal.querySelectorAll('.kom-checkbox[data-target="kom2"]:checked')).map(cb => cb.value);
             const kelas3 = Array.from(modal.querySelectorAll('.kom-checkbox[data-target="kom3"]:checked')).map(cb => cb.value);
-            
+            // Validate paired classes (A1-A2, B1-B2, C1-C2)
+            const validatePairedClasses = (kelasArray) => {
+                const pairs = {
+                    'A1': 'A2',
+                    'A2': 'A1',
+                    'B1': 'B2',
+                    'B2': 'B1',
+                    'C1': 'C2',
+                    'C2': 'C1'
+                };
+                const selected = new Set(kelasArray);
+                for (const cls of selected) {
+                    const paired = pairs[cls];
+                    if (paired && !selected.has(paired)) {
+                        return `Kelas ${cls} harus dipilih bersamaan dengan ${paired}.`;
+                    }
+                }
+                return null;
+            };
+            const error1 = validatePairedClasses(kelas1);
+            const error2 = validatePairedClasses(kelas2);
+            const error3 = validatePairedClasses(kelas3);
+            if (error1) {
+                showAlertModal('Validasi Gagal', error1);
+                return;
+            }
+            if (error2) {
+                showAlertModal('Validasi Gagal', error2);
+                return;
+            }
+            if (error3) {
+                showAlertModal('Validasi Gagal', error3);
+                return;
+            }
             // Build data object
             const data = {
                 _token: window.csrfToken,
@@ -524,45 +514,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 mata_kuliah_3: formData.get('mata_kuliah_3') || '',
                 kelas_3: kelas3
             };
-            
             console.log('Submitting edit data:', data);
-            
             // Kirim data ke server dengan AJAX
             submitEditForm(data, userData.id);
             document.body.removeChild(modal);
         };
-
         // Klik di luar modal untuk close
         modal.addEventListener('click', function(e) {
-            if (e.target === modal) document.body.removeChild(modal);
+            if (e.target === modal) {document.body.removeChild(modal);
+            }
         });
     }
-
     // Initialize KOM Dropdowns dalam Modal
     function initializeKomDropdownsInModal(modal) {
         const dropdownToggles = modal.querySelectorAll('.dropdown-kom-toggle');
         const dropdownMenus = modal.querySelectorAll('.dropdown-kom-menu');
-        
         dropdownToggles.forEach(toggle => {
             const target = toggle.getAttribute('data-target');
             const menu = modal.querySelector(`.dropdown-kom-menu[data-target="${target}"]`);
             const chevronIcon = toggle.querySelector('i');
-            
             toggle.addEventListener('click', function(e) {
                 e.stopPropagation();
                 const isShowing = !menu.classList.contains('hidden');
-                
                 // Close all dropdowns in modal
                 dropdownMenus.forEach(m => m.classList.add('hidden'));
                 modal.querySelectorAll('.dropdown-kom-toggle i').forEach(icon => icon.classList.remove('rotate-180'));
-                
                 if (!isShowing) {
                     menu.classList.remove('hidden');
                     chevronIcon.classList.add('rotate-180');
                 }
             });
         });
-        
         // Add event listeners to all checkboxes in modal
         const allCheckboxes = modal.querySelectorAll('.kom-checkbox');
         allCheckboxes.forEach(checkbox => {
@@ -571,7 +553,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateSelectedKomTextInModal(modal, target);
             });
         });
-        
         // Close dropdown when clicking outside
         modal.addEventListener('click', function(e) {
             if (!e.target.closest('.dropdown-kom-toggle') && !e.target.closest('.dropdown-kom-menu')) {
@@ -579,7 +560,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 modal.querySelectorAll('.dropdown-kom-toggle i').forEach(icon => icon.classList.remove('rotate-180'));
             }
         });
-        
         // Prevent dropdown from closing when clicking inside
         dropdownMenus.forEach(menu => {
             menu.addEventListener('click', function(e) {
@@ -587,18 +567,15 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
-
     // Update selected KOM text dalam modal
     function updateSelectedKomTextInModal(modal, komTarget) {
         const checkboxes = modal.querySelectorAll(`.kom-checkbox[data-target="${komTarget}"]:checked`);
         const toggle = modal.querySelector(`.dropdown-kom-toggle[data-target="${komTarget}"]`);
         const selectedText = toggle.querySelector('.selected-kom-text');
-        
         const selectedPairs = Array.from(checkboxes).map(cb => {
             const value = cb.value;
             return `KOM ${value}`;
         });
-        
         if (selectedPairs.length === 0) {
             selectedText.textContent = 'Pilih kelas';
             selectedText.className = 'selected-kom-text text-gray-400';
@@ -607,14 +584,11 @@ document.addEventListener('DOMContentLoaded', function() {
             selectedText.className = 'selected-kom-text text-gray-900';
         }
     }
-
     // Submit Edit Form via AJAX
     function submitEditForm(data, userId) {
         showProcessingEditModal();
-        
         console.log('Sending update request to:', `/kelola-pengguna/${userId}`);
         console.log('Data:', data);
-        
         // Convert arrays to proper format for Laravel
         const formData = new FormData();
         formData.append('_token', data._token);
@@ -624,20 +598,16 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('email', data.email);
         formData.append('peran', data.peran);
         formData.append('mata_kuliah_1', data.mata_kuliah_1);
-        
         // Append kelas arrays
         data.kelas_1.forEach(kelas => formData.append('kelas_1[]', kelas));
-        
         if (data.mata_kuliah_2) {
             formData.append('mata_kuliah_2', data.mata_kuliah_2);
             data.kelas_2.forEach(kelas => formData.append('kelas_2[]', kelas));
         }
-        
         if (data.mata_kuliah_3) {
             formData.append('mata_kuliah_3', data.mata_kuliah_3);
             data.kelas_3.forEach(kelas => formData.append('kelas_3[]', kelas));
         }
-        
         fetch(`/kelola-pengguna/${userId}`, {
             method: 'POST',
             body: formData,
@@ -666,7 +636,6 @@ document.addEventListener('DOMContentLoaded', function() {
             showAlertModal('Error', 'Terjadi kesalahan saat menyimpan data: ' + error.message);
         });
     }
-
     // FUNGSI HAPUS SINGLE
     function showSingleDeleteConfirmationModal(userId, userName, actionUrl) {
         const modal = document.createElement('div');
@@ -695,53 +664,41 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
         `;
-        
         document.body.appendChild(modal);
-        
         modal.querySelector('#cancelSingleDeleteButton').onclick = () => document.body.removeChild(modal);
-        
         modal.querySelector('#confirmSingleDeleteButton').onclick = () => {
             document.body.removeChild(modal);
             showProcessingModal(1, userName);
-            
             // Submit form delete dengan AJAX
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = actionUrl;
-            
             const csrfInput = document.createElement('input');
             csrfInput.type = 'hidden';
             csrfInput.name = '_token';
             csrfInput.value = window.csrfToken;
-            
             const methodInput = document.createElement('input');
             methodInput.type = 'hidden';
             methodInput.name = '_method';
             methodInput.value = 'DELETE';
-            
             form.appendChild(csrfInput);
             form.appendChild(methodInput);
             document.body.appendChild(form);
-            
             setTimeout(() => {
                 form.submit();
             }, 1500);
         };
-        
         modal.addEventListener('click', function(e) {
             if (e.target === modal) document.body.removeChild(modal);
         });
     }
-
     // FUNGSI HAPUS MULTIPLE
     function showMultipleDeleteConfirmationModal() {
         const selectedUsers = document.querySelectorAll('.toggle-btn.active');
-        
         if (selectedUsers.length === 0) {
             showAlertModal('Peringatan', 'Tidak ada pengguna yang dipilih untuk dihapus.');
             return;
         }
-
         const modal = document.createElement('div');
         modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
         modal.innerHTML = `
@@ -768,27 +725,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
         `;
-        
         document.body.appendChild(modal);
-        
         modal.querySelector('#cancelMultipleDeleteButton').onclick = () => document.body.removeChild(modal);
         modal.querySelector('#confirmMultipleDeleteButton').onclick = () => {
             deleteMultipleUsers(selectedUsers);
             document.body.removeChild(modal);
         };
-        
         modal.addEventListener('click', function(e) {
             if (e.target === modal) document.body.removeChild(modal);
         });
     }
-
     function deleteMultipleUsers(selectedUsers) {
         const userIds = Array.from(selectedUsers).map(btn => btn.getAttribute('data-user-id'));
-        
         console.log('Deleting users:', userIds);
-        
         showProcessingModal(selectedUsers.length);
-        
         fetch('/kelola-pengguna/delete-multiple', {
             method: 'POST',
             headers: {
@@ -813,7 +763,6 @@ document.addEventListener('DOMContentLoaded', function() {
             showAlertModal('Error', 'Terjadi kesalahan saat menghapus pengguna.');
         });
     }
-
     function showProcessingEditModal() {
         const modal = document.createElement('div');
         modal.className = 'processing-modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
@@ -833,15 +782,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
         `;
-        
         document.body.appendChild(modal);
     }
-
     function showProcessingModal(userCount, userName = '') {
         const message = userName ? 
             `Sedang menghapus pengguna ${userName}...` : 
             `Sedang menghapus ${userCount} pengguna yang dipilih...`;
-        
         const modal = document.createElement('div');
         modal.className = 'processing-modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
         modal.innerHTML = `
@@ -860,10 +806,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
         `;
-        
         document.body.appendChild(modal);
     }
-
     function showSuccessModal(message) {
         const modal = document.createElement('div');
         modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
@@ -885,15 +829,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
         `;
-        
         document.body.appendChild(modal);
-        
         modal.querySelector('#successOkButton').onclick = () => {
             document.body.removeChild(modal);
             location.reload();
         };
     }
-
+    
     function showAlertModal(title, message) {
         const modal = document.createElement('div');
         modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
@@ -915,13 +857,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
         `;
-        
         document.body.appendChild(modal);
-        
         modal.querySelector('#alertOkButton').onclick = () => document.body.removeChild(modal);
-        
         modal.addEventListener('click', function(e) {
-            if (e.target === modal) document.body.removeChild(modal);
+            if (e.target === modal){ document.body.removeChild(modal);
+            }
         });
     }
 });

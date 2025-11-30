@@ -1,7 +1,5 @@
 @extends('layouts.main')
-
 @section('title', 'Tambah Pengguna - ITLG Lab Management System')
-
 @section('content')
 <div class="max-w-4xl mx-auto">
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
@@ -57,7 +55,7 @@
                         <!-- Untuk BPH: tampilan readonly dan hidden input -->
                         <input type="hidden" name="program_studi" value="{{ $user->program_studi }}">
                         <input type="text" readonly
-                            value="{{ $user->program_studi }}"
+                            value="{{ $user->program->name ?? 'N/A' }}"
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:px-4 sm:py-3">
                     @else
                         <!-- Untuk admin: dropdown pilih program studi -->
@@ -123,7 +121,7 @@
                         <div class="space-y-2">
                             <label class="block text-sm font-medium text-gray-700">Mata Kuliah 1 <span class="text-red-500">*</span></label>
                             <div class="relative">
-                                <select name="mata_kuliah_1" required id="mataKuliah1" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white sm:px-4 sm:py-3">
+                                <select name="mata_kuliah_1" required id="mataKuliah1" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white sm:px-4 sm:py-3 select-no-custom-arrow">
                                     <option value="">Pilih mata kuliah...</option>
                                     @php
                                         $authUser = auth()->user();
@@ -193,7 +191,7 @@
                         <div class="space-y-2">
                             <label class="block text-sm font-medium text-gray-700">Mata Kuliah 2</label>
                             <div class="relative">
-                                <select name="mata_kuliah_2" id="mataKuliah2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white sm:px-4 sm:py-3">
+                                <select name="mata_kuliah_2" id="mataKuliah2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white sm:px-4 sm:py-3 select-no-custom-arrow">
                                     <option value="">Pilih mata kuliah...</option>
                                     @foreach(\App\Models\Course::where('program_id', $user->program_studi)->get() as $course)
                                         <option value="{{ $course->course_id }}">{{ $course->course_name }}</option>
@@ -256,7 +254,7 @@
                         <div class="space-y-2">
                             <label class="block text-sm font-medium text-gray-700">Mata Kuliah 3</label>
                             <div class="relative">
-                                <select name="mata_kuliah_3" id="mataKuliah3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white sm:px-4 sm:py-3">
+                                <select name="mata_kuliah_3" id="mataKuliah3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white sm:px-4 sm:py-3 select-no-custom-arrow">
                                     <option value="">Pilih mata kuliah...</option>
                                     @foreach(\App\Models\Course::where('program_id', $user->program_studi)->get() as $course)
                                         <option value="{{ $course->course_id }}">{{ $course->course_name }}</option>
@@ -590,6 +588,41 @@ document.addEventListener('DOMContentLoaded', function() {
             return true;
         });
     }
+
+    // ================================
+    // FUNGSI POPUP ERROR YANG PASTI JALAN
+    // ================================
+    @if(session('error'))
+        (function() {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg shadow-lg max-w-md w-full mx-4">
+                    <div class="p-6">
+                        <div class="text-center">
+                            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4">
+                                <i class="bi bi-exclamation-circle text-yellow-600 text-xl"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">Gagal!</h3>
+                            <p class="text-sm text-gray-500 mb-4">{{ session('error') }}</p>
+                        </div>
+                        <div class="mt-6 flex justify-center">
+                            <button id="alertOkButton" class="inline-flex items-center px-4 py-2 md:px-6 md:py-2 bg-gradient-to-r from-blue-900 to-red-700 text-white rounded-md hover:from-blue-800 hover:to-red-600 transition-all duration-200 shadow-md hover:shadow-lg font-medium text-sm md:text-base">
+                                OK
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            document.getElementById('alertOkButton').onclick = () => document.body.removeChild(modal);
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    document.body.removeChild(modal);
+                }
+            });
+        })();
+    @endif
 });
 </script>
 @endpush
