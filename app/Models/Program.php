@@ -6,10 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Program extends Model
 {
-    protected $primaryKey = 'program_id';
+    // Migration uses default id() which creates 'id' column
+    protected $primaryKey = 'id';
+
+    protected $fillable = ['name', 'faculty'];
 
     public function users()
     {
-        return $this->hasMany(User::class, 'program_studi', 'program_id');
+        return $this->hasMany(User::class, 'program_studi', 'id');
     }
 }

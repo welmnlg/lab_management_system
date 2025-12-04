@@ -27,7 +27,7 @@
                 {{-- Tombol Aksi --}}
                 <div class="flex-shrink-0 mt-4 md:mt-0">
                     <button onclick="bukaModalGantiSandi()"
-                        class="flex items-center gap-2 px-4 py-2 bg-gr  ient-to-r from-blue-900 to-red-700 text-white font-semibold rounded-lg shadow-md hover:opacity-90 transition">
+                        class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-900 to-red-700 text-white font-semibold rounded-lg shadow-md hover:opacity-90 transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H5v-2H3v-2H1l4.257-4.257A6 6 0 1121 9z">
@@ -74,140 +74,142 @@
             <h3 class="text-lg font-bold text-gray-800 mb-4" id="modal-title">Konfirmasi</h3>
             <p class="text-gray-600 mb-6" id="modal-message">Apakah Anda yakin?</p>
             <div class="flex justify-end gap-3">
-                <button id="modal-batal"
+                <button id="modal-batal" class="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition">
+                Batal
+            </button>
+            <button id="modal-ya" class="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-blue-900 to-red-700 rounded-lg hover:opacity-90 transition">
+                Ya
+            </button>
+        </div>
+    </div>
+</div>
+
+{{-- Modal Ganti Kata Sandi --}}
+<div id="modal-ganti-sandi" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4" onclick="event.stopPropagation()">
+        {{-- Header --}}
+        <div class="mb-6">
+            <h2 class="text-xl font-bold text-gray-800">Ganti Kata Sandi</h2>
+            <p class="text-sm text-gray-600 mt-2">
+                Kata sandi harus memiliki minimal 6 karakter dan harus mengandung huruf, angka, dan karakter khusus (!$@%).
+            </p>
+        </div>
+
+        {{-- Form --}}
+        <form id="form-ganti-sandi" class="space-y-4">
+            @csrf
+            @method('PUT')
+            {{-- Kata Sandi Lama --}}
+            <div>
+                <label for="sandi-lama" class="block text-sm font-medium text-gray-700 mb-2">
+                    Kata Sandi Lama
+                </label>
+                <input type="password" id="sandi-lama" name="current_password" 
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    placeholder="Masukkan kata sandi lama"
+                    required
+                    autocomplete="current-password">
+                <div id="error-sandi-lama" class="text-red-500 text-xs mt-1 hidden"></div>
+            </div>
+
+            {{-- Kata Sandi Baru --}}
+            <div>
+                <label for="sandi-baru" class="block text-sm font-medium text-gray-700 mb-2">
+                    Kata Sandi Baru
+                </label>
+                <input type="password" id="sandi-baru" name="new_password" 
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    placeholder="Masukkan kata sandi baru"
+                    required
+                    autocomplete="new-password">
+                
+                {{-- Indikator Kekuatan Kata Sandi --}}
+                <div class="mt-2 space-y-1">
+                    <div class="flex items-center text-xs">
+                        <span id="indicator-length" class="w-3 h-3 rounded-full bg-gray-300 mr-2"></span>
+                        <span id="text-length" class="text-gray-600">Minimal 6 karakter</span>
+                    </div>
+                    <div class="flex items-center text-xs">
+                        <span id="indicator-letter" class="w-3 h-3 rounded-full bg-gray-300 mr-2"></span>
+                        <span id="text-letter" class="text-gray-600">Mengandung huruf</span>
+                    </div>
+                    <div class="flex items-center text-xs">
+                        <span id="indicator-number" class="w-3 h-3 rounded-full bg-gray-300 mr-2"></span>
+                        <span id="text-number" class="text-gray-600">Mengandung angka</span>
+                    </div>
+                    <div class="flex items-center text-xs">
+                        <span id="indicator-special" class="w-3 h-3 rounded-full bg-gray-300 mr-2"></span>
+                        <span id="text-special" class="text-gray-600">Mengandung karakter khusus (!$@%)</span>
+                    </div>
+                </div>
+                
+                <div id="error-sandi-baru" class="text-red-500 text-xs mt-1 hidden"></div>
+            </div>
+
+            {{-- Konfirmasi Kata Sandi Baru --}}
+            <div>
+                <label for="konfirmasi-sandi" class="block text-sm font-medium text-gray-700 mb-2">
+                    Tulis Ulang Kata Sandi Baru
+                </label>
+                <input type="password" id="konfirmasi-sandi" name="new_password_confirmation" 
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    placeholder="Tulis ulang kata sandi baru"
+                    required
+                    autocomplete="new-password">
+                <div id="error-konfirmasi-sandi" class="text-red-500 text-xs mt-1 hidden"></div>
+            </div>
+
+            {{-- Tombol Aksi --}}
+            <div class="flex justify-end gap-3 pt-4">
+                <button type="button" onclick="tutupModalGantiSandi()" 
                     class="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition">
                     Batal
                 </button>
-                <button id="modal-ya"
-                    class="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-blue-900 to-red-700 rounded-lg hover:opacity-90 transition">
-                    Ya
+                <button type="submit" id="submit-ganti-sandi"
+                    class="px-4 py-2 text-sm font-semibold text-white bg-gray-400 rounded-lg cursor-not-allowed transition"
+                    disabled>
+                    Ganti Kata Sandi
                 </button>
             </div>
-        </div>
+        </form>
     </div>
+</div>
 
-    {{-- Modal Ganti Kata Sandi --}}
-    <div id="modal-ganti-sandi" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4" onclick="event.stopPropagation()">
-            {{-- Header --}}
-            <div class="mb-6">
-                <h2 class="text-xl font-bold text-gray-800">Ganti Kata Sandi</h2>
-                <p class="text-sm text-gray-600 mt-2">
-                    Kata sandi harus memiliki minimal 6 karakter dan harus mengandung huruf, angka, dan karakter khusus
-                    (!$@%).
-                </p>
-            </div>
-
-            {{-- Form --}}
-            <form id="form-ganti-sandi" class="space-y-4">
-                @csrf
-                @method('PUT')
-                {{-- Kata Sandi Lama --}}
-                <div>
-                    <label for="sandi-lama" class="block text-sm font-medium text-gray-700 mb-2">
-                        Kata Sandi Lama
-                    </label>
-                    <input type="password" id="sandi-lama" name="current_password"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                        placeholder="Masukkan kata sandi lama" required autocomplete="current-password">
-                    <div id="error-sandi-lama" class="text-red-500 text-xs mt-1 hidden"></div>
-                </div>
-
-                {{-- Kata Sandi Baru --}}
-                <div>
-                    <label for="sandi-baru" class="block text-sm font-medium text-gray-700 mb-2">
-                        Kata Sandi Baru
-                    </label>
-                    <input type="password" id="sandi-baru" name="new_password"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                        placeholder="Masukkan kata sandi baru" required autocomplete="new-password">
-
-                    {{-- Indikator Kekuatan Kata Sandi --}}
-                    <div class="mt-2 space-y-1">
-                        <div class="flex items-center text-xs">
-                            <span id="indicator-length" class="w-3 h-3 rounded-full bg-gray-300 mr-2"></span>
-                            <span id="text-length" class="text-gray-600">Minimal 6 karakter</span>
-                        </div>
-                        <div class="flex items-center text-xs">
-                            <span id="indicator-letter" class="w-3 h-3 rounded-full bg-gray-300 mr-2"></span>
-                            <span id="text-letter" class="text-gray-600">Mengandung huruf</span>
-                        </div>
-                        <div class="flex items-center text-xs">
-                            <span id="indicator-number" class="w-3 h-3 rounded-full bg-gray-300 mr-2"></span>
-                            <span id="text-number" class="text-gray-600">Mengandung angka</span>
-                        </div>
-                        <div class="flex items-center text-xs">
-                            <span id="indicator-special" class="w-3 h-3 rounded-full bg-gray-300 mr-2"></span>
-                            <span id="text-special" class="text-gray-600">Mengandung karakter khusus (!$@%)</span>
-                        </div>
-                    </div>
-
-                    <div id="error-sandi-baru" class="text-red-500 text-xs mt-1 hidden"></div>
-                </div>
-
-                {{-- Konfirmasi Kata Sandi Baru --}}
-                <div>
-                    <label for="konfirmasi-sandi" class="block text-sm font-medium text-gray-700 mb-2">
-                        Tulis Ulang Kata Sandi Baru
-                    </label>
-                    <input type="password" id="konfirmasi-sandi" name="new_password_confirmation"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                        placeholder="Tulis ulang kata sandi baru" required autocomplete="new-password">
-                    <div id="error-konfirmasi-sandi" class="text-red-500 text-xs mt-1 hidden"></div>
-                </div>
-
-                {{-- Tombol Aksi --}}
-                <div class="flex justify-end gap-3 pt-4">
-                    <button type="button" onclick="tutupModalGantiSandi()"
-                        class="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition">
-                        Batal
-                    </button>
-                    <button type="submit" id="submit-ganti-sandi"
-                        class="px-4 py-2 text-sm font-semibold text-white bg-gray-400 rounded-lg cursor-not-allowed transition"
-                        disabled>
-                        Ganti Kata Sandi
-                    </button>
-                </div>
-            </form>
+{{-- Modal Sukses --}}
+<div id="modal-sukses" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-xl p-6 max-w-sm w-full mx-4 text-center" onclick="event.stopPropagation()">
+        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
         </div>
+        <h3 class="text-lg font-bold text-gray-800 mb-2" id="sukses-title">Berhasil!</h3>
+        <p class="text-gray-600 mb-6" id="sukses-message">Kata sandi berhasil diganti.</p>
+        <button onclick="tutupModalSukses()"
+            class="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-blue-900 to-red-700 rounded-lg hover:opacity-90 transition w-full">
+            Tutup
+        </button>
     </div>
+</div>
 
-    {{-- Modal Sukses --}}
-    <div id="modal-sukses" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-xl p-6 max-w-sm w-full mx-4 text-center" onclick="event.stopPropagation()">
-            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-            </div>
-            <h3 class="text-lg font-bold text-gray-800 mb-2" id="sukses-title">Berhasil!</h3>
-            <p class="text-gray-600 mb-6" id="sukses-message">Kata sandi berhasil diganti.</p>
-            <button onclick="tutupModalSukses()"
-                class="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-blue-900 to-red-700 rounded-lg hover:opacity-90 transition w-full">
-                Tutup
-            </button>
+{{-- Modal Error --}}
+<div id="modal-error" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-xl p-6 max-w-sm w-full mx-4 text-center" onclick="event.stopPropagation()">
+        <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
         </div>
+        <h3 class="text-lg font-bold text-gray-800 mb-2" id="error-title">Gagal!</h3>
+        <p class="text-gray-600 mb-6" id="error-message">Terjadi kesalahan saat mengganti kata sandi.</p>
+        <button onclick="tutupModalError()"
+            class="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-red-700 to-orange-500 rounded-lg hover:opacity-90 transition w-full">
+            Tutup
+        </button>
     </div>
+</div>
 
-    {{-- Modal Error --}}
-    <div id="modal-error" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-xl p-6 max-w-sm w-full mx-4 text-center" onclick="event.stopPropagation()">
-            <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
-                    </path>
-                </svg>
-            </div>
-            <h3 class="text-lg font-bold text-gray-800 mb-2" id="error-title">Gagal!</h3>
-            <p class="text-gray-600 mb-6" id="error-message">Terjadi kesalahan saat mengganti kata sandi.</p>
-            <button onclick="tutupModalError()"
-                class="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-red-700 to-orange-500 rounded-lg hover:opacity-90 transition w-full">
-                Tutup
-            </button>
-        </div>
-    </div>
-
-    <script>
+<script>
         // ==========================================
         // GLOBAL VARIABLES
         // ==========================================
@@ -510,29 +512,44 @@
         /**
          * Render jadwal mingguan dengan tab hari
          */
-        function renderWeeklySchedules(schedules) {
-            const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat']; //Testing sabtu Minggu
-            const dayShort = ['SEN', 'SEL', 'RAB', 'KAM', 'JUM'];
-            const scheduleTabsContainer = document.getElementById('schedule-tabs');
-            const scheduleContentContainer = document.getElementById('schedule-content');
+    function renderWeeklySchedules(schedules) {
+        const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
+        const dayShort = ['SEN', 'SEL', 'RAB', 'KAM', 'JUM'];
+        const scheduleTabsContainer = document.getElementById('schedule-tabs');
+        const scheduleContentContainer = document.getElementById('schedule-content');
 
+        if (!scheduleTabsContainer || !scheduleContentContainer) return;
+        scheduleTabsContainer.innerHTML = '';
+        scheduleContentContainer.innerHTML = '';
 
-            if (!scheduleTabsContainer || !scheduleContentContainer) return;
-            scheduleTabsContainer.innerHTML = '';
-            scheduleContentContainer.innerHTML = '';
+        const weekDates = getWeekDates();
+        
+        // Determine default active day
+        const today = new Date().getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+        let defaultActiveIndex = 0; // Default Monday
+        
+        if (today >= 1 && today <= 5) {
+            // Monday (1) to Friday (5) -> map to index 0-4
+            defaultActiveIndex = today - 1;
+        } else if (today === 6 || today === 0) {
+            // Saturday (6) or Sunday (0) -> default to Friday (index 4)
+            defaultActiveIndex = 4;
+        }
 
+        days.forEach((day, index) => {
+            const daySchedules = schedules[day] || [];
+            const date = weekDates[index];
 
-            const weekDates = getWeekDates();
+            const tabButton = document.createElement('button');
+            const isActive = index === defaultActiveIndex;
+            
+            // Set initial active day global variable
+            if (isActive) {
+                hariAktif = day;
+            }
 
-            days.forEach((day, index) => {
-                    const daySchedules = schedules[day] || [];
-                    const date = weekDates[index];
-
-
-                    const tabButton = document.createElement('button');
-                    const isActive = index === 0;
-                    tabButton.id = `tab-${day.toLowerCase()}`;
-                    tabButton.className = `flex-shrink-0 px-3 py-2 rounded-lg font-semibold text-xs min-w-[60px] transition-all duration-200 ${
+            tabButton.id = `tab-${day.toLowerCase()}`;
+            tabButton.className = `flex-shrink-0 px-3 py-2 rounded-lg font-semibold text-xs min-w-[60px] transition-all duration-200 ${
                 isActive 
                     ? 'bg-gradient-to-r from-blue-900 to-red-700 text-white' 
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -628,8 +645,14 @@
                     actionContent = getStatusBadge(status);
                 } else if (status === 'pindah_ruangan') {
                     borderColor = 'border-purple-500';
-                    actionContent =
-                        `<span class="text-xs text-purple-600 font-medium">Dipindahkan ke Ruangan Lain</span>`;
+                    actionContent = `
+                        <a href="/scan-qr" class="flex items-center gap-2 text-sm px-4 py-2 bg-purple-50 hover:bg-purple-100 rounded-lg transition cursor-pointer">
+                            <svg class="w-5 h-5 text-purple-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
+                            </svg>
+                            <span class="text-purple-600 font-medium">Menunggu Scan QR (Ruangan Baru) →</span>
+                        </a>
+                    `;
                 } else {
                     actionContent = getStatusBadge(status);
                 }
@@ -646,7 +669,6 @@
                             Mata Kuliah: ${schedule.course_name}
                             ${schedule.is_substitute ? '<span class="ml-2 px-2 py-0.5 text-xs bg-yellow-100 text-yellow-800 rounded-full">Kelas Pengganti</span>' : ''}
                             ${schedule.is_override && !schedule.is_substitute ? '<span class="ml-2 px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded-full">Pindah Ruangan</span>' : ''}
-                            ${schedule.schedule_override_id != null && schedule.is_substitute ? '<span class="ml-2 px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded-full">Pindah Ruangan</span>' : ''}
                         </p>
                         <div class="flex items-center flex-wrap gap-2 text-sm text-gray-600 mt-2">
                             <span class="flex items-center gap-1.5 bg-gray-200 px-2 py-1 rounded-md">
@@ -687,25 +709,22 @@
 
                         scheduleContentContainer.appendChild(contentPanel);
                     });
-
-                    if (days.length > 0) {
-                        hariAktif = days[0];
-                    }
                 }
+            
 
-                /**
-                 * Show empty state ketika tidak ada jadwal
-                 */
-                function showEmptyScheduleState() {
-                    const scheduleTabsContainer = document.getElementById('schedule-tabs');
-                    const scheduleContentContainer = document.getElementById('schedule-content');
-                    
-                    if (scheduleTabsContainer) {
-                        scheduleTabsContainer.innerHTML = '';
-                    }
-                    
-                    if (scheduleContentContainer) {
-                        scheduleContentContainer.innerHTML = `
+    /**
+     * Show empty state ketika tidak ada jadwal
+     */
+    function showEmptyScheduleState() {
+        const scheduleTabsContainer = document.getElementById('schedule-tabs');
+        const scheduleContentContainer = document.getElementById('schedule-content');
+        
+        if (scheduleTabsContainer) {
+            scheduleTabsContainer.innerHTML = '';
+        }
+        
+        if (scheduleContentContainer) {
+            scheduleContentContainer.innerHTML = `
                 <div class="text-center py-12 text-gray-500">
                     <svg class="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
@@ -715,16 +734,16 @@
                     <p class="text-sm">Silakan ambil jadwal terlebih dahulu</p>
                 </div>
             `;
-                    }
-                }
+        }
+    }
 
-                // ==========================================
-                // TAB SWITCHING FUNCTION
-                // ==========================================
-                
-                /**
-                 * Fungsi untuk mengubah hari yang aktif
-                 */
+    // ==========================================
+    // TAB SWITCHING FUNCTION
+    // ==========================================
+    
+    /**
+     * Fungsi untuk mengubah hari yang aktif
+     */
                 function ubahHari(hari) {
                     
                     const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat']; //Testing sabtu Minggu
@@ -758,7 +777,6 @@
                     // REFRESH: Update status dan tombol untuk hari yang dipilih
                     refreshDaySchedules(hari);
                 }
-
                 /**
                  * Refresh schedule buttons and status for a specific day
                  */
@@ -785,17 +803,14 @@
                         let actionContent = '';
                         let borderColor = 'border-gray-400';
                         
-                        // Treat 'active' override as 'terjadwal' (Pending Confirmation)
-                        const effectiveStatus = (isOverride && status === 'active') ? 'terjadwal' : status;
-                        
-                        if (effectiveStatus === 'terjadwal') {
+                        if (status === 'terjadwal') {
                             if (showButtons) {
                                 actionContent = `
-                                    <button onclick="konfirmasiBatal(${scheduleId}, ${isOverride})"
+                                    <button onclick="konfirmasiBatal(${scheduleId})"
                                         class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-red-600 to-red-400 rounded-lg hover:opacity-90 transition min-w-[135px]">
                                         Batal
                                     </button>
-                                    <button onclick="konfirmasiAjar(${scheduleId}, ${isOverride})"
+                                    <button onclick="konfirmasiAjar(${scheduleId})"
                                         class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-green-600 to-green-400 rounded-lg hover:opacity-90 transition min-w-[135px]">
                                         Konfirmasi
                                     </button>
@@ -804,46 +819,36 @@
                                 actionContent = getStatusBadge(status);
                             } else {
                                 actionContent = `<span class="text-xs text-gray-500 text-center py-2">Belum waktunya konfirmasi</span>`;
-                            }
-                        }
-                        else if (effectiveStatus === 'dikonfirmasi') {
-                            borderColor = 'border-green-500';
-                            actionContent = `
-                                    <a href="/scan-qr" class="flex items-center gap-2 text-sm px-4 py-2 bg-blue-50 hover:bg-blue-100 rounded-lg transition cursor-pointer">
-                                        <svg class="w-5 h-5 text-blue-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
-                                        </svg>
-                                        <span class="text-blue-600 font-medium">Menunggu Scan QR →</span>
-                                    </a>
-                                `;
-                        } else if (effectiveStatus === 'sedang_berlangsung') {
-                            borderColor = 'border-yellow-500';
+        }
+        }
+        else if (status === 'dikonfirmasi') {
+            borderColor = 'border-green-500';
+            actionContent = `
+                    <a href="/scan-qr" class="flex items-center gap-2 text-sm px-4 py-2 bg-blue-50 hover:bg-blue-100 rounded-lg transition cursor-pointer">
+                        <svg class="w-5 h-5 text-blue-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
+                        </svg>
+                        <span class="text-blue-600 font-medium">Menunggu Scan QR →</span>
+                    </a>
+                `;
+        } else if (status === 'sedang_berlangsung') {
+            borderColor = 'border-yellow-500';
 
-                            actionContent = '';
-                            
-                            // Logic: Tombol pindah ruangan gak berlaku kalau schedule_id ada atau schedule_override_id ada (untuk override)
-                            // Regular schedule (not override) always allows move
-                            let canMove = true;
-                            if (isOverride) {
-                                if (schedule.schedule_id || schedule.schedule_override_id) {
-                                    canMove = false;
-                                }
-                            }
+            actionContent = '';
+            if (!isOverride) {
+                actionContent += `
+                    <button onclick="pindahRuangan(${scheduleId})"
+                        class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-red-600 to-red-400 rounded-lg hover:opacity-90 transition min-w-[135px]">
+                        Pindah Ruangan
+                    </button>`;
+            }
 
-                            if (canMove) {
-                                actionContent += `
-                                    <button onclick="pindahRuangan(${scheduleId}, ${isOverride})"
-                                        class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-red-600 to-red-400 rounded-lg hover:opacity-90 transition min-w-[135px]">
-                                        Pindah Ruangan
-                                    </button>`;
-                            }
-
-                            actionContent += `
-                                <button onclick="selesaiKelas(${scheduleId}, ${isOverride})"
-                                    class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-blue-600 to-blue-400 rounded-lg hover:opacity-90 transition min-w-[135px]">
-                                    Selesai
-                                </button>
-                                `;
+            actionContent += `
+                <button onclick="selesaiKelas(${scheduleId}, ${isOverride})"
+                    class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-blue-600 to-blue-400 rounded-lg hover:opacity-90 transition min-w-[135px]">
+                    Selesai
+                </button>
+                `;
         } else {
             if (status === 'selesai') {
                 borderColor = 'border-green-500';
@@ -852,39 +857,9 @@
                 borderColor = 'border-red-500';
                 actionContent = getStatusBadge(status);
             } else if (status === 'pindah_ruangan') {
-            borderColor = 'border-purple-500';
-            
-            // Cek apakah sudah ada child override (artinya sudah scan di ruangan baru)
-            if (schedule.child_override) {
-                actionContent = `
-                    <div class="text-center w-full">
-                        <p class="text-xs text-purple-600 font-medium">Dipindahkan ke Ruangan Lain</p>
-                    </div>
-                `;
-            } else {
-                // Show Scan QR button ONLY for overrides (Substitute Classes)
-                if (isOverride) {
-                    actionContent = `
-                        <div class="text-center w-full">
-                            <p class="text-xs text-purple-600 mb-2 font-medium">Dipindahkan ke Ruangan Lain</p>
-                            <a href="/scan-qr" class="flex items-center justify-center gap-2 text-sm px-4 py-2 bg-purple-50 hover:bg-purple-100 rounded-lg transition cursor-pointer border border-purple-200">
-                                <svg class="w-5 h-5 text-purple-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
-                                </svg>
-                                <span class="text-purple-600 font-medium">Scan QR Ruangan Baru</span>
-                            </a>
-                        </div>
-                    `;
-                } else {
-                    // Regular class: Just show text
-                    actionContent = `
-                        <div class="text-center w-full">
-                            <p class="text-xs text-purple-600 font-medium">Dipindahkan ke Ruangan Lain</p>
-                        </div>
-                    `;
-                }
-            }
-        } else if (status === 'moved_out') {
+                borderColor = 'border-purple-500';
+                actionContent = `<span class="text-xs text-purple-600 font-medium">Dipindahkan ke Ruangan Lain</span>`;
+            } else if (status === 'moved_out') {
                 borderColor = 'border-gray-400';
                 actionContent = getStatusBadge(status);
             } else {
@@ -974,42 +949,176 @@
             modal.classList.remove('flex');
         }
 
-        /**
-         * Buka modal ganti kata sandi
-         */
-        function bukaModalGantiSandi() {
-            const modal = document.getElementById('modal-ganti-sandi');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            resetValidasi();
+    /**
+     * Tampilkan modal sukses
+     */
+    function tampilkanModalSukses(title, message) {
+        document.getElementById('sukses-title').textContent = title;
+        document.getElementById('sukses-message').textContent = message;
+        const modal = document.getElementById('modal-sukses');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
 
-            // Focus ke input pertama
-            setTimeout(() => {
-                document.getElementById('sandi-lama').focus();
-            }, 100);
-        }
+    /**
+     * Tutup modal sukses
+     */
+    function tutupModalSukses() {
+        const modal = document.getElementById('modal-sukses');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
 
-        /**
-         * Tutup modal ganti kata sandi
-         */
-        function tutupModalGantiSandi() {
-            const modal = document.getElementById('modal-ganti-sandi');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-            document.getElementById('form-ganti-sandi').reset();
-            resetValidasi();
-        }
+    /**
+     * Tampilkan modal error
+     */
+    function tampilkanModalError(title, message) {
+        document.getElementById('error-title').textContent = title;
+        document.getElementById('error-message').textContent = message;
+        const modal = document.getElementById('modal-error');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
 
-        // ==========================================
-        // PASSWORD VALIDATION FUNCTIONS
-        // ==========================================
+    /**
+     * Tutup modal error
+     */
+    function tutupModalError() {
+        const modal = document.getElementById('modal-error');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
 
-        /**
-         * Reset semua validasi
-         */
-        function resetValidasi() {
+    /**
+     * Buka modal ganti kata sandi
+     */
+    function bukaModalGantiSandi() {
+        const modal = document.getElementById('modal-ganti-sandi');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        resetValidasi();
+        
+        // Focus ke input pertama
+        setTimeout(() => {
+            document.getElementById('sandi-lama').focus();
+        }, 100);
+    }
+
+    /**
+     * Tutup modal ganti kata sandi
+     */
+    function tutupModalGantiSandi() {
+        const modal = document.getElementById('modal-ganti-sandi');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.getElementById('form-ganti-sandi').reset();
+        resetValidasi();
+    }
+
+    // ==========================================
+    // PASSWORD VALIDATION FUNCTIONS
+    // ==========================================
+    
+    /**
+     * Reset semua validasi
+     */
+    function resetValidasi() {
+        isSandiLamaValid = false;
+        isSandiBaruValid = false;
+        isKonfirmasiValid = false;
+        updateSubmitButton();
+        
+        // Reset semua indikator
+        const indicators = document.querySelectorAll('[id^="indicator-"]');
+        indicators.forEach(indicator => {
+            indicator.className = 'w-3 h-3 rounded-full bg-gray-300 mr-2';
+        });
+        
+        const texts = document.querySelectorAll('[id^="text-"]');
+        texts.forEach(text => {
+            if (text.id === 'text-length' || text.id === 'text-letter' || 
+                text.id === 'text-number' || text.id === 'text-special') {
+                text.className = 'text-gray-600';
+            }
+        });
+        
+        // Reset error messages
+        const errorElements = document.querySelectorAll('[id^="error-"]');
+        errorElements.forEach(error => {
+            error.classList.add('hidden');
+            error.textContent = '';
+        });
+    }
+
+    /**
+     * Validasi kata sandi lama
+     */
+    function validateSandiLama(sandi) {
+        const errorElement = document.getElementById('error-sandi-lama');
+        
+        if (sandi.length === 0) {
+            showError(errorElement, 'Kata sandi lama harus diisi');
             isSandiLamaValid = false;
+        } else if (sandi.length < 3) {
+            showError(errorElement, 'Kata sandi lama terlalu pendek');
+            isSandiLamaValid = false;
+        } else {
+            hideError(errorElement);
+            isSandiLamaValid = true;
+        }
+        
+        updateSubmitButton();
+    }
+
+    /**
+     * Validasi kata sandi baru
+     */
+    function validateSandiBaru(sandi) {
+        const errorElement = document.getElementById('error-sandi-baru');
+        
+        // Validasi panjang
+        const isLengthValid = sandi.length >= 6;
+        updateIndicator('length', isLengthValid, 'Minimal 6 karakter');
+        
+        // Validasi huruf
+        const hasLetter = /[a-zA-Z]/.test(sandi);
+        updateIndicator('letter', hasLetter, 'Mengandung huruf');
+        
+        // Validasi angka
+        const hasNumber = /[0-9]/.test(sandi);
+        updateIndicator('number', hasNumber, 'Mengandung angka');
+        
+        // Validasi karakter khusus (!$@%)
+        const hasSpecial = /[!$@%]/.test(sandi);
+        updateIndicator('special', hasSpecial, 'Mengandung karakter khusus (!$@%)');
+        
+        // Overall validation
+        const isValid = isLengthValid && hasLetter && hasNumber && hasSpecial;
+        
+        if (sandi.length === 0) {
+            hideError(errorElement);
             isSandiBaruValid = false;
+        } else if (!isValid) {
+            showError(errorElement, 'Kata sandi tidak memenuhi semua persyaratan');
+            isSandiBaruValid = false;
+        } else {
+            hideError(errorElement);
+            isSandiBaruValid = true;
+        }
+        
+        updateSubmitButton();
+    }
+
+    /**
+     * Validasi konfirmasi kata sandi
+     */
+    function validateKonfirmasiSandi() {
+        const sandiBaru = document.getElementById('sandi-baru').value;
+        const konfirmasi = document.getElementById('konfirmasi-sandi').value;
+        const errorElement = document.getElementById('error-konfirmasi-sandi');
+        
+        if (konfirmasi.length === 0) {
+            hideError(errorElement);
             isKonfirmasiValid = false;
             updateSubmitButton();
 
@@ -1034,26 +1143,23 @@
                 error.textContent = '';
             });
         }
+    }
 
-        /**
-         * Validasi kata sandi lama
-         */
-        function validateSandiLama(sandi) {
-            const errorElement = document.getElementById('error-sandi-lama');
-
-            if (sandi.length === 0) {
-                showError(errorElement, 'Kata sandi lama harus diisi');
-                isSandiLamaValid = false;
-            } else if (sandi.length < 3) {
-                showError(errorElement, 'Kata sandi lama terlalu pendek');
-                isSandiLamaValid = false;
-            } else {
-                hideError(errorElement);
-                isSandiLamaValid = true;
-            }
-
-            updateSubmitButton();
+    /**
+     * Update indikator visual untuk validasi password
+     */
+    function updateIndicator(type, isValid, text) {
+        const indicator = document.getElementById(`indicator-${type}`);
+        const textElement = document.getElementById(`text-${type}`);
+        
+        if (isValid) {
+            indicator.className = 'w-3 h-3 rounded-full bg-green-500 mr-2';
+            textElement.className = 'text-green-600';
+        } else {
+            indicator.className = 'w-3 h-3 rounded-full bg-red-500 mr-2';
+            textElement.className = 'text-red-600';
         }
+    }
 
         /**
          * Validasi kata sandi baru
@@ -1173,10 +1279,10 @@
         /**
          * Konfirmasi batal - Ketika user membatalkan jadwal mengajar
          */
-        async function konfirmasiBatal(scheduleId, isOverride = false) {
+        async function konfirmasiBatal(scheduleId) {
             if (!confirm('Batalkan jadwal ini?')) return;
 
-            const result = await cancelScheduleAPI(scheduleId, isOverride);
+            const result = await cancelScheduleAPI(scheduleId);
 
             if (result.success) {
                 alert(' Jadwal berhasil dibatalkan');
@@ -1184,7 +1290,6 @@
                 //  UPDATE UI
                 const statusBadge = document.getElementById(`status-jadwal-${scheduleId}`);
                 const buttonDiv = document.getElementById(`tombol-jadwal-${scheduleId}`);
-                const scheduleDiv = document.getElementById(`jadwal-${scheduleId}`); // Fix: Define scheduleDiv
 
                 if (statusBadge) {
                     statusBadge.textContent = 'Dibatalkan';
@@ -1201,10 +1306,6 @@
                     scheduleDiv.style.pointerEvents = 'none';
                 }
 
-                setTimeout(() => {
-                    location.reload();
-                }, 300);
-
             } else {
                 alert('❌ ' + result.message);
             }
@@ -1215,21 +1316,18 @@
          * Konfirmasi ajar - Ketika user mengkonfirmasi akan mengajar
          * Setelah konfirmasi, button berubah menjadi Pindah Ruangan & Selesai (setelah scan QR)
          */
-        async function konfirmasiAjar(scheduleId, isOverride = false) {
+        async function konfirmasiAjar(scheduleId) {
             if (!confirm('Anda yakin akan mengajar?')) return;
 
-            const result = await confirmScheduleAPI(scheduleId, isOverride);
+            const result = await confirmScheduleAPI(scheduleId);
 
             if (result.success) {
-                alert('✅ Jadwal berhasil dikonfirmasi! Silakan scan QR di ruangan.');
+                alert(' Jadwal berhasil dikonfirmasi! Silakan scan QR di ruangan.');
 
-                // ✅ Fix: Use correct DOM ID for overrides
-                const domId = isOverride ? `override-${scheduleId}` : scheduleId;
-                
-                // ✅ UPDATE UI IMMEDIATELY
-                const statusBadge = document.getElementById(`status-jadwal-${domId}`);
-                const buttonDiv = document.getElementById(`tombol-jadwal-${domId}`);
-                const scheduleDiv = document.getElementById(`jadwal-${domId}`);
+                //  UPDATE UI IMMEDIATELY
+                const statusBadge = document.getElementById(`status-jadwal-${scheduleId}`);
+                const buttonDiv = document.getElementById(`tombol-jadwal-${scheduleId}`);
+                const scheduleDiv = document.getElementById(`jadwal-${scheduleId}`);
 
                 if (statusBadge) {
                     statusBadge.textContent = 'Dikonfirmasi';
@@ -1262,21 +1360,18 @@
         /**
          * Pindah Ruangan - Ketika user ingin pindah ruangan saat sedang berlangsung
          */
-        async function pindahRuangan(scheduleId, isOverride = false) {
+        async function pindahRuangan(scheduleId) {
             if (!confirm('Pindah ke ruangan lain? Status akan berubah menjadi "Pindah Ruangan".')) return;
 
-            const result = await moveToRoomAPI(scheduleId, isOverride);
+            const result = await moveToRoomAPI(scheduleId);
 
             if (result.success) {
-                alert('✅ Status berubah menjadi Pindah Ruangan. Silakan scan QR di ruangan baru.');
-                
-                // Fix: Use correct DOM ID for overrides
-                const domId = isOverride ? `override-${scheduleId}` : scheduleId;
-                
+                alert(' Status berubah menjadi Pindah Ruangan. Silakan scan QR di ruangan baru.');
+
                 // Update UI
-                const statusBadge = document.getElementById(`status-jadwal-${domId}`);
-                const scheduleDiv = document.getElementById(`jadwal-${domId}`);
-                const buttonDiv = document.getElementById(`tombol-jadwal-${domId}`);
+                const statusBadge = document.getElementById(`status-jadwal-${scheduleId}`);
+                const scheduleDiv = document.getElementById(`jadwal-${scheduleId}`);
+                const buttonDiv = document.getElementById(`tombol-jadwal-${scheduleId}`);
 
                 if (statusBadge) {
                     statusBadge.textContent = 'Pindah Ruangan';
@@ -1290,11 +1385,11 @@
 
                 if (buttonDiv) {
                     buttonDiv.innerHTML = `
-                    <a href="/scan-qr" class="flex items-center gap-2 text-sm px-4 py-2 bg-purple-50 hover:bg-purple-100 rounded-lg transition cursor-pointer border border-purple-200">
+                    <a href="/scan-qr" class="flex items-center gap-2 text-sm px-4 py-2 bg-purple-50 hover:bg-purple-100 rounded-lg transition cursor-pointer">
                         <svg class="w-5 h-5 text-purple-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
                         </svg>
-                        <span class="text-purple-600 font-medium">Scan QR Ruangan Baru →</span>
+                        <span class="text-purple-600 font-medium">Menunggu Scan QR (Ruangan Baru) →</span>
                     </a>
                 `;
                 }
@@ -1473,11 +1568,11 @@
             try {
                 console.log('Mengirim request ganti password...');
 
-                const response = await fetch('{{ route('profile.password.update') }}', {
+                const response = await fetch(`{{ route('profile.password.update') }}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'X-CSRF-TOKEN': `{{ csrf_token() }}`,
                         'Accept': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest'
                     },

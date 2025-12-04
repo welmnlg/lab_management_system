@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -13,42 +12,59 @@ class CourseClassesTableSeeder extends Seeder
      */
     public function run(): void
     {
-       DB::table('course_classes')->insert([
-        // Austin Butler, BPH+ASLAB, TI, TIF2207 - Minerva Mcgonaggal - Selasa
-        ['class_name' => 'Kom A1', 'course_id' => 1, 'lecturer' => 'Minerva Mcgonaggal', 'created_at' => now(), 'updated_at' => now()],
-        ['class_name' => 'Kom A2', 'course_id' => 1, 'lecturer' => 'Minerva Mcgonaggal', 'created_at' => now(), 'updated_at' => now()],
-        ['class_name' => 'Kom B1', 'course_id' => 1, 'lecturer' => 'Minerva Mcgonaggal', 'created_at' => now(), 'updated_at' => now()],
-        ['class_name' => 'Kom B2', 'course_id' => 1, 'lecturer' => 'Minerva Mcgonaggal', 'created_at' => now(), 'updated_at' => now()],
+        // Disable foreign key checks
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        
+        // Clear existing data
+        DB::table('course_classes')->truncate();
+        
+        // Re-enable foreign key checks
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        // Kim Mingyu, ASLAB only, TI, TIF2209 - Filius Flitwick - Rabu
-        ['class_name' => 'Kom A1', 'course_id' => 2, 'lecturer' => 'Filius Flitwick', 'created_at' => now(), 'updated_at' => now()],
-        ['class_name' => 'Kom A2', 'course_id' => 2, 'lecturer' => 'Filius Flitwick', 'created_at' => now(), 'updated_at' => now()],
-        ['class_name' => 'Kom C1', 'course_id' => 2, 'lecturer' => 'Filius Flitwick', 'created_at' => now(), 'updated_at' => now()],
-        ['class_name' => 'Kom C2', 'course_id' => 2, 'lecturer' => 'Filius Flitwick', 'created_at' => now(), 'updated_at' => now()],
-        ['class_name' => 'Kom A1', 'course_id' => 5, 'lecturer' => 'Sarah Purnawati', 'created_at' => now(), 'updated_at' => now()],
-        ['class_name' => 'Kom A2', 'course_id' => 5, 'lecturer' => 'Sarah Purnawati', 'created_at' => now(), 'updated_at' => now()],
-        ['class_name' => 'Kom B1', 'course_id' => 5, 'lecturer' => 'Sarah Purnawati', 'created_at' => now(), 'updated_at' => now()],
-        ['class_name' => 'Kom B2', 'course_id' => 5, 'lecturer' => 'Sarah Purnawati', 'created_at' => now(), 'updated_at' => now()],
-        ['class_name' => 'Kom C1', 'course_id' => 5, 'lecturer' => 'Sarah Purnawati', 'created_at' => now(), 'updated_at' => now()],
-        ['class_name' => 'Kom C2', 'course_id' => 5, 'lecturer' => 'Sarah Purnawati', 'created_at' => now(), 'updated_at' => now()],
+        // Get course IDs dynamically
+        $courses = DB::table('courses')->pluck('course_id', 'course_code');
 
-        // Wil Ohmsford, ASLAB only, TI, TIF2209 - Albus Dumbledore - Selasa
-        ['class_name' => 'Kom B1', 'course_id' => 2, 'lecturer' => 'Albus Dumbledore', 'created_at' => now(), 'updated_at' => now()],
-        ['class_name' => 'Kom B2', 'course_id' => 2, 'lecturer' => 'Albus Dumbledore', 'created_at' => now(), 'updated_at' => now()],
+        // Standard KOM classes for each course
+        $komClasses = ['Kom A1', 'Kom A2', 'Kom B1', 'Kom B2', 'Kom C1', 'Kom C2'];
+        
+        $lecturers = [
+            'Minerva McGonagall',
+            'Severus Snape',
+            'Albus Dumbledore',
+            'Filius Flitwick',
+            'Rubeus Hagrid',
+            'Remus Lupin',
+            'Sarah Purnawati',
+            'Budi Santoso',
+        ];
 
-        // Karina, BPH+ASLAB, TI, TIF1206 - Severus Snape
-        ['class_name' => 'Kom A1', 'course_id' => 3, 'lecturer' => 'Severus Snape', 'created_at' => now(), 'updated_at' => now()],
-        ['class_name' => 'Kom A2', 'course_id' => 3, 'lecturer' => 'Severus Snape', 'created_at' => now(), 'updated_at' => now()],
+        $classes = [];
 
-        // Hermione, BPH+ASLAB, TI, TIF1206 & TIF2207 - Severus Snape & Minerva Mcgonaggal
-        ['class_name' => 'Kom B1', 'course_id' => 3, 'lecturer' => 'Severus Snape', 'created_at' => now(), 'updated_at' => now()],
-        ['class_name' => 'Kom B2', 'course_id' => 3, 'lecturer' => 'Severus Snape', 'created_at' => now(), 'updated_at' => now()],
-        ['class_name' => 'Kom A1', 'course_id' => 1, 'lecturer' => 'Minerva Mcgonaggal', 'created_at' => now(), 'updated_at' => now()],
-        ['class_name' => 'Kom A2', 'course_id' => 1, 'lecturer' => 'Minerva Mcgonaggal', 'created_at' => now(), 'updated_at' => now()],
+        // Create classes for each course
+        foreach ($courses as $courseCode => $courseId) {
+            // Randomly select a lecturer for this course
+            $lecturer = $lecturers[array_rand($lecturers)];
+            
+            // Create all 6 KOM classes for this course
+            foreach ($komClasses as $komName) {
+                $classes[] = [
+                    'class_name' => $komName,
+                    'course_id' => $courseId,
+                    'lecturer' => $lecturer,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+        }
 
-        // Feyd Rautha, Ilmu Komputer, ILK1206 - Albus Dumbledore
-        ['class_name' => 'Kom B1', 'course_id' => 4, 'lecturer' => 'Albus Dumbledore', 'created_at' => now(), 'updated_at' => now()],
-        ['class_name' => 'Kom B2', 'course_id' => 4, 'lecturer' => 'Albus Dumbledore', 'created_at' => now(), 'updated_at' => now()],
-    ]);
+        // Insert all classes
+        DB::table('course_classes')->insert($classes);
+
+        $totalCourses = count($courses);
+        $totalClasses = count($classes);
+
+        $this->command->info('✅ Course Classes seeded successfully!');
+        $this->command->info("   - $totalCourses courses");
+        $this->command->info("   - $totalClasses classes (6 KOM per course)");
     }
 }

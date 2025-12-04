@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             RolesTableSeeder::class,
             UsersTableSeeder::class,
             RoomsTableSeeder::class,
+            SemesterPeriodsSeeder::class,
             RoleUserTableSeeder::class,
             CoursesTableSeeder::class,
             CourseClassesTableSeeder::class,
@@ -27,7 +28,7 @@ class DatabaseSeeder extends Seeder
             ScheduleOverridesTableSeeder::class,
             NotificationsTableSeeder::class,
             LogbookSeeder::class,
-            DashboardTableSeeder::class,
+            // DashboardTableSeeder::class,
         ]);
         // User::factory(10)->create();
 

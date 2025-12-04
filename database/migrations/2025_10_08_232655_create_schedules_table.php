@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('schedules', function (Blueprint $table) {
@@ -22,16 +19,13 @@ return new class extends Migration
             $table->time('end_time');
             $table->timestamps();
             
-            //foreign key
-            $table->foreign('class_id')->references('class_id')->on('course_classes')->onDelete('cascade');
-            $table->foreign('user_id')->references('user_id')->on('users')->onDelete('cascade');
-            $table->foreign('room_id')->references('room_id')->on('rooms')->onDelete('cascade');
+            // Indexes for better performance (only for columns that exist)
+            $table->index(['room_id', 'day']);
+            $table->index('user_id');
+            $table->index('class_id');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('schedules');

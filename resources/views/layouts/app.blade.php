@@ -82,6 +82,9 @@
                     <p class="text-xs text-gray-500 truncate">{{ Auth::user()->email }}</p>
                 </div>
             </div>
+            <button id="closeMobileSidebar" class="text-white p-2 rounded-full hover:bg-white hover:bg-opacity-10 transition-colors duration-200">
+                <i class="bi bi-x-lg text-xl"></i>
+            </button>
         </div>
     </div>
 </div>

@@ -496,6 +496,30 @@ document.addEventListener('DOMContentLoaded', function() {
         // Initialize dropdown KOM functionality
         initializeKomDropdownsInModal(modal);
 
+        // **NEW: Add event listeners for mata kuliah select changes**
+        // When user selects mata kuliah, fetch and update available KOMs
+        const mkSelectors = [
+            { selector: 'select[name="mata_kuliah_1"]', komTarget: 'kom1' },
+            { selector: 'select[name="mata_kuliah_2"]', komTarget: 'kom2' },
+            { selector: 'select[name="mata_kuliah_3"]', komTarget: 'kom3' }
+        ];
+
+        mkSelectors.forEach(({ selector, komTarget }) => {
+            const mkSelect = modal.querySelector(selector);
+            if (mkSelect) {
+                mkSelect.addEventListener('change', function() {
+                    const courseId = this.value;
+                    if (courseId) {
+                        console.log(`MataKuliah changed for ${komTarget}, courseId:`, courseId);
+                        fetchAndUpdateAvailableKoms(modal, courseId, komTarget, userData.id);
+                    } else {
+                        // Reset KOM checkboxes if no course selected
+                        resetKomCheckboxes(modal, komTarget);
+                    }
+                });
+            }
+        });
+
         // Event: Batal
         modal.querySelector('#cancelEditButton').onclick = () => document.body.removeChild(modal);
 
@@ -606,6 +630,121 @@ document.addEventListener('DOMContentLoaded', function() {
             selectedText.textContent = selectedPairs.join(', ');
             selectedText.className = 'selected-kom-text text-gray-900';
         }
+    }
+
+    // **NEW: Fetch and update available KOMs for a course**
+    async function fetchAndUpdateAvailableKoms(modal, courseId, komTarget, userId = null) {
+        try {
+            console.log(`Fetching available KOMs for course ${courseId}, userId ${userId}`);
+            
+            const url = `/kelola-pengguna/api/courses/${courseId}/available-koms${userId ? '?userId=' + userId : ''}`;
+            const response = await fetch(url);
+            const result = await response.json();
+            
+            if (result.success) {
+                const data = result.data;
+                console.log(`Available KOMs for ${komTarget}:`, data);
+                
+                // Show warning if duplicates detected
+                if (data.has_duplicates && data.user_assigned_koms.length > 0) {
+                    const duplicates = data.user_assigned_koms.filter(k => data.assigned_koms.includes(k));
+                    if (duplicates.length > 0) {
+                        showDuplicateWarning(modal, komTarget, duplicates);
+                    }
+                }
+                
+                // Update checkbox list with only available KOMs + user's current KOMs
+                const allSelectableKoms = [...new Set([...data.available_koms, ...data.user_assigned_koms])];
+                updateKomCheckboxes(modal, komTarget, allSelectableKoms, data.user_assigned_koms);
+            } else {
+                console.error('Failed to fetch available KOMs:', result.message);
+            }
+        } catch (error) {
+            console.error('Error fetching available KOMs:', error);
+        }
+    }
+
+    // **NEW: Update KOM checkboxes with only available options**
+    function updateKomCheckboxes(modal, komTarget, availableKoms, userAssignedKoms) {
+        const menu = modal.querySelector(`.dropdown-kom-menu[data-target="${komTarget}"]`);
+        if (!menu) return;
+        
+        const container = menu.querySelector('.kom-checkbox-container');
+        if (!container) return;
+        
+        // Clear existing checkboxes
+        container.innerHTML = '';
+        
+        // Sort KOMs: A1, A2, B1, B2, C1, C2
+        const sortedKoms = availableKoms.sort((a, b) => {
+            const order = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+            return order.indexOf(a) - order.indexOf(b);
+        });
+        
+        // Render only available KOMs
+        sortedKoms.forEach(cls => {
+            const isChecked = userAssignedKoms.includes(cls);
+            const label = document.createElement('label');
+            label.className = 'flex items-center px-3 py-2 hover:bg-gray-100 rounded cursor-pointer transition-colors';
+            label.innerHTML = `
+                <input type="checkbox" value="${cls}" 
+                    ${isChecked ? 'checked' : ''}
+                    class="kom-checkbox mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
+                    data-target="${komTarget}" 
+                    data-pair="${cls}">
+                <span class="text-sm text-gray-700">KOM ${cls}</span>
+            `;
+            container.appendChild(label);
+        });
+        
+        // Re-attach event listeners for new checkboxes
+        const newCheckboxes = container.querySelectorAll('.kom-checkbox');
+        newCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                updateSelectedKomTextInModal(modal, komTarget);
+            });
+        });
+        
+        // Update selected text
+        updateSelectedKomTextInModal(modal, komTarget);
+        
+        console.log(`✅ Updated ${komTarget} with ${sortedKoms.length} available KOMs`);
+    }
+
+    // **NEW: Reset KOM checkboxes to default (all 6 KOMs)**
+    function resetKomCheckboxes(modal, komTarget) {
+        const allKoms = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+        updateKomCheckboxes(modal, komTarget, allKoms, []);
+    }
+
+    // **NEW: Show duplicate warning**
+    function showDuplicateWarning(modal, komTarget, duplicates) {
+        const message = `⚠️ Peringatan: KOM ${duplicates.join(', ')} sudah diassign ke user lain untuk mata kuliah ini!`;
+        
+        // Find the dropdown toggle for this komTarget
+        const dropdown = modal.querySelector(`.dropdown-kom-toggle[data-target="${komTarget}"]`);
+        if (!dropdown) return;
+        
+        // Check if warning already exists
+        const existingWarning = dropdown.parentElement.querySelector('.duplicate-warning');
+        if (existingWarning) {
+            existingWarning.remove();
+        }
+        
+        // Create warning element
+        const warning = document.createElement('div');
+        warning.className = 'duplicate-warning bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded mb-2 text-xs';
+        warning.innerHTML = `<span>${message}</span>`;
+        
+        // Insert before dropdown
+        dropdown.parentElement.insertBefore(warning, dropdown);
+        
+        // Auto-remove after 8 seconds
+        setTimeout(() => {
+            if (warning.parentElement) {
+                warning.remove();
+            }
+        }, 8000);
     }
 
     // Submit Edit Form via AJAX

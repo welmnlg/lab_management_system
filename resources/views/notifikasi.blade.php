@@ -1,4 +1,4 @@
-@extends('layouts.pageadmin')
+@extends('layouts.main')
 
 @section('title', 'Notifikasi - ITLG Lab Management System')
 
@@ -6,7 +6,11 @@
 <div class="max-w-4xl mx-auto px-4 sm:px-6 py-6">
     <!-- Daftar Notifikasi -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden" id="notifications-container">
-        <!-- Notifikasi akan di-load secara dinamis -->
+        <!-- Loading -->
+        <div class="text-center py-12">
+            <div class="animate-spin inline-block w-8 h-8 border-4 border-gray-300 border-t-blue-500 rounded-full"></div>
+            <p class="mt-4 text-gray-600">Memuat notifikasi...</p>
+        </div>
     </div>
 
     <!-- Empty State -->
@@ -20,122 +24,364 @@
 </div>
 
 <script>
-// Notification Management untuk halaman notifikasi
+let currentUserId = {{ Auth::user()->user_id }};
+let allNotifications = [];
+let hasMarkedAsRead = false; // Flag untuk prevent multiple calls
+
+// Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
-    const notificationsContainer = document.getElementById('notifications-container');
-    const emptyState = document.getElementById('empty-state');
+    console.log('🚀 Notifikasi page loaded, user_id:', currentUserId);
     
-    // Load and display notifications
-    function loadNotifications() {
-        const notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
-        
-        if (notifications.length === 0) {
-            notificationsContainer.classList.add('hidden');
-            emptyState.classList.remove('hidden');
-            return;
+    // Load notifications
+    loadNotifications();
+    
+    // Subscribe to real-time notifications
+    subscribeToNotifications();
+    
+    // Refresh every 30 seconds
+    setInterval(loadNotifications, 30000);
+});
+
+/**
+ * Load notifications from server
+ */
+function loadNotifications() {
+    const container = document.getElementById('notifications-container');
+    const emptyState = document.getElementById('empty-state');
+
+    fetch('/api/notifications', {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
         }
-        
-        emptyState.classList.add('hidden');
-        notificationsContainer.classList.remove('hidden');
-        
-        // Urutkan: yang belum dibaca di atas, lalu yang terbaru di atas
-        const sortedNotifications = [...notifications].sort((a, b) => {
-            if (a.read !== b.read) {
-                return a.read ? 1 : -1;
-            }
-            return new Date(b.createdAt) - new Date(a.createdAt);
-        });
-        
-        notificationsContainer.innerHTML = sortedNotifications.map(notif => {
-            const isUnread = !notif.read;
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Network response failed');
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            allNotifications = data.data || [];
+            console.log('📬 Loaded notifications:', allNotifications.length);
             
-            return `
-                <div class="border-b border-gray-200 last:border-b-0 notification-item ${isUnread ? 'bg-green-50 border-l-4 border-l-green-500' : ''}" 
-                     data-id="${notif.id}">
-                    <div class="p-4 sm:p-6">
-                        <div class="flex items-start justify-between">
-                            <div class="flex items-start space-x-3 sm:space-x-4">
-                                <!-- Icon -->
-                                <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full ${isUnread ? 'bg-green-100' : 'bg-gray-100'} flex items-center justify-center flex-shrink-0">
-                                    <svg class="w-4 h-4 sm:w-5 sm:h-5 ${isUnread ? 'text-green-600' : 'text-gray-400'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                    </svg>
-                                </div>
-                                
-                                <!-- Konten -->
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-2 mb-1">
-                                        <span class="font-semibold text-gray-900 text-sm sm:text-base truncate">${notif.title}</span>
-                                        <span class="hidden sm:inline text-xs text-gray-500">•</span>
-                                        <span class="text-xs text-gray-500 mt-1 sm:mt-0">${notif.time}</span>
-                                    </div>
-                                    <p class="text-gray-700 ${isUnread ? 'font-medium' : ''} text-sm sm:text-base line-clamp-2">
-                                        ${notif.message}
-                                    </p>
-                                </div>
+            // Render or show empty
+            if (allNotifications.length === 0) {
+                container.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+            } else {
+                renderNotifications(allNotifications);
+                container.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+            }
+            
+            // Update badge di navbar
+            updateNavbarBadge();
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error loading notifications:', error);
+        container.innerHTML = `
+            <div class="text-center py-12">
+                <p class="text-red-600">Gagal memuat notifikasi</p>
+                <button onclick="loadNotifications()" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    Coba Lagi
+                </button>
+            </div>
+        `;
+    });
+}
+
+/**
+ * Render notifications - DESAIN LAMA (Simple & Clean)
+ */
+function renderNotifications(notifications) {
+    const container = document.getElementById('notifications-container');
+    
+    if (notifications.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+
+    // Urutkan: yang belum dibaca di atas, lalu yang terbaru di atas
+    const sortedNotifications = [...notifications].sort((a, b) => {
+        if (a.status !== b.status) {
+            return a.status === 'waiting' ? -1 : 1;
+        }
+        return new Date(b.created_at) - new Date(a.created_at);
+    });
+
+    container.innerHTML = sortedNotifications.map(notif => {
+        const isUnread = notif.status === 'waiting';
+        const timeAgo = getRelativeTime(notif.created_at);
+        
+        return `
+            <a href="/profil" 
+               class="block border-b border-gray-200 last:border-b-0 notification-item ${isUnread ? 'bg-green-50 border-l-4 border-l-green-500 hover:bg-green-100' : 'hover:bg-gray-50'} transition-colors cursor-pointer" 
+               data-id="${notif.notification_id}"
+               data-status="${notif.status}"
+               data-created="${notif.created_at}"
+               onclick="handleNotificationClick(event, ${notif.notification_id})">
+                <div class="p-4 sm:p-6">
+                    <div class="flex items-start justify-between">
+                        <div class="flex items-start space-x-3 sm:space-x-4 flex-1">
+                            <!-- Icon -->
+                            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full ${isUnread ? 'bg-green-100' : 'bg-gray-100'} flex items-center justify-center flex-shrink-0">
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5 ${isUnread ? 'text-green-600' : 'text-gray-400'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
                             </div>
                             
-                            <!-- Indicator dots hijau untuk notifikasi baru -->
-                            ${isUnread ? 
-                                '<div class="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-green-500 mt-2 notification-indicator flex-shrink-0 ml-2" title="Pesan baru"></div>' 
-                                : 
-                                '<div class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-gray-300 mt-2 flex-shrink-0 ml-2" title="Sudah dibaca"></div>'
-                            }
+                            <!-- Konten -->
+                            <div class="flex-1 min-w-0">
+                                <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-2 mb-1">
+                                    <span class="font-semibold text-gray-900 text-sm sm:text-base truncate">${notif.title}</span>
+                                    <span class="hidden sm:inline text-xs text-gray-500">•</span>
+                                    <span class="text-xs text-gray-500 mt-1 sm:mt-0 notification-time">${timeAgo}</span>
+                                </div>
+                                <p class="text-gray-700 ${isUnread ? 'font-medium' : ''} text-sm sm:text-base line-clamp-3">
+                                    ${notif.message}
+                                </p>
+                                ${isUnread ? 
+                                    '<p class="text-xs text-green-600 font-medium mt-2">📍 Klik untuk konfirmasi di halaman Profil</p>' 
+                                    : 
+                                    '<p class="text-xs text-gray-500 mt-2">✓ Sudah dibaca</p>'
+                                }
+                            </div>
                         </div>
+                        
+                        <!-- Indicator dots hijau untuk notifikasi baru -->
+                        ${isUnread ? 
+                            '<div class="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-green-500 mt-2 notification-indicator flex-shrink-0 ml-2" title="Pesan baru"></div>' 
+                            : 
+                            '<div class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-gray-300 mt-2 flex-shrink-0 ml-2" title="Sudah dibaca"></div>'
+                        }
                     </div>
                 </div>
-            `;
-        }).join('');
+            </a>
+        `;
+    }).join('');
+    
+    // Update relative times every 30 seconds
+    setTimeout(updateRelativeTimes, 30000);
+}
+
+/**
+ * Handle individual notification click
+ */
+function handleNotificationClick(event, notificationId) {
+    event.preventDefault(); // Prevent immediate navigation
+    
+    const notifElement = event.currentTarget;
+    const currentStatus = notifElement.getAttribute('data-status');
+    
+    // If already read, just navigate
+    if (currentStatus === 'confirmed') {
+        window.location.href = '/profil';
+        return;
     }
     
-    // Mark all as read when leaving this page
-    function setupPageLeaveHandler() {
-        // Mark as read when user navigates away from this page
-        window.addEventListener('beforeunload', function() {
-            const notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
-            const updatedNotifications = notifications.map(notif => ({
-                ...notif,
-                read: true
-            }));
+    // Mark as read
+    markNotificationAsRead(notificationId, function(success) {
+        if (success) {
+            // Update UI immediately
+            notifElement.setAttribute('data-status', 'confirmed');
+            notifElement.classList.remove('bg-green-50', 'border-l-4', 'border-l-green-500', 'hover:bg-green-100');
+            notifElement.classList.add('hover:bg-gray-50');
             
-            localStorage.setItem('notifications', JSON.stringify(updatedNotifications));
+            // Update badge
+            updateNavbarBadge();
             
-            // Update header badge in parent
-            if (window.parent && window.parent.updateHeaderBadge) {
-                window.parent.updateHeaderBadge();
+            // Navigate after short delay (so user sees the change)
+            setTimeout(() => {
+                window.location.href = '/profil';
+            }, 300);
+        } else {
+            // If error, just navigate anyway
+            window.location.href = '/profil';
+        }
+    });
+}
+
+/**
+ * Mark single notification as read
+ */
+function markNotificationAsRead(notificationId, callback) {
+    fetch(`/api/notifications/${notificationId}/confirm`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log(`✅ Notification #${notificationId} marked as read`);
+            
+            // Update local notification list
+            const notif = allNotifications.find(n => n.notification_id === notificationId);
+            if (notif) {
+                notif.status = 'confirmed';
             }
             
-            console.log('All notifications marked as read (leaving page)');
-        });
-        
-        // Also mark as read when clicking any navigation link
-        document.addEventListener('click', function(e) {
-            const link = e.target.closest('a');
-            if (link && link.href && !link.href.includes('notifikasi')) {
-                const notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
-                const updatedNotifications = notifications.map(notif => ({
-                    ...notif,
-                    read: true
-                }));
-                
-                localStorage.setItem('notifications', JSON.stringify(updatedNotifications));
-                
-                if (window.parent && window.parent.updateHeaderBadge) {
-                    window.parent.updateHeaderBadge();
-                }
-                
-                console.log('All notifications marked as read (navigating away)');
-            }
-        });
+            callback(true);
+        } else {
+            console.error('❌ Failed to mark notification');
+            callback(false);
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error:', error);
+        callback(false);
+    });
+}
+
+/**
+ * Mark all notifications as read (AUTO - ketika user buka halaman)
+ */
+function markAllAsRead() {
+    // Check jika sudah pernah dipanggil
+    if (hasMarkedAsRead) {
+        console.log('⚠️ Already marked as read, skipping...');
+        return;
     }
     
-    // Initialize
-    loadNotifications();
-    setupPageLeaveHandler();
+    const unreadNotifs = allNotifications.filter(n => n.status === 'waiting');
     
-    // Auto-refresh setiap 3 detik untuk update real-time
-    setInterval(loadNotifications, 3000);
-});
+    if (unreadNotifs.length === 0) {
+        console.log('ℹ️ No unread notifications to mark');
+        return;
+    }
+    
+    console.log('📖 Auto-marking all notifications as read...');
+    hasMarkedAsRead = true; // Set flag
+    
+    fetch('/api/notifications/confirm-all', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('✅ All notifications marked as read');
+            // Update badge immediately
+            updateNavbarBadge(0);
+            // Reload to show updated status after 500ms
+            setTimeout(() => {
+                loadNotifications();
+            }, 500);
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error marking notifications as read:', error);
+        hasMarkedAsRead = false; // Reset flag jika error
+    });
+}
+
+/**
+ * Update navbar badge count
+ */
+function updateNavbarBadge(count = null) {
+    const badge = document.getElementById('notification-badge');
+    
+    if (count === null) {
+        // Hitung dari allNotifications
+        count = allNotifications.filter(n => n.status === 'waiting').length;
+    }
+    
+    if (badge) {
+        if (count > 0) {
+            badge.textContent = count;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    }
+}
+
+/**
+ * Subscribe to real-time notifications via Pusher
+ */
+function subscribeToNotifications() {
+    if (!window.Echo) {
+        console.warn('⚠️ Echo not initialized yet');
+        setTimeout(subscribeToNotifications, 1000);
+        return;
+    }
+
+    const channelName = `notification.${currentUserId}`;
+    console.log(`🔔 Subscribing to channel: ${channelName}`);
+
+    window.Echo.private(channelName)
+        .listen('ScheduleReminderNotification', (event) => {
+            console.log('📬 Real-time notification received:', event);
+            
+            // Reload notifications
+            setTimeout(() => {
+                hasMarkedAsRead = false; // Reset flag untuk notif baru
+                loadNotifications();
+            }, 500);
+        })
+        .error((error) => {
+            console.error('❌ Error subscribing to channel:', error);
+        });
+
+    console.log(`✅ Subscribed to ${channelName}`);
+}
+
+/**
+ * Get relative time in Indonesian
+ */
+function getRelativeTime(timestamp) {
+    const now = new Date();
+    const created = new Date(timestamp);
+    const diffInSeconds = Math.floor((now - created) / 1000);
+    
+    if (diffInSeconds < 10) {
+        return 'Baru saja';
+    } else if (diffInSeconds < 60) {
+        return `${diffInSeconds} detik yang lalu`;
+    } else if (diffInSeconds < 3600) {
+        const minutes = Math.floor(diffInSeconds / 60);
+        return `${minutes} menit yang lalu`;
+    } else if (diffInSeconds < 86400) {
+        const hours = Math.floor(diffInSeconds / 3600);
+        return `${hours} jam yang lalu`;
+    } else if (diffInSeconds < 604800) {
+        const days = Math.floor(diffInSeconds / 86400);
+        return `${days} hari yang lalu`;
+    } else {
+        const weeks = Math.floor(diffInSeconds / 604800);
+        return `${weeks} minggu yang lalu`;
+    }
+}
+
+/**
+ * Update all relative times on the page
+ */
+function updateRelativeTimes() {
+    const items = document.querySelectorAll('.notification-item');
+    
+    items.forEach(item => {
+        const createdAt = item.getAttribute('data-created');
+        if (createdAt) {
+            const timeElement = item.querySelector('.notification-time');
+            if (timeElement) {
+                timeElement.textContent = getRelativeTime(createdAt);
+            }
+        }
+    });
+    
+    // Schedule next update in 30 seconds
+    setTimeout(updateRelativeTimes, 30000);
+}
+
 </script>
 
 <style>

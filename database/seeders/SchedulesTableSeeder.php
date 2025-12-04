@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -13,220 +12,132 @@ class SchedulesTableSeeder extends Seeder
      */
     public function run(): void
     {
-        DB::table('schedules')->insert([
-            // LAB JARINGAN 1
-            [
-                'class_id' => 1,
-                'user_id' => 1, // Austin Butler
-                'room_id' => 1,
-                'day' => 'Senin',
-                'start_time' => '08:00:00',
-                'end_time' => '09:40:00',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'class_id' => 2,
-                'user_id' => 1,
-                'room_id' => 1,
-                'day' => 'Selasa',
-                'start_time' => '09:40:00',
-                'end_time' => '11:20:00',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'class_id' => 3,
-                'user_id' => 1,
-                'room_id' => 1,
-                'day' => 'Rabu',
-                'start_time' => '13:00:00',
-                'end_time' => '14:40:00',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
+        // Disable foreign key checks
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        
+        // Clear existing data
+        DB::table('schedules')->truncate();
+        
+        // Re-enable foreign key checks
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+        // Get active period
+        $activePeriod = DB::table('semester_periods')
+            ->where('is_active', true)
+            ->first();
+
+        if (!$activePeriod) {
+            $this->command->warn('⚠️  No active period found. Skipping schedule seeding.');
+            return;
+        }
+
+        // Get users
+        $users = DB::table('users')->get()->keyBy('name');
+        
+        // Get some class IDs for schedule creation
+        $getClassId = function($courseCode, $komName) {
+            $course = DB::table('courses')->where('course_code', $courseCode)->first();
+            if (!$course) return null;
             
+            $class = DB::table('course_classes')
+                ->where('course_id', $course->course_id)
+                ->where('class_name', $komName)
+                ->first();
+                
+            return $class ? $class->class_id : null;
+        };
 
-            // === LAB 2 ===
-            [
-                'class_id' => 5,
-                'user_id' => 2,
-                'room_id' => 4,
-                'day' => 'Selasa',
-                'start_time' => '08:00:00',
-                'end_time' => '09:40:00',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'class_id' => 6,
-                'user_id' => 2,
-                'room_id' => 2,
-                'day' => 'Rabu',
-                'start_time' => '09:40:00',
-                'end_time' => '11:20:00',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'class_id' => 7,
-                'user_id' => 2,
-                'room_id' => 2,
-                'day' => 'Kamis',
-                'start_time' => '13:00:00',
-                'end_time' => '14:40:00',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'class_id' => 8,
-                'user_id' => 2,
-                'room_id' => 2,
-                'day' => 'Jumat',
-                'start_time' => '14:40:00',
-                'end_time' => '16:20:00',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'class_id' => 9,
-                'user_id' => 3, // Kim Mingyu
-                'room_id' => 2, // Jaringan 2
-                'day' => 'Senin',
-                'start_time' => '07:30:00',
-                'end_time' => '09:40:00',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
+        // Get room IDs
+        $rooms = DB::table('rooms')->pluck('room_id', 'room_name');
 
-            [
-                'class_id' => 10,
-                'user_id' => 3, // Kim Mingyu
-                'room_id' => 2, // Jaringan 2
-                'day' => 'Senin',
-                'start_time' => '09:40:00',
-                'end_time' => '11:20:00',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
+        $schedules = [];
 
-            [
-                'class_id' => 11,
-                'user_id' => 3, // Kim Mingyu
-                'room_id' => 2, // Jaringan 2
-                'day' => 'Senin',
-                'start_time' => '11:20:00',
-                'end_time' => '13:00:00',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-
-            [
-                'class_id' => 12,
-                'user_id' => 3, // Kim Mingyu
-                'room_id' => 2, // Jaringan 2
-                'day' => 'Senin',
-                'start_time' => '13:00:00',
-                'end_time' => '14:40:00',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-
-            [
-                'class_id' => 13,
-                'user_id' => 3, // Kim Mingyu
-                'room_id' => 2, // Jaringan 2
-                'day' => 'Senin',
-                'start_time' => '20:50:00',
-                'end_time' => '23:20:00',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-
-            // === LAB 3 ===
-            [
-                'class_id' => 14,
-                'user_id' => 3,
-                'room_id' => 4,
-                'day' => 'Rabu',
-                'start_time' => '08:00:00',
-                'end_time' => '09:40:00',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'class_id' => 15,
-                'user_id' => 3,
-                'room_id' => 3,
-                'day' => 'Kamis',
-                'start_time' => '09:40:00',
-                'end_time' => '11:20:00',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'class_id' => 16,
-                'user_id' => 4,
-                'room_id' => 2,
-                'day' => 'Kamis',
-                'start_time' => '08:00:00',
-                'end_time' => '09:40:00',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'class_id' => 17,
-                'user_id' => 4,
-                'room_id' => 3,
-                'day' => 'Jumat',
-                'start_time' => '09:40:00',
-                'end_time' => '11:20:00',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-
-            // === LAB 5 ===
-            [
-                'class_id' => 18,
-                'user_id' => 5,
-                'room_id' => 4,
-                'day' => 'Jumat',
-                'start_time' => '08:00:00',
-                'end_time' => '09:40:00',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'class_id' => 19,
-                'user_id' => 5,
-                'room_id' => 4,
-                'day' => 'Senin',
-                'start_time' => '09:40:00',
-                'end_time' => '11:20:00',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],          
-            [
-                'class_id' => 20,
-                'user_id' => 6,
-                'room_id' => 1,
-                'day' => 'Kamis',
-                'start_time' => '13:00:00',
-                'end_time' => '14:40:00',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'class_id' => 21,
-                'user_id' => 6,
-                'room_id' => 4,
-                'day' => 'Kamis',
-                'start_time' => '14:40:00',
-                'end_time' => '16:20:00',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
+        // Austin Butler schedules
+        if (isset($users['Austin Butler']) && isset($rooms['C101'])) {
+            $userId = $users['Austin Butler']->user_id;
+            $classId = $getClassId('TIF2201', 'Kom A1'); // Pemrograman Web A1
             
-        ]);
+            if ($classId) {
+                $schedules[] = [
+                    'period_id' => $activePeriod->period_id,
+                    'user_id' => $userId,
+                    'class_id' => $classId,
+                    'room_id' => $rooms['C101'],
+                    'day' => 'Senin',
+                    'start_time' => '08:00:00',
+                    'end_time' => '09:40:00',
+                    'status' => 'terjadwal',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+
+            $classId2 = $getClassId('TIF2203', 'Kom B1'); // MSBD B1
+            if ($classId2 && isset($rooms['C102'])) {
+                $schedules[] = [
+                    'period_id' => $activePeriod->period_id,
+                    'user_id' => $userId,
+                    'class_id' => $classId2,
+                    'room_id' => $rooms['C102'],
+                    'day' => 'Selasa',
+                    'start_time' => '09:40:00',
+                    'end_time' => '11:20:00',
+                    'status' => 'terjadwal',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+        }
+
+        // Kim Mingyu schedules
+        if (isset($users['Kim Mingyu']) && isset($rooms['C101'])) {
+            $userId = $users['Kim Mingyu']->user_id;
+            $classId = $getClassId('TIF2205', 'Kom A1'); // Mobile Hacking A1
+            
+            if ($classId) {
+                $schedules[] = [
+                    'period_id' => $activePeriod->period_id,
+                    'user_id' => $userId,
+                    'class_id' => $classId,
+                    'room_id' => $rooms['C101'],
+                    'day' => 'Senin',
+                    'start_time' => '09:40:00',
+                    'end_time' => '11:20:00',
+                    'status' => 'terjadwal',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+        }
+
+        // Karina schedules
+        if (isset($users['Karina']) && isset($rooms['C103'])) {
+            $userId = $users['Karina']->user_id;
+            $classId = $getClassId('TIF2203', 'Kom A1'); // MSBD A1
+            
+            if ($classId) {
+                $schedules[] = [
+                    'period_id' => $activePeriod->period_id,
+                    'user_id' => $userId,
+                    'class_id' => $classId,
+                    'room_id' => $rooms['C103'],
+                    'day' => 'Rabu',
+                    'start_time' => '08:00:00',
+                    'end_time' => '09:40:00',
+                    'status' => 'terlewat',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+        }
+
+        // Insert schedules
+        if (!empty($schedules)) {
+            DB::table('schedules')->insert($schedules);
+        }
+
+        $this->command->info('✅ Schedules seeded successfully!');
+        $this->command->info('   - Period: ' . $activePeriod->semester_type . ' ' . $activePeriod->academic_year);
+        $this->command->info('   - ' . count($schedules) . ' sample schedules created');
     }
 }

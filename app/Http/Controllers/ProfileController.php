@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use App\Models\Schedule;
-// use App\Models\SemesterPeriod;
+use App\Models\SemesterPeriod;
 use Illuminate\Support\Facades\Auth;
 
 class ProfileController extends Controller
@@ -138,7 +138,9 @@ class ProfileController extends Controller
     {
         try {
             $user = Auth::user();
-            // $activePeriod = SemesterPeriod::getActivePeriod();
+            
+            // Get active semester period
+            $activePeriod = SemesterPeriod::where('is_active', true)->first();
 
             $data = [
                 'user' => [
@@ -152,8 +154,8 @@ class ProfileController extends Controller
                 'period' => null
             ];
 
-            // if ($activePeriod) {
-                // Get user schedules grouped by day
+            if ($activePeriod) {
+                // Get user schedules grouped by day - ONLY dari semester aktif
                 $schedules = Schedule::with(['course', 'class', 'room'])
                     ->where('period_id', $activePeriod->period_id)
                     ->where('user_id', $user->user_id)
@@ -173,7 +175,7 @@ class ProfileController extends Controller
                             'course_code' => $schedule->course->course_code ?? '',
                             'class_name' => $schedule->class->class_name ?? '',
                             'room_name' => $schedule->room->room_name ?? 'Unknown Room',
-                            // 'building_name' => $schedule->room->building->building_name ?? 'Unknown Building',
+                            'location' => $schedule->room->location ?? 'Unknown Location',
                             'time_slot' => $schedule->time_slot,
                             'start_time' => $schedule->start_time,
                             'end_time' => $schedule->end_time,
@@ -188,7 +190,7 @@ class ProfileController extends Controller
                     'academic_year' => $activePeriod->academic_year,
                     'formatted_period' => $activePeriod->formatted_period
                 ];
-            // }
+            }
 
             return response()->json([
                 'success' => true,
