@@ -1,10 +1,11 @@
-view Kelola matkul
+{{-- View Kelola Mata Kuliah --}}
 
 @extends('layouts.main')
 
 @section('title', 'Kelola Mata Kuliah - ITLG Lab Management System')
 
 @section('content')
+<div class="container mx-auto px-4 py-6">
 <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
     <!-- Filter Semester -->
     <div class="px-4 md:px-6 py-4 border-b border-gray-200">
@@ -118,6 +119,7 @@ view Kelola matkul
         </button>
     </div>
 </div>
+</div> {{-- Close container --}}
 
 <!-- CSRF Token for AJAX -->
 <meta name="csrf-token" content="{{ csrf_token() }}">

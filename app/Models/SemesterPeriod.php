@@ -130,6 +130,14 @@ class SemesterPeriod extends Model
             return false;
         }
 
+        // ✅ PRIORITY 1: Check manual override (is_schedule_open)
+        // If admin opens schedule taking manually, this takes precedence
+        if ($this->is_schedule_open) {
+            Log::info('✅ Schedule taking OPEN: Manual override by admin');
+            return true;
+        }
+
+        // ✅ PRIORITY 2: Check automatic date-based opening
         // Check if schedule dates are set
         if (!$this->schedule_start_date || !$this->schedule_end_date) {
             Log::info('🔒 Schedule taking CLOSED: Dates not set');

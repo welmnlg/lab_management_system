@@ -6,10 +6,8 @@ use Illuminate\Console\Command;
 use App\Models\Schedule;
 use App\Models\Notification;
 use App\Models\SemesterPeriod;
-use App\Notifications\ScheduleReminderNotification;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
 
 class SendScheduleReminders extends Command
 {
@@ -18,21 +16,20 @@ class SendScheduleReminders extends Command
 
     public function handle()
     {
-        $this->info('Starting schedule reminder check...');
+        $this->info('🔔 Starting schedule reminder check...');
 
         try {
             // Get active period
             $activePeriod = SemesterPeriod::getActivePeriod();
             
             if (!$activePeriod) {
-                $this->info('No active period found');
-                return;
+                $this->warn('⚠️  No active period found. Skipping notification check.');
+                return Command::SUCCESS;
             }
 
             // Get current time
             $now = Carbon::now();
-            $reminderTime = $now->copy()->addMinutes(30);
-
+            
             // Get day name in Indonesian
             $dayMap = [
                 'Monday' => 'Senin',
@@ -46,86 +43,103 @@ class SendScheduleReminders extends Command
 
             $currentDay = $dayMap[$now->format('l')];
             
-            $this->info("Current time: {$now}");
-            $this->info("Looking for classes at: {$reminderTime->format('H:i')} on {$currentDay}");
+            // Calculate time window for notifications (25-35 minutes from now)
+            // Wider window to ensure we don't miss any due to second differences
+            $targetTimeStart = $now->copy()->addMinutes(25);
+            $targetTimeEnd = $now->copy()->addMinutes(35);
+            
+            $this->info("📅 Current time: {$now->format('Y-m-d H:i:s')}");
+            $this->info("📅 Current day: {$currentDay}");
+            $this->info("🔍 Looking for classes starting between {$targetTimeStart->format('H:i:s')} - {$targetTimeEnd->format('H:i:s')}");
 
-            // Find schedules that match the 30-minute reminder time
-            // Convert time to format "HH.MM"
-            $reminderTimeSlot = $reminderTime->format('H.i');
-
-            $schedules = Schedule::with(['user', 'course', 'class', 'room.building'])
+            // Find schedules that start in ~30 minutes
+            $schedules = Schedule::with(['user', 'class', 'room'])
                 ->where('period_id', $activePeriod->period_id)
                 ->where('day', $currentDay)
-                ->where('status', 'active')
-                ->get()
-                ->filter(function ($schedule) use ($reminderTimeSlot) {
-                    // Parse time slot "08.00 - 08:50"
-                    $parts = explode(' - ', $schedule->time_slot);
-                    if (count($parts) === 2) {
-                        $startTime = trim($parts[0]); // "08.00"
-                        // Normalize to compare (convert 08.00 to 08:00 if needed)
-                        $startTime = str_replace('.', ':', $startTime);
-                        $reminderTimeCompare = str_replace('.', ':', $reminderTimeSlot);
-                        
-                        return $startTime === $reminderTimeCompare;
-                    }
-                    return false;
-                });
+                ->whereIn('status', ['terjadwal', 'dikonfirmasi']) // Only active schedules
+                ->whereBetween('start_time', [
+                    $targetTimeStart->format('H:i:s'),
+                    $targetTimeEnd->format('H:i:s')
+                ])
+                ->get();
 
-            $this->info("Found " . count($schedules) . " schedules to notify");
+            $this->info("📊 Found {$schedules->count()} schedule(s) starting in ~30 minutes");
+
+            $sentCount = 0;
+            $skippedCount = 0;
 
             foreach ($schedules as $schedule) {
                 try {
                     // Check if notification already sent for this schedule today
                     $existingNotif = Notification::where('schedule_id', $schedule->schedule_id)
-                        ->whereDate('created_at', today())
+                        ->whereDate('created_at', $now->toDateString())
                         ->first();
 
                     if ($existingNotif) {
-                        $this->info("Notification already sent for schedule {$schedule->schedule_id}");
+                        $this->warn("⏭️  Notification already sent for schedule #{$schedule->schedule_id}");
+                        $skippedCount++;
                         continue;
                     }
+
+                    // Get schedule details
+                    $className = $schedule->class->class_name ?? 'Kelas tidak diketahui';
+                    $courseName = $schedule->class->course->course_name ?? 'Mata kuliah tidak diketahui';
+                    $roomName = $schedule->room->room_name ?? 'Ruangan tidak diketahui';
+                    $startTime = Carbon::parse($schedule->start_time)->format('H:i');
+                    $endTime = Carbon::parse($schedule->end_time)->format('H:i');
+                    $userName = $schedule->user->name ?? 'User';
 
                     // Create notification record
                     $notif = Notification::create([
                         'user_id' => $schedule->user_id,
                         'schedule_id' => $schedule->schedule_id,
-                        'title' => 'Pengingat Jadwal Mengajar',
-                        'message' => "Pengingat: Anda mengajar {$schedule->course->course_name} ({$schedule->class->class_name}) di ruang {$schedule->room->room_name} pada pukul {$schedule->time_slot}",
+                        'title' => 'Pengingat Jadwal Praktikum',
+                        'message' => "Pengingat: Anda memiliki jadwal praktikum {$courseName} ({$className}) di {$roomName} pada pukul {$startTime}-{$endTime}. Silahkan konfirmasi kehadiran Anda di halaman Profil.",
                         'class_status' => 'waiting',
                         'notified_at' => $now
                     ]);
 
-                    // Send notification via queue
-                    $schedule->user->notify(new ScheduleReminderNotification($schedule, $notif));
+                    $sentCount++;
+                    $this->info("✅ Notification sent to {$userName} for {$className} at {$startTime}");
 
-                    $this->info("Notification sent for schedule {$schedule->schedule_id} to user {$schedule->user->name}");
-
+                    // Log for debugging
                     Log::info('Schedule reminder sent', [
-                        'schedule_id' => $schedule->schedule_id,
                         'user_id' => $schedule->user_id,
+                        'user_name' => $userName,
+                        'schedule_id' => $schedule->schedule_id,
                         'notification_id' => $notif->notification_id,
-                        'course' => $schedule->course->course_name,
-                        'time' => $schedule->time_slot
+                        'class' => $className,
+                        'room' => $roomName,
+                        'time' => "{$startTime}-{$endTime}",
+                        'day' => $currentDay
                     ]);
 
                 } catch (\Exception $e) {
-                    $this->error("Error sending notification for schedule {$schedule->schedule_id}: " . $e->getMessage());
+                    $this->error("❌ Error sending notification for schedule #{$schedule->schedule_id}: {$e->getMessage()}");
                     Log::error('Error sending schedule reminder', [
                         'schedule_id' => $schedule->schedule_id,
-                        'error' => $e->getMessage()
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
                     ]);
                 }
             }
 
-            $this->info('Schedule reminder check completed');
+            $this->newLine();
+            $this->info("✅ Process completed!");
+            $this->info("   📤 Sent: {$sentCount}");
+            $this->info("   ⏭️  Skipped: {$skippedCount}");
+            $this->info("   📊 Total: {$schedules->count()}");
+
+            return Command::SUCCESS;
 
         } catch (\Exception $e) {
-            $this->error('Error in SendScheduleReminders: ' . $e->getMessage());
+            $this->error("❌ Fatal error in SendScheduleReminders: {$e->getMessage()}");
             Log::error('SendScheduleReminders command error', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
+            
+            return Command::FAILURE;
         }
     }
 }

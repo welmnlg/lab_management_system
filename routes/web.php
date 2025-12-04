@@ -7,10 +7,8 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\SemesterPeriodController;
-// use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\LogbookController;
-use App\Http\Controllers\QRController;
 use App\Http\Controllers\Api\ScheduleController;
 use App\Http\Controllers\Lab\QrVerificationController;
 use Illuminate\Support\Facades\Route;
@@ -46,13 +44,23 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/api/logbook/filters', [App\Http\Controllers\LogbookController::class, 'getFilterOptions'])->name('api.logbook.filters');
     Route::get('/logbook/export', [App\Http\Controllers\LogbookController::class, 'exportLogbook'])->name('logbook.export');
 
+
     // Ambil Jadwal - UNTUK ASLAB (User biasa)
     Route::get('/ambil-jadwal', function () {
         return view('ambil-jadwal');
     })->name('ambil-jadwal');
 
-    // Ambil Jadwal - UNTUK ADMIN/BPH
+    // Ambil Jadwal - UNTUK ADMIN/BPH (with protection)
     Route::get('/ambil-jadwal-admin', function () {
+        $user = auth()->user();
+        $isAdmin = $user->roles->contains('status', 'admin') || $user->roles->contains('status', 'bph');
+        
+        // Redirect non-admin users to regular ambil-jadwal page
+        if (!$isAdmin) {
+            return redirect()->route('ambil-jadwal')
+                ->with('error', 'Anda tidak memiliki akses ke halaman admin.');
+        }
+        
         return view('ambil-jadwal-admin');
     })->name('ambil-jadwal-admin');
 
@@ -88,6 +96,9 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/{user}', [UserController::class, 'destroy'])->name('kelola-pengguna.destroy');
         Route::post('/delete-multiple', [UserController::class, 'deleteMultiple'])->name('kelola-pengguna.delete-multiple');
         Route::get('/{user}', [UserController::class, 'show'])->name('kelola-pengguna.show');
+        
+        // API: Get available KOMs for a course (excluding already assigned)
+        Route::get('/api/courses/{courseId}/available-koms', [UserController::class, 'getAvailableKoms']);
     });
 
     // ========================================
@@ -98,8 +109,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/', [SemesterPeriodController::class, 'store'])->name('semester-periods.store');
         Route::post('/close', [SemesterPeriodController::class, 'closeSemester'])->name('semester-periods.close');
         Route::get('/', [SemesterPeriodController::class, 'index'])->name('semester-periods.index');
-        Route::post('/open-schedule-taking', [SemesterPeriodController::class, 'openScheduleTaking'])->name('semester-periods.open-schedule-taking');
-        Route::post('/close-schedule-taking', [SemesterPeriodController::class, 'closeScheduleTaking'])->name('semester-periods.close-schedule-taking');
+        Route::post('/open-schedule', [SemesterPeriodController::class, 'openScheduleTaking'])->name('semester-periods.open-schedule');
+        Route::post('/close-schedule', [SemesterPeriodController::class, 'closeScheduleTaking'])->name('semester-periods.close-schedule');
     });
 
     // ========================================
@@ -117,10 +128,21 @@ Route::middleware(['auth'])->group(function () {
     });
 
     Route::prefix('api/schedules')->group(function () {
+        // IMPORTANT: Specific routes MUST come BEFORE dynamic {id} routes
+        
         // Get user's schedules
         Route::get('/my-schedules', [ScheduleController::class, 'getMySchedules']);
         
-        // Get schedule detail
+        // Get ALL courses for active semester (Ganjil/Genap) - for form-ambil-jadwal
+        Route::get('/active-courses', [ScheduleController::class, 'getActiveSemesterCourses']);
+        
+        // Get courses for active semester (user-specific, legacy) 
+        Route::get('/user-courses-active', [ScheduleController::class, 'getUserCoursesActive']);
+        
+        // Get user's booked classes for a course (to filter duplicate bookings)
+        Route::get('/user-booked-classes/{courseId}', [ScheduleController::class, 'getUserBookedClasses']);
+        
+        // Get schedule detail - MUST be after specific routes
         Route::get('/{id}', [ScheduleController::class, 'getScheduleDetail']);
         
         // Cancel schedule
@@ -204,16 +226,6 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/{logbook}', [LogbookController::class, 'update'])->name('logbooks.update');
         Route::get('/user/{userId}', [LogbookController::class, 'getUserLogbooks'])->name('logbooks.user');
         Route::get('/today', [LogbookController::class, 'getTodayLogbooks'])->name('logbooks.today');
-    });
-
-    // ========================================
-    // QR CODE ROUTES
-    // ========================================
-    Route::prefix('qr')->group(function () {
-        Route::post('/scan', [QRController::class, 'scan'])->name('qr.scan');
-        Route::post('/login', [QRController::class, 'login'])->name('qr.login');
-        Route::post('/logout', [QRController::class, 'logout'])->name('qr.logout');
-        Route::get('/generate/{roomId}', [QRController::class, 'generate'])->name('qr.generate');
     });
 
     
@@ -376,8 +388,6 @@ Route::middleware(['auth'])->group(function () {
 // PUBLIC ROUTES (Tidak butuh auth)
 // ========================================
 
-// QR Code Public Access (untuk scan)
-Route::post('/public/qr/scan', [QRController::class, 'publicScan'])->name('public.qr.scan');
 
 // Forgot Password OTP Routes (Public - tidak perlu auth)
 Route::post('/forgot-password/send-otp', [ForgotPasswordController::class, 'sendOTP'])->name('forgot-password.send-otp');

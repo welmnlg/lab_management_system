@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -13,46 +12,122 @@ class UserCoursesTableSeeder extends Seeder
      */
     public function run(): void
     {
-        DB::table('user_courses')->insert([
-            // Austin Butler (user_id=1) ngajar Praktikum Kecerdasan Buatan (course_id=1)
-            // ngajar Kom A1, A2, B1, B2 kelas dengan class_id 1,2,3,4
-            ['user_id' => 1, 'class_id' => 1, 'created_at' => now(), 'updated_at' => now()],
-            ['user_id' => 1, 'class_id' => 2, 'created_at' => now(), 'updated_at' => now()],
-            ['user_id' => 1, 'class_id' => 3, 'created_at' => now(), 'updated_at' => now()],
-            ['user_id' => 1, 'class_id' => 4, 'created_at' => now(), 'updated_at' => now()],
+        // Disable foreign key checks
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        
+        // Clear existing data
+        DB::table('user_courses')->truncate();
+        
+        // Re-enable foreign key checks
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-            // Feyd-Rautha (user_id=2) ngajar Praktikum Computer Vision (course_id=4) Kom B1,B2 class_id 15,16
-            ['user_id' => 2, 'class_id' => 15, 'created_at' => now(), 'updated_at' => now()],
-            ['user_id' => 2, 'class_id' => 16, 'created_at' => now(), 'updated_at' => now()],
+        // Get users dynamically
+        $users = DB::table('users')->get()->keyBy('name');
+        
+        // Get courses by code
+        $courses = DB::table('courses')->get()->keyBy('course_code');
+        
+        // Get class IDs helper function
+        $getClassIds = function($courseCode, $komNames) use ($courses) {
+            if (!isset($courses[$courseCode])) return [];
             
-            // Kim Mingyu (user_id=3) ngajar Praktikum Keamanan Server dan Jaringan (course_id=2)
-            // ngajar Kom A1,A2,C1,C2 class_id 5,6,7,8
-            ['user_id' => 3, 'class_id' => 5, 'created_at' => now(), 'updated_at' => now()],
-            ['user_id' => 3, 'class_id' => 6, 'created_at' => now(), 'updated_at' => now()],
-            ['user_id' => 3, 'class_id' => 7, 'created_at' => now(), 'updated_at' => now()],
-            ['user_id' => 3, 'class_id' => 8, 'created_at' => now(), 'updated_at' => now()],
-            ['user_id' => 3, 'class_id' => 9, 'created_at' => now(), 'updated_at' => now()], // Kom A1
-            ['user_id' => 3, 'class_id' => 10, 'created_at' => now(), 'updated_at' => now()], // Kom A2
-            ['user_id' => 3, 'class_id' => 11, 'created_at' => now(), 'updated_at' => now()], // Kom C1
-            ['user_id' => 3, 'class_id' => 12, 'created_at' => now(), 'updated_at' => now()], // Kom C2
-            ['user_id' => 3, 'class_id' => 13, 'created_at' => now(), 'updated_at' => now()], // Kom B1 
+            $courseId = $courses[$courseCode]->course_id;
+            $classIds = [];
+            
+            foreach ($komNames as $komName) {
+                $class = DB::table('course_classes')
+                    ->where('course_id', $courseId)
+                    ->where('class_name', $komName)
+                    ->first();
+                    
+                if ($class) {
+                    $classIds[] = $class->class_id;
+                }
+            }
+            
+            return $classIds;
+        };
 
+        $assignments = [];
 
-            // Wil Ohmsford (user_id=4) ngajar Keamanan Server Kom B1,B2 class_id 9,10
-            ['user_id' => 4, 'class_id' => 14, 'created_at' => now(), 'updated_at' => now()],
-            ['user_id' => 4, 'class_id' => 15, 'created_at' => now(), 'updated_at' => now()],
+        // Austin Butler (user_id: 1) - Admin/BPH + Aslab TI
+        // Ganjil semester courses
+        if (isset($users['Austin Butler'])) {
+            $userId = $users['Austin Butler']->user_id;
+            
+            // Praktikum Pemrograman Web (Ganjil) - Kom A1, A2
+            foreach ($getClassIds('TIF2201', ['Kom A1', 'Kom A2']) as $classId) {
+                $assignments[] = [
+                    'user_id' => $userId,
+                    'class_id' => $classId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+            
+            // Praktikum MSBD (Ganjil) - Kom B1
+            foreach ($getClassIds('TIF2203', ['Kom B1']) as $classId) {
+                $assignments[] = [
+                    'user_id' => $userId,
+                    'class_id' => $classId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+        }
 
-            // Karina (user_id=5) ngajar Praktikum Sistem Basis Data (course_id=3), Kom A1,A2 class_id 11,12
-            ['user_id' => 5, 'class_id' => 16, 'created_at' => now(), 'updated_at' => now()],
-            ['user_id' => 5, 'class_id' => 17, 'created_at' => now(), 'updated_at' => now()],
+        // Kim Mingyu (user_id: 2) - Aslab TI
+        if (isset($users['Kim Mingyu'])) {
+            $userId = $users['Kim Mingyu']->user_id;
+            
+            // Praktikum Mobile Hacking (Ganjil) - Kom A1, A2, C1
+            foreach ($getClassIds('TIF2205', ['Kom A1', 'Kom A2', 'Kom C1']) as $classId) {
+                $assignments[] = [
+                    'user_id' => $userId,
+                    'class_id' => $classId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+        }
 
-            // Hermione (user_id=6) ngajar Sistem Basis Data Kom B1,B2 class_id 13,14
-            ['user_id' => 6, 'class_id' => 18, 'created_at' => now(), 'updated_at' => now()],
-            ['user_id' => 6, 'class_id' => 19, 'created_at' => now(), 'updated_at' => now()],
+        // Karina - Aslab TI
+        if (isset($users['Karina'])) {
+            $userId = $users['Karina']->user_id;
+            
+            // Praktikum MSBD (Ganjil) - Kom A1, A2
+            foreach ($getClassIds('TIF2203', ['Kom A1', 'Kom A2']) as $classId) {
+                $assignments[] = [
+                    'user_id' => $userId,
+                    'class_id' => $classId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+        }
 
-            // Hermione juga ngajar Praktikum Kecerdasan Buatan kelas Kom A1,A2 class_id 1,2
-            ['user_id' => 6, 'class_id' => 1, 'created_at' => now(), 'updated_at' => now()],
-            ['user_id' => 6, 'class_id' => 2, 'created_at' => now(), 'updated_at' => now()],
-        ]);
+        // Hermione Granger - Aslab TI
+        if (isset($users['Hermione Granger'])) {
+            $userId = $users['Hermione Granger']->user_id;
+            
+            // Praktikum Mobile Hacking (Ganjil) - Kom B1, B2
+            foreach ($getClassIds('TIF2205', ['Kom B1', 'Kom B2']) as $classId) {
+                $assignments[] = [
+                    'user_id' => $userId,
+                    'class_id' => $classId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+        }
+
+        // Insert all assignments
+        if (!empty($assignments)) {
+            DB::table('user_courses')->insert($assignments);
+        }
+
+        $this->command->info('✅ User Courses assignments seeded successfully!');
+        $this->command->info('   - ' . count($assignments) . ' course-class assignments created');
+        $this->command->info('   - Focused on Ganjil semester courses (matching active period)');
     }
 }

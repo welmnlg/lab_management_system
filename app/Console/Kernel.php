@@ -12,30 +12,19 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // ✅ Run auto-expire every 5 minutes
-        $schedule->command('schedules:auto-expire')
-            ->everyFiveMinutes()
-            ->withoutOverlapping()
-            ->runInBackground();
-
-        // Optional: Add logging
-        $schedule->command('schedules:auto-expire')
-            ->everyFiveMinutes()
-            ->withoutOverlapping()
-            ->appendOutputTo(storage_path('logs/schedule-expire.log'));
-        // Run every minute to check for schedules
+        // ✅ Send notification reminders - runs every minute
+        // For production: use everyMinute() with Windows Task Scheduler
+        // For testing: command can be called manually or via loop scheduler
         $schedule->command('schedule:send-reminders')
             ->everyMinute()
-            ->name('schedule_reminders')
-            ->withoutOverlapping()
-            ->onFailure(function () {
-                \Log::error('SendScheduleReminders command failed');
-            })
-            ->onSuccess(function () {
-                \Log::info('SendScheduleReminders command executed successfully');
-            });
-
-        // Process queued jobs
+            ->withoutOverlapping();
+        
+        // ✅ Auto-expire schedules every 5 minutes
+        $schedule->command('schedules:auto-expire')
+            ->everyFiveMinutes()
+            ->withoutOverlapping();
+        
+        // Process queued jobs every 5 minutes
         $schedule->command('queue:work --max-jobs=1000 --max-time=3600')
             ->everyFiveMinutes()
             ->name('queue_worker')

@@ -166,24 +166,11 @@ class SemesterPeriodController extends Controller
     }
 
     /**
-     * Open schedule taking for specific users
+     * Open schedule taking for ALL users (Manual override)
      */
     public function openScheduleTaking(Request $request)
     {
         try {
-            $validator = Validator::make($request->all(), [
-                'allowed_users' => 'required|array',
-                'allowed_users.*' => 'exists:users,user_id'
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validasi gagal',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
             $activePeriod = SemesterPeriod::getActivePeriod();
             
             if (!$activePeriod) {
@@ -193,16 +180,20 @@ class SemesterPeriodController extends Controller
                 ], 404);
             }
 
-            $activePeriod->openScheduleTaking($request->allowed_users);
+            // ✅ SIMPLIFIED: Set is_schedule_open = true for ALL users
+            $activePeriod->update([
+                'is_schedule_open' => true
+            ]);
 
-            Log::info('Schedule taking opened', [
+            Log::info('Schedule taking opened manually for ALL users', [
                 'period_id' => $activePeriod->period_id,
-                'allowed_users' => $request->allowed_users
+                'admin_user' => auth()->id()
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Pengambilan jadwal berhasil dibuka untuk user terpilih'
+                'message' => 'Pengambilan jadwal berhasil dibuka untuk SEMUA aslab',
+                'data' => $activePeriod
             ]);
 
         } catch (\Exception $e) {
@@ -229,15 +220,20 @@ class SemesterPeriodController extends Controller
                 ], 404);
             }
 
-            $activePeriod->closeScheduleTaking();
+            // ✅ SIMPLIFIED: Set is_schedule_open = false
+            $activePeriod->update([
+                'is_schedule_open' => false
+            ]);
 
-            Log::info('Schedule taking closed', [
-                'period_id' => $activePeriod->period_id
+            Log::info('Schedule taking closed manually', [
+                'period_id' => $activePeriod->period_id,
+                'admin_user' => auth()->id()
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Pengambilan jadwal berhasil ditutup'
+                'message' => 'Pengambilan jadwal berhasil ditutup',
+                'data' => $activePeriod
             ]);
 
         } catch (\Exception $e) {

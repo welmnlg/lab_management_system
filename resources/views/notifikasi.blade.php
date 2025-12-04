@@ -38,11 +38,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Subscribe to real-time notifications
     subscribeToNotifications();
     
-    // Auto-mark as read setelah 1 detik (user sudah lihat halaman)
-    setTimeout(() => {
-        markAllAsRead();
-    }, 1000);
-    
     // Refresh every 30 seconds
     setInterval(loadNotifications, 30000);
 });
@@ -118,10 +113,15 @@ function renderNotifications(notifications) {
 
     container.innerHTML = sortedNotifications.map(notif => {
         const isUnread = notif.status === 'waiting';
+        const timeAgo = getRelativeTime(notif.created_at);
         
         return `
-            <div class="border-b border-gray-200 last:border-b-0 notification-item ${isUnread ? 'bg-green-50 border-l-4 border-l-green-500' : ''}" 
-                 data-id="${notif.notification_id}">
+            <a href="/profil" 
+               class="block border-b border-gray-200 last:border-b-0 notification-item ${isUnread ? 'bg-green-50 border-l-4 border-l-green-500 hover:bg-green-100' : 'hover:bg-gray-50'} transition-colors cursor-pointer" 
+               data-id="${notif.notification_id}"
+               data-status="${notif.status}"
+               data-created="${notif.created_at}"
+               onclick="handleNotificationClick(event, ${notif.notification_id})">
                 <div class="p-4 sm:p-6">
                     <div class="flex items-start justify-between">
                         <div class="flex items-start space-x-3 sm:space-x-4 flex-1">
@@ -137,11 +137,16 @@ function renderNotifications(notifications) {
                                 <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-2 mb-1">
                                     <span class="font-semibold text-gray-900 text-sm sm:text-base truncate">${notif.title}</span>
                                     <span class="hidden sm:inline text-xs text-gray-500">•</span>
-                                    <span class="text-xs text-gray-500 mt-1 sm:mt-0">Baru saja</span>
+                                    <span class="text-xs text-gray-500 mt-1 sm:mt-0 notification-time">${timeAgo}</span>
                                 </div>
-                                <p class="text-gray-700 ${isUnread ? 'font-medium' : ''} text-sm sm:text-base line-clamp-2">
+                                <p class="text-gray-700 ${isUnread ? 'font-medium' : ''} text-sm sm:text-base line-clamp-3">
                                     ${notif.message}
                                 </p>
+                                ${isUnread ? 
+                                    '<p class="text-xs text-green-600 font-medium mt-2">📍 Klik untuk konfirmasi di halaman Profil</p>' 
+                                    : 
+                                    '<p class="text-xs text-gray-500 mt-2">✓ Sudah dibaca</p>'
+                                }
                             </div>
                         </div>
                         
@@ -153,9 +158,84 @@ function renderNotifications(notifications) {
                         }
                     </div>
                 </div>
-            </div>
+            </a>
         `;
     }).join('');
+    
+    // Update relative times every 30 seconds
+    setTimeout(updateRelativeTimes, 30000);
+}
+
+/**
+ * Handle individual notification click
+ */
+function handleNotificationClick(event, notificationId) {
+    event.preventDefault(); // Prevent immediate navigation
+    
+    const notifElement = event.currentTarget;
+    const currentStatus = notifElement.getAttribute('data-status');
+    
+    // If already read, just navigate
+    if (currentStatus === 'confirmed') {
+        window.location.href = '/profil';
+        return;
+    }
+    
+    // Mark as read
+    markNotificationAsRead(notificationId, function(success) {
+        if (success) {
+            // Update UI immediately
+            notifElement.setAttribute('data-status', 'confirmed');
+            notifElement.classList.remove('bg-green-50', 'border-l-4', 'border-l-green-500', 'hover:bg-green-100');
+            notifElement.classList.add('hover:bg-gray-50');
+            
+            // Update badge
+            updateNavbarBadge();
+            
+            // Navigate after short delay (so user sees the change)
+            setTimeout(() => {
+                window.location.href = '/profil';
+            }, 300);
+        } else {
+            // If error, just navigate anyway
+            window.location.href = '/profil';
+        }
+    });
+}
+
+/**
+ * Mark single notification as read
+ */
+function markNotificationAsRead(notificationId, callback) {
+    fetch(`/api/notifications/${notificationId}/confirm`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log(`✅ Notification #${notificationId} marked as read`);
+            
+            // Update local notification list
+            const notif = allNotifications.find(n => n.notification_id === notificationId);
+            if (notif) {
+                notif.status = 'confirmed';
+            }
+            
+            callback(true);
+        } else {
+            console.error('❌ Failed to mark notification');
+            callback(false);
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error:', error);
+        callback(false);
+    });
 }
 
 /**
@@ -254,6 +334,54 @@ function subscribeToNotifications() {
 
     console.log(`✅ Subscribed to ${channelName}`);
 }
+
+/**
+ * Get relative time in Indonesian
+ */
+function getRelativeTime(timestamp) {
+    const now = new Date();
+    const created = new Date(timestamp);
+    const diffInSeconds = Math.floor((now - created) / 1000);
+    
+    if (diffInSeconds < 10) {
+        return 'Baru saja';
+    } else if (diffInSeconds < 60) {
+        return `${diffInSeconds} detik yang lalu`;
+    } else if (diffInSeconds < 3600) {
+        const minutes = Math.floor(diffInSeconds / 60);
+        return `${minutes} menit yang lalu`;
+    } else if (diffInSeconds < 86400) {
+        const hours = Math.floor(diffInSeconds / 3600);
+        return `${hours} jam yang lalu`;
+    } else if (diffInSeconds < 604800) {
+        const days = Math.floor(diffInSeconds / 86400);
+        return `${days} hari yang lalu`;
+    } else {
+        const weeks = Math.floor(diffInSeconds / 604800);
+        return `${weeks} minggu yang lalu`;
+    }
+}
+
+/**
+ * Update all relative times on the page
+ */
+function updateRelativeTimes() {
+    const items = document.querySelectorAll('.notification-item');
+    
+    items.forEach(item => {
+        const createdAt = item.getAttribute('data-created');
+        if (createdAt) {
+            const timeElement = item.querySelector('.notification-time');
+            if (timeElement) {
+                timeElement.textContent = getRelativeTime(createdAt);
+            }
+        }
+    });
+    
+    // Schedule next update in 30 seconds
+    setTimeout(updateRelativeTimes, 30000);
+}
+
 </script>
 
 <style>

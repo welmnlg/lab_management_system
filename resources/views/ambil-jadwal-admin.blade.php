@@ -84,7 +84,7 @@
                     <div id="no-schedule" class="text-center py-12">
                         <div class="text-gray-500">
                             <i class="fas fa-calendar-times text-4xl mb-4"></i>
-                            <p class="text-lg">Pilih gedung dan ruangan untuk melihat jadwal</p>
+                            <p class="text-lg">Pilih ruangan untuk melihat jadwal</p>
                         </div>
                     </div>
                 </div>
@@ -104,8 +104,8 @@
     </div>
 </div>
 <!-- Modal Buka Semester Baru -->
-<div id="buka-semester-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden p-4 pt-20 md:pt-24 lg:pt-0 lg:pl-64">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-auto my-auto">
+<div id="buka-semester-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-auto my-auto max-h-[85vh] overflow-y-auto">
         <!-- Header Modal -->
         <div class="border-b border-gray-200 p-6">
             <h3 class="text-xl font-bold text-gray-800">Buka Semester Baru</h3>
@@ -230,16 +230,11 @@
                 <label class="block text-sm font-semibold text-gray-700">Waktu <span class="text-red-500">*</span></label>
                 <select name="time_slot" id="edit_time_slot" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm" required>
                     <option value="">Pilih Waktu</option>
-                    <option value="08.00 - 08:50">08.00 - 08:50</option>
-                    <option value="08:50 - 09:40">08:50 - 09:40</option>
-                    <option value="09:40 - 10:30">09:40 - 10:30</option>
-                    <option value="10:30 - 11:20">10:30 - 11:20</option>
-                    <option value="11:20 - 12:10">11:20 - 12:10</option>
-                    <option value="12:10 - 13:00">12:10 - 13:00</option>
-                    <option value="13:00 - 13:50">13:00 - 13:50</option>
-                    <option value="13:50 - 14:40">13:50 - 14:40</option>
-                    <option value="14:40 - 15:30">14:40 - 15:30</option>
-                    <option value="15:30 - 16:20">15:30 - 16:20</option>
+                    <option value="08.00 - 09:40">08:00 - 09:40</option>
+                    <option value="09:40 - 11:20">09:40 - 11:20</option>
+                    <option value="11:20 - 13:00">11:20 - 13:00</option>
+                    <option value="13:00 - 14:40">13:00 - 14:40</option>
+                    <option value="14:40 - 16:20">14:40 - 16:20</option>
                 </select>
             </div>
             <!-- Footer Modal -->
@@ -265,7 +260,8 @@
         <form id="formBukaPengambilan" class="p-6 space-y-4">
             @csrf
             <input type="hidden" id="pengambilan_action" name="action" value="open">
-            <div class="space-y-2">
+            <!-- User selection section - HIDDEN (buka untuk semua) -->
+            <div class="space-y-2 hidden">
                 <label class="block text-sm font-semibold text-gray-700">Pilih Aslab yang Diizinkan</label>
                 <div id="aslab-list" class="max-h-60 overflow-y-auto border border-gray-300 rounded-lg p-3">
                     <!-- Daftar aslab akan dimuat via JavaScript -->
@@ -518,7 +514,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // State
     let currentRoom = null;
     let rooms = [];
-    let rooms = [];
     let currentPeriod = null;
     const currentUserId = {{ auth()->id() }};
     console.log('🚀 Page loaded. Current user ID:', currentUserId);
@@ -623,10 +618,9 @@ document.addEventListener('DOMContentLoaded', function() {
             editJadwalModal.classList.add('hidden');
         });
     }
-    // Modal Buka Pengambilan
+    // Modal Buka Pengambilan - Show modal (user selection hidden in HTML)
     if (bukaPengambilanBtn) {
         bukaPengambilanBtn.addEventListener('click', function() {
-            loadAslabList();
             bukaPengambilanModal.classList.remove('hidden');
         });
     }
@@ -652,13 +646,17 @@ document.addEventListener('DOMContentLoaded', function() {
             updateSchedule();
         });
     }
+    
     // Form Buka Pengambilan
     if (formBukaPengambilan) {
         formBukaPengambilan.addEventListener('submit', function(e) {
             e.preventDefault();
-            toggleScheduleTaking();
+            const action = document.getElementById('pengambilan_action').value;
+            toggleScheduleTaking(action);
+            bukaPengambilanModal.classList.add('hidden');
         });
     }
+    
     // Functions
     function checkActiveSemester() {
         fetch('{{ route("semester-periods.active") }}')
@@ -683,8 +681,17 @@ document.addEventListener('DOMContentLoaded', function() {
         statusTerkunci.classList.add('hidden');
         statusTerbuka.classList.remove('hidden');
         currentPeriod = semesterData;
+        
+        // Calculate remaining days based on schedule_end_date instead of semester end_date
+        let remainingDays = 0;
+        if (semesterData.schedule_end_date) {
+            const today = new Date();
+            const endDate = new Date(semesterData.schedule_end_date);
+            const diffTime = endDate - today;
+            remainingDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        }
+        
         // Update semester info
-        const remainingDays = Math.ceil(semesterData.remaining_days);
         document.getElementById('nama-semester').textContent = 
             `${semesterData.semester_type} ${semesterData.academic_year}`;
         document.getElementById('periode-semester').textContent = 
@@ -692,7 +699,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('periode-pengambilan').textContent = 
             `Pengambilan Jadwal: ${semesterData.schedule_date_range || 'Belum diatur'}`;
         document.getElementById('sisa-waktu').textContent = 
-            `${remainingDays} hari`;
+            remainingDays > 0 ? `${remainingDays} hari` : 'Berakhir';
         // Update status pengambilan jadwal
         const statusElement = document.getElementById('status-pengambilan');
         if (semesterData.is_schedule_open) {
@@ -727,6 +734,47 @@ document.addEventListener('DOMContentLoaded', function() {
         loadRooms();
     }
 
+    // ✅ NEW: Toggle schedule taking for ALL users
+    function toggleScheduleTaking(action) {
+        loading.classList.remove('hidden');
+        
+        const url = action === 'open' 
+            ? '{{ route("semester-periods.open-schedule") }}'
+            : '{{ route("semester-periods.close-schedule") }}';
+        
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({}) // No user selection needed
+        })
+        .then(response => response.json())
+        .then(result => {
+            loading.classList.add('hidden');
+            
+            if (result.success) {
+                showNotification(
+                    action === 'open' 
+                        ? 'Pengambilan jadwal berhasil dibuka untuk semua aslab!' 
+                        : 'Pengambilan jadwal berhasil ditutup!', 
+                    'success'
+                );
+                // Refresh state
+                checkActiveSemester();
+            } else {
+                showNotification(result.message || 'Gagal mengubah status', 'error');
+            }
+        })
+        .catch(error => {
+            loading.classList.add('hidden');
+            console.error('Error:', error);
+            showNotification('Terjadi kesalahan', 'error');
+        });
+    }
+
+
     function loadRooms() {
         fetch('/api/rooms')
             .then(response => response.json())
@@ -734,9 +782,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (result.success) {
                     rooms = result.data;
                     populateRoomButtons();
-                    // Load schedule for first room if exists
+                    
+                    // Check if there's a room parameter in URL
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const roomParam = urlParams.get('room');
+                    
+                    // Load schedule for specific room or first room
                     if (rooms.length > 0) {
-                        loadScheduleForRoom(rooms[0].room_id);
+                        if (roomParam) {
+                            // Find room by ID from URL parameter
+                            const targetRoom = rooms.find(r => r.room_id == roomParam);
+                            if (targetRoom) {
+                                loadScheduleForRoom(targetRoom.room_id);
+                                console.log('📍 Auto-selected room from URL:', targetRoom.room_name);
+                            } else {
+                                // Fallback to first room if param room not found
+                                loadScheduleForRoom(rooms[0].room_id);
+                            }
+                        } else {
+                            // Default to first room
+                            loadScheduleForRoom(rooms[0].room_id);
+                        }
                     } else {
                         // Show no schedule message
                         document.getElementById('lab-schedules').innerHTML = `
@@ -829,9 +895,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Days and times
         const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
         const times = [
-            '08.00 - 08:50', '08:50 - 09:40', '09:40 - 10:30',
-            '10:30 - 11:20', '11:20 - 12:10', '12:10 - 13:00', 
-            '13:00 - 13:50', '13:50 - 14:40', '14:40 - 15:30', '15:30 - 16:20'
+            '08.00 - 09.40', '09.40 - 11.20', 
+            '11.20 - 13.00', '13.00 - 14.40', 
+            '14.40 - 16.20'
         ];
         let html = `
             <div class="overflow-x-auto">
@@ -913,8 +979,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function attachScheduleItemListeners() {
         console.log('🔗 === Attaching event listeners ===');
-        const allItems = document.querySelectorAll('.schedule-item');
+        
+        // Search specifically within lab-schedules container
+        const container = document.getElementById('lab-schedules');
+        if (!container) {
+            console.error('❌ lab-schedules container not found!');
+            return;
+        }
+        
+        const allItems = container.querySelectorAll('.schedule-item');
         console.log(`📊 Total schedule items found: ${allItems.length}`);
+        console.log('Container HTML length:', container.innerHTML.length);
+        
+        // Debug: Check if schedule-item class exists in HTML
+        if (allItems.length === 0) {
+            console.warn('⚠️ No .schedule-item found. Checking HTML...');
+            console.log('Container innerHTML sample:', container.innerHTML.substring(0, 500));
+        }
+        
         let editableCount = 0;
         allItems.forEach((item, index) => {
             const scheduleId = item.getAttribute('data-schedule-id');

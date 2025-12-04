@@ -19,13 +19,7 @@ class ProgramsTableSeeder extends Seeder
                 'faculty' => 'Ilmu Komputer dan Teknologi Informasi',
                 'created_at' => now(),
                 'updated_at' => now(),
-            ],
-            [
-                'name' => 'Ilmu Komputer',
-                'faculty' => 'Ilmu Komputer dan Teknologi Informasi',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
+            ]
         ]);
     }
 }

@@ -54,18 +54,22 @@
                     <label class="block text-sm font-medium text-gray-700">Program Studi <span class="text-red-500">*</span></label>
 
                     @if($user->roles->contains('status', 'bph'))
-                        <!-- Untuk BPH: tampilan readonly dan hidden input -->
+                        <!-- Untuk BPH: tampilan readonly dengan NAMA program dan hidden input dengan ID -->
                         <input type="hidden" name="program_studi" value="{{ $user->program_studi }}">
                         <input type="text" readonly
-                            value="{{ $user->program_studi }}"
+                            value="{{ $user->program ? $user->program->name : 'Program tidak ditemukan' }}"
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:px-4 sm:py-3">
                     @else
                         <!-- Untuk admin: dropdown pilih program studi -->
                         <select name="program_studi" required
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:px-4 sm:py-3">
                             <option value="">-- Pilih Program Studi --</option>
-                            <option value="Teknologi Informasi">Teknologi Informasi</option>
-                            <option value="Sistem Informasi">Sistem Informasi</option>
+                            @php
+                                $programs = \App\Models\Program::all();
+                            @endphp
+                            @foreach($programs as $program)
+                                <option value="{{ $program->id }}">{{ $program->name }}</option>
+                            @endforeach
                         </select>
                     @endif
                     @error('program_studi')
@@ -445,6 +449,29 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize KOM Dropdowns
     initializeKomDropdowns();
 
+    // **NEW: Add mata kuliah change listeners for dynamic KOM loading**
+    const mkSelectors = [
+        { id: 'mataKuliah1', komTarget: 'kom1' },
+        { id: 'mataKuliah2', komTarget: 'kom2' },
+        { id: 'mataKuliah3', komTarget: 'kom3' }
+    ];
+
+    mkSelectors.forEach(({ id, komTarget }) => {
+        const mkSelect = document.getElementById(id);
+        if (mkSelect) {
+            mkSelect.addEventListener('change', function() {
+                const courseId = this.value;
+                if (courseId) {
+                    console.log(`MataKuliah changed for ${komTarget}, courseId:`, courseId);
+                    fetchAndUpdateAvailableKomsForAdd(courseId, komTarget);
+                } else {
+                    // Reset to show all KOMs if no course selected
+                    resetKomCheckboxesForAdd(komTarget);
+                }
+            });
+        }
+    });
+
     // Function to initialize KOM dropdowns
     function initializeKomDropdowns() {
         const dropdownToggles = document.querySelectorAll('.dropdown-kom-toggle');
@@ -589,6 +616,122 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             return true;
         });
+    }
+
+    // **NEW: Fetch and update available KOMs for a course (Add User)**
+    async function fetchAndUpdateAvailableKomsForAdd(courseId, komTarget) {
+        try {
+            console.log(`Fetching available KOMs for course ${courseId}`);
+            
+            const url = `/kelola-pengguna/api/courses/${courseId}/available-koms`;
+            const response = await fetch(url);
+            const result = await response.json();
+            
+            if (result.success) {
+                const data = result.data;
+                console.log(`Available KOMs for ${komTarget}:`, data);
+                
+                // Show warning if there are duplicates (someone else has same course+kom)
+                if (data.assigned_koms && data.assigned_koms.length > 0) {
+                    console.log(`⚠️ ${data.assigned_koms.length} KOMs already assigned to other users`);
+                }
+                
+                // Update checkbox list with only available KOMs
+                updateKomCheckboxesForAdd(komTarget, data.available_koms);
+            } else {
+                console.error('Failed to fetch available KOMs:', result.message);
+            }
+        } catch (error) {
+            console.error('Error fetching available KOMs:', error);
+        }
+    }
+
+    // **NEW: Update KOM checkboxes with only available options (Add User)**
+    function updateKomCheckboxesForAdd(komTarget, availableKoms) {
+        const menu = document.querySelector(`.dropdown-kom-menu[data-target="${komTarget}"]`);
+        if (!menu) return;
+        
+        const container = menu.querySelector('.kom-checkbox-container');
+        if (!container) return;
+        
+        // Clear existing checkboxes
+        container.innerHTML = '';
+        
+        // Sort KOMs: A1, A2, B1, B2, C1, C2
+        const sortedKoms = availableKoms.sort((a, b) => {
+            const order = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+            return order.indexOf(a) - order.indexOf(b);
+        });
+        
+        if (sortedKoms.length === 0) {
+            // No available KOMs - show message
+            container.innerHTML = '<div class="px-3 py-2 text-sm text-red-600 text-center">Semua KOM sudah diassign</div>';
+            return;
+        }
+        
+        // Render only available KOMs
+        sortedKoms.forEach(cls => {
+            const label = document.createElement('label');
+            label.className = 'flex items-center px-3 py-2 hover:bg-gray-100 rounded cursor-pointer transition-colors';
+            label.innerHTML = `
+                <input type="checkbox" value="${cls}" 
+                    class="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded kom-checkbox" 
+                    data-target="${komTarget}" 
+                    data-pair="${cls}">
+                <span class="text-sm text-gray-700">KOM ${cls}</span>
+            `;
+            container.appendChild(label);
+        });
+        
+        // Re-attach event listeners for new checkboxes
+        const newCheckboxes = container.querySelectorAll('.kom-checkbox');
+        newCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                updateSelectedKomText(this.getAttribute('data-target'));
+                updateHiddenInputs(this.getAttribute('data-target'));
+                updateSimpanButton();
+            });
+        });
+        
+        console.log(`✅ Updated ${komTarget} with ${sortedKoms.length} available KOMs`);
+    }
+
+    // **NEW: Reset KOM checkboxes to default (all 6 KOMs)**
+    function resetKomCheckboxesForAdd(komTarget) {
+        const allKoms = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+        updateKomCheckboxesForAdd(komTarget, allKoms);
+    }
+
+    // **NEW: Show duplicate warning (Add User)**
+    function showDuplicateWarningForAdd(komTarget, assignedKoms) {
+        if (!assignedKoms || assignedKoms.length === 0) return;
+        
+        const message = `⚠️ Info: KOM ${assignedKoms.join(', ')} sudah diassign ke user lain`;
+        
+        // Find the dropdown toggle for this komTarget
+        const dropdown = document.querySelector(`.dropdown-kom-toggle[data-target="${komTarget}"]`);
+        if (!dropdown) return;
+        
+        // Check if warning already exists
+        const existingWarning = dropdown.parentElement.querySelector('.duplicate-warning');
+        if (existingWarning) {
+            existingWarning.remove();
+        }
+        
+        // Create warning element
+        const warning = document.createElement('div');
+        warning.className = 'duplicate-warning bg-yellow-100 border border-yellow-400 text-yellow-800 px-3 py-2 rounded mb-2 text-xs';
+        warning.innerHTML = `<span>${message}</span>`;
+        
+        // Insert before dropdown
+        dropdown.parentElement.insertBefore(warning, dropdown);
+        
+        // Auto-remove after 8 seconds
+        setTimeout(() => {
+            if (warning.parentElement) {
+                warning.remove();
+            }
+        }, 8000);
     }
 });
 </script>

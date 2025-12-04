@@ -426,4 +426,71 @@ class UserController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get available KOMs for a course that are not assigned to other users
+     * Prevents duplicate course-class assignments
+     */
+    public function getAvailableKoms($courseId, Request $request)
+    {
+        try {
+            $userId = $request->query('userId'); // User yang sedang diedit
+            
+            // All possible KOM classes
+            $allKoms = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+            
+            // Get all course classes for this course
+            $courseClasses = CourseClass::where('course_id', $courseId)->get();
+            
+            // Get KOMs already assigned to OTHER users for this course
+            $assignedKoms = \DB::table('user_courses as uc')
+                ->join('course_classes as cc', 'uc.class_id', '=', 'cc.class_id')
+                ->where('cc.course_id', $courseId)
+                ->when($userId, function($query) use ($userId) {
+                    // Exclude current user's assignments
+                    return $query->where('uc.user_id', '!=', $userId);
+                })
+                ->pluck('cc.class_name')
+                ->map(function($className) {
+                    // Convert "Kom A1" to "A1"
+                    return str_replace('Kom ', '', $className);
+                })
+                ->toArray();
+            
+            // Available KOMs = All KOMs - Assigned KOMs
+            $availableKoms = array_values(array_diff($allKoms, $assignedKoms));
+            
+            // Check for duplicates (if any assigned KOMs exist for this user and course)
+            $userAssignedKoms = [];
+            if ($userId) {
+                $userAssignedKoms = \DB::table('user_courses as uc')
+                    ->join('course_classes as cc', 'uc.class_id', '=', 'cc.class_id')
+                    ->where('cc.course_id', $courseId)
+                    ->where('uc.user_id', $userId)
+                    ->pluck('cc.class_name')
+                    ->map(function($className) {
+                        return str_replace('Kom ', '', $className);
+                    })
+                    ->toArray();
+            }
+            
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'available_koms' => $availableKoms,
+                    'assigned_koms' => $assignedKoms,
+                    'user_assigned_koms' => $userAssignedKoms,
+                    'has_duplicates' => count(array_intersect($userAssignedKoms, $assignedKoms)) > 0
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error getting available KOMs: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data KOM tersedia',
+                'error' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
+    }
 }

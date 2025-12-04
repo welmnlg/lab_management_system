@@ -119,22 +119,22 @@
                         class="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
                         required>
                     <option value="">Pilih Waktu</option>
-                    <option value="08.00 - 08:50">08.00 - 08:50</option>
-                    <option value="08:50 - 09:40">08:50 - 09:40</option>
-                    <option value="09:40 - 10:30">09:40 - 10:30</option>
-                    <option value="10:30 - 11:20">10:30 - 11:20</option>
-                    <option value="11:20 - 12:10">11:20 - 12:10</option>
-                    <option value="12:10 - 13:00">12:10 - 13:00</option>
-                    <option value="13:00 - 13:50">13:00 - 13:50</option>
-                    <option value="13:50 - 14:40">13:50 - 14:40</option>
-                    <option value="14:40 - 15:30">14:40 - 15:30</option>
-                    <option value="15:30 - 16:20">15:30 - 16:20</option>
+                    <option value="08.00 - 09:40">08.00 - 09:40</option>
+                    <option value="09:40 - 11:20">09:40 - 11:20</option>
+                    <option value="11:20 - 13:00">11:20 - 13:00</option>
+                    <option value="13:00 - 14:40">13:00 - 14:40</option>
+                    <option value="14:40 - 16:20">14:40 - 16:20</option>
                 </select>
             </div>
 
             <!-- Button Group -->
             <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-6">
-                <a href="{{ route('ambil-jadwal-admin') }}" 
+                @php
+                    $user = auth()->user();
+                    $isAdmin = $user->roles->contains('status', 'admin') || $user->roles->contains('status', 'bph');
+                    $backRoute = $isAdmin ? route('ambil-jadwal-admin') : route('ambil-jadwal');
+                @endphp
+                <a href="{{ $backRoute }}" 
                    class="flex-1 px-4 py-3 sm:px-6 sm:py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-semibold text-center transition-all duration-200 text-sm sm:text-base">
                     Kembali
                 </a>
@@ -267,9 +267,13 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Event: Modal buttons
+    let bookedRoomId = null; // Store room_id from booking
+    
     successOk.addEventListener('click', function() {
         successModal.classList.add('hidden');
-        window.location.href = '{{ route("ambil-jadwal-admin") }}';
+        // Redirect based on user role (using backRoute from PHP)
+        const redirectUrl = '{{ $backRoute }}' + (bookedRoomId ? `?room=${bookedRoomId}` : '');
+        window.location.href = redirectUrl;
     });
 
     errorOk.addEventListener('click', function() {
@@ -277,13 +281,22 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Functions
+    let coursesData = []; // Store full course data including classes
+    
     function loadUserCourses() {
-        // API call to get user's courses for active semester
-        fetch('/api/schedules/user-courses-active')
+        // API call to get ALL courses for active semester (Ganjil/Genap)
+        // Not user-specific - gets all available courses for the current semester
+        fetch('/api/schedules/active-courses')
             .then(response => response.json())
             .then(result => {
                 if (result.success) {
+                    coursesData = result.data; // Store full data
                     populateCourseSelect(result.data);
+                    
+                    // Log semester info
+                    if (result.meta) {
+                        console.log('📚 Loaded courses for:', result.meta.current_semester, result.meta.period);
+                    }
                 } else {
                     showError('Gagal memuat data mata kuliah');
                 }
@@ -306,33 +319,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function loadRoomsForBuildingC() {
-        // API call to get rooms for Gedung C
-        fetch('/api/buildings')
-            .then(response => response.json())
-            .then(result => {
-                if (result.success) {
-                    // Find building C
-                    const buildingC = result.data.find(building => 
-                        building.building_code === 'C' || building.building_name.includes('C')
-                    );
-                    
-                    if (buildingC) {
-                        loadRoomsByBuilding(buildingC.building_id);
-                    } else {
-                        showError('Gedung C tidak ditemukan');
-                    }
-                } else {
-                    showError('Gagal memuat data gedung');
-                }
-            })
-            .catch(error => {
-                console.error('Error loading buildings:', error);
-                showError('Terjadi kesalahan saat memuat gedung');
-            });
-    }
-
-    function loadRoomsByBuilding(buildingId) {
-        fetch(`/api/buildings/${buildingId}/rooms`)
+        // Directly load all rooms (all in Gedung C based on location column)
+        fetch('/api/rooms')
             .then(response => response.json())
             .then(result => {
                 if (result.success) {
@@ -358,25 +346,44 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function loadClassesForCourse(courseId) {
-        // Show loading state
-        kelasSelect.disabled = true;
-        kelasSelect.innerHTML = '<option value="">Memuat kelas...</option>';
+    async function loadClassesForCourse(courseId) {
+        try {
+            // Get classes from stored data
+            const course = coursesData.find(c => c.course_id == courseId);
+            
+            if (!course || !course.classes) {
+                kelasSelect.innerHTML = '<option value="">Tidak ada kelas tersedia</option>';
+                kelasSelect.disabled = true;
+                return;
+            }
 
-        // API call to get classes for selected course
-        fetch(`/api/courses/${courseId}/classes`)
-            .then(response => response.json())
-            .then(result => {
-                if (result.success) {
-                    populateClassSelect(result.classes);
-                } else {
-                    kelasSelect.innerHTML = '<option value="">Gagal memuat kelas</option>';
-                }
-            })
-            .catch(error => {
-                console.error('Error loading classes:', error);
-                kelasSelect.innerHTML = '<option value="">Error memuat kelas</option>';
+            // Fetch user's existing schedules for this course to filter out already-booked classes
+            const response = await fetch(`/api/schedules/user-booked-classes/${courseId}`);
+            const result = await response.json();
+            
+            let bookedClassIds = [];
+            if (result.success && result.data) {
+                bookedClassIds = result.data.booked_class_ids || [];
+            }
+            
+            console.log(`Course ${courseId} - Booked class IDs:`, bookedClassIds);
+            
+            // Filter out classes that are already booked by this user
+            const availableClasses = course.classes.filter(classItem => {
+                return !bookedClassIds.includes(classItem.class_id);
             });
+            
+            if (availableClasses.length === 0) {
+                kelasSelect.innerHTML = '<option value="">Semua kelas sudah diambil</option>';
+                kelasSelect.disabled = true;
+            } else {
+                populateClassSelect(availableClasses);
+            }
+        } catch (error) {
+            console.error('Error loading classes:', error);
+            kelasSelect.innerHTML = '<option value="">Error loading classes</option>';
+            kelasSelect.disabled = true;
+        }
     }
 
     function populateClassSelect(classes) {
@@ -423,6 +430,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function submitForm() {
         const formData = new FormData(form);
         const data = Object.fromEntries(formData.entries());
+
+        // Save room_id for redirect
+        bookedRoomId = data.room_id;
 
         // Convert time slot to start_time and end_time
         const timeSlot = data.time_slot;

@@ -6,6 +6,7 @@ use App\Models\Room;
 use App\Models\Schedule;
 use App\Models\ScheduleOverride;
 use App\Models\CourseClass;
+use App\Models\SemesterPeriod;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -31,15 +32,18 @@ class RoomScheduleService
         $monday = Carbon::parse($weekStart)->startOfWeek(Carbon::MONDAY);
         $friday = $monday->copy()->addDays(4); // Friday
         
-        // Get all schedules for this room
+        // Get all schedules for this room - ONLY dari semester aktif
         $regularSchedules = Schedule::where('room_id', $roomId)
-            ->with(['class.course', 'user'])  // Fixed: use class instead of courseClass
+            ->whereHas('period', function($query) {
+                $query->where('is_active', true);
+            })
+            ->with(['class.course', 'user', 'period'])  // Fixed: use class instead of courseClass
             ->get();
         
         // Get schedule overrides for this week
         $overrides = ScheduleOverride::where('room_id', $roomId)
             ->whereBetween('date', [$monday->format('Y-m-d'), $friday->format('Y-m-d')])
-            ->with(['class.course', 'user'])  // Fixed: use class instead of courseClass
+            ->with(['courseClass.course', 'user'])  // Fixed: ScheduleOverride uses 'courseClass' relationship
             ->get();
         
         // Build calendar structure
@@ -130,7 +134,13 @@ class RoomScheduleService
      */
     private function formatScheduleForCalendar($schedule, $timeSlot, $isOverride = false)
     {
-        $courseClass = $schedule->class;  // Fixed: use class instead of courseClass
+        // FIXED: Schedule model uses 'class' while ScheduleOverride uses 'courseClass'
+        if ($isOverride) {
+            $courseClass = $schedule->courseClass;
+        } else {
+            $courseClass = $schedule->class;
+        }
+        
         $course = $courseClass ? $courseClass->course : null;
         $user = $schedule->user ?? null;
         
@@ -181,13 +191,16 @@ class RoomScheduleService
                 // Ambil data user yang sedang pakai
                 $user = \App\Models\User::find($occupancy->current_user_id);
                 
-                // Cari schedule yang sedang berjalan
+                // Cari schedule yang sedang berjalan - ONLY dari semester aktif
                 $currentSchedule = Schedule::where('room_id', $room->room_id)
                     ->where('day', $currentDay)
                     ->where('start_time', '<=', $currentTime)
                     ->where('end_time', '>=', $currentTime)
                     ->where('user_id', $occupancy->current_user_id)
-                    ->with(['courseClass.course', 'user'])
+                    ->whereHas('period', function($query) {
+                        $query->where('is_active', true);
+                    })
+                    ->with(['class.course', 'user'])  // Fixed: Schedule uses 'class' relationship
                     ->first();
                 
                 // Cek override juga
@@ -211,12 +224,15 @@ class RoomScheduleService
                 ];
             }
             
-            // ✅ Jika TIDAK ada occupancy, cek apakah ada jadwal
+            // ✅ Jika TIDAK ada occupancy, cek apakah ada jadwal - ONLY dari semester aktif
             $currentSchedule = Schedule::where('room_id', $room->room_id)
                 ->where('day', $currentDay)
                 ->where('start_time', '<=', $currentTime)
                 ->where('end_time', '>=', $currentTime)
-                ->with(['courseClass.course', 'user'])
+                ->whereHas('period', function($query) {
+                    $query->where('is_active', true);
+                })
+                ->with(['class.course', 'user'])  // Fixed: Schedule uses 'class' relationship
                 ->first();
             
             $override = ScheduleOverride::where('room_id', $room->room_id)
@@ -245,7 +261,15 @@ class RoomScheduleService
      */
     private function formatCurrentSchedule($schedule)
     {
-        $courseClass = $schedule->class;  // Fixed: use class instead of courseClass
+        // FIXED: Detect model type and use correct relationship
+        $isOverride = get_class($schedule) === 'App\Models\ScheduleOverride';
+        
+        if ($isOverride) {
+            $courseClass = $schedule->courseClass;
+        } else {
+            $courseClass = $schedule->class;
+        }
+        
         $course = $courseClass ? $courseClass->course : null;
         $user = $schedule->user;
         
@@ -289,10 +313,13 @@ class RoomScheduleService
         $dateCarbon = Carbon::parse($date);
         $day = $this->getIndonesianDay($dateCarbon);
         
-        // Get regular schedules
+        // Get regular schedules - ONLY dari semester aktif
         $schedules = Schedule::where('room_id', $roomId)
             ->where('day', $day)
-            ->with(['courseClass.course', 'user'])
+            ->whereHas('period', function($query) {
+                $query->where('is_active', true);
+            })
+            ->with(['class.course', 'user', 'period'])  // Fixed: Schedule uses 'class' relationship
             ->get();
         
         // Get overrides for this date
@@ -347,22 +374,30 @@ class RoomScheduleService
     }
     
     /**
-     * Format schedule
-     */
-    private function formatSchedule($schedule, $date, $isOverride)
-    {
-        $courseClass = $schedule->class;  // Fixed: use class instead of courseClass
-        $course = $courseClass ? $courseClass->course : null;
-        $user = $schedule->user;
-        
-        // Jika override tidak punya class_id, ambil dari schedule asli
-        if ($isOverride && !$courseClass && $schedule->schedule_id) {
-            $originalSchedule = Schedule::with(['class.course'])->find($schedule->schedule_id);  // Fixed: use class
-            if ($originalSchedule) {
-                $courseClass = $originalSchedule->class;  // Fixed: use class
-                $course = $courseClass ? $courseClass->course : null;
-            }
+ * Format schedule
+ */
+private function formatSchedule($schedule, $date, $isOverride)
+{
+    // FIXED: Schedule model uses 'class' while ScheduleOverride uses 'courseClass'
+    if ($isOverride) {
+        // ScheduleOverride uses courseClass relationship
+        $courseClass = $schedule->courseClass;
+    } else {
+        // Schedule uses class relationship
+        $courseClass = $schedule->class;
+    }
+    
+    $course = $courseClass ? $courseClass->course : null;
+    $user = $schedule->user;
+    
+    // Jika override tidak punya class_id, ambil dari schedule asli
+    if ($isOverride && !$courseClass && $schedule->schedule_id) {
+        $originalSchedule = Schedule::with(['class.course'])->find($schedule->schedule_id);
+        if ($originalSchedule) {
+            $courseClass = $originalSchedule->class;
+            $course = $courseClass ? $courseClass->course : null;
         }
+    }
         
         // Pastikan start_time dan end_time dalam format yang benar
         $startTime = $schedule->start_time;
@@ -422,16 +457,14 @@ class RoomScheduleService
             return 'scheduled';
         }
 
-        // PERBAIKAN 1.5: Cek status dari database untuk override yang sudah selesai
+        // PERBAIKAN 1.5: Cek status dari database untuk schedule dan override yang sudah selesai
         if ($schedule) {
-            // Untuk ScheduleOverride, cek status database langsung
-            if (get_class($schedule) === 'App\Models\ScheduleOverride') {
-                if ($schedule->status === 'selesai') {
-                    return 'completed';
-                }
-                if ($schedule->status === 'sedang_berlangsung') {
-                    return 'ongoing';
-                }
+            // Check database status for both Schedule and ScheduleOverride
+            if ($schedule->status === 'selesai') {
+                return 'completed';
+            }
+            if ($schedule->status === 'sedang_berlangsung') {
+                return 'ongoing';
             }
             
             // Cek status Pindah Ruangan (Moved)

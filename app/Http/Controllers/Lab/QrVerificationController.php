@@ -398,14 +398,22 @@ class QrVerificationController extends Controller
             'is_override' => $isOverride
         ]]);
 
+        // FIXED: Get class info based on model type
+        $courseClass = null;
+        if ($isOverride) {
+            $courseClass = $validSchedule->courseClass;
+        } else {
+            $courseClass = $validSchedule->class;
+        }
+        
         return response()->json([
             'success' => true,
             'message' => 'QR code valid. Silakan konfirmasi.',
             'data' => [
                 'room_name' => $room->room_name,
                 'location' => $room->location,
-                'class_name' => $validSchedule->courseClass->class_name ?? 'N/A',
-                'subject_name' => $validSchedule->courseClass->course->course_name ?? 'N/A',
+                'class_name' => $courseClass->class_name ?? 'N/A',
+                'subject_name' => $courseClass->course->course_name ?? 'N/A',
                 'start_time' => $validSchedule->start_time,
                 'end_time' => $validSchedule->end_time,
                 'day' => $validSchedule->day,
@@ -497,7 +505,7 @@ class QrVerificationController extends Controller
 
             if ($isOverride) {
                 $override = ScheduleOverride::find($overrideId);
-                $courseClass = $override->courseClass;
+                $courseClass = $override->courseClass;  // ScheduleOverride uses 'courseClass'
                 
                 // Backup check for move
                 if ($override->status === 'pindah_ruangan') {
@@ -505,7 +513,7 @@ class QrVerificationController extends Controller
                 }
             } else {
                 $schedule = Schedule::find($scheduleId);
-                $courseClass = $schedule->courseClass;
+                $courseClass = $schedule->class;  // FIXED: Schedule uses 'class' relationship
 
                 // Backup check for move
                 // if ($schedule->status === 'pindah_ruangan') {
@@ -708,6 +716,14 @@ class QrVerificationController extends Controller
         $user = auth()->user();
 
         try {
+            // Get the logbook first to know which schedule/override to update
+            $logbook = Logbook::where('user_id', $user->user_id)
+                ->where('room_id', $roomId)
+                ->whereNull('logout')
+                ->whereDate('date', today())
+                ->latest()
+                ->first();
+            
             // Update room occupancy
             RoomOccupancyStatus::where('room_id', $roomId)
                 ->where('current_user_id', $user->user_id)
@@ -717,16 +733,23 @@ class QrVerificationController extends Controller
                 ]);
             
             // Update Logbook logout time
-            Logbook::where('user_id', $user->user_id)
-                ->where('room_id', $roomId)
-                ->whereNull('logout')
-                ->whereDate('date', today())
-                ->latest()
-                ->first()
-                ?->update([
+            if ($logbook) {
+                $logbook->update([
                     'logout' => now()->format('H:i:s'),
                     'status' => 'SELESAI'
                 ]);
+                
+                // ✅ FIXED: Update schedule/override status to 'selesai'
+                if ($logbook->override_id) {
+                    // It's an override (kelas ganti)
+                    ScheduleOverride::where('id', $logbook->override_id)
+                        ->update(['status' => 'selesai']);
+                } elseif ($logbook->schedule_id) {
+                    // It's a regular schedule
+                    Schedule::where('schedule_id', $logbook->schedule_id)
+                        ->update(['status' => 'selesai']);
+                }
+            }
 
             // Update last access log
             RoomAccessLog::where('user_id', $user->user_id)

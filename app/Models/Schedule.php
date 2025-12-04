@@ -76,13 +76,13 @@ class Schedule extends Model
         return $now->isBetween($oneHourBefore, $fifteenMinAfter);
     }
 
-    // Relasi ke CourseClass
-    public function courseClass()
+    /**
+     * Relationship with semester period
+     */
+    public function period()
     {
         return $this->belongsTo(SemesterPeriod::class, 'period_id', 'period_id');
     }
-    // public function semesterPeriod()
-    // {\n    //     return $this->belongsTo(SemesterPeriod::class, 'period_id', 'period_id');\n    // }
 
     /**
      * Relationship with user (lecturer)
@@ -117,16 +117,26 @@ class Schedule extends Model
     }
 
     /**
-     * Get course through class relationship
-     * Use: $schedule->class->course
+     * Relationship with course (via class)
      */
+    public function course()
+    {
+        return $this->hasOneThrough(
+            Course::class,
+            CourseClass::class,
+            'class_id',      // Foreign key on CourseClass table
+            'course_id',     // Foreign key on Course table
+            'class_id',      // Local key on Schedule table
+            'course_id'      // Local key on CourseClass table
+        );
+    }
 
     /**
      * Scope for active period schedules
      */
     public function scopeActivePeriod($query)
     {
-        return $query->whereHas('semesterPeriod', function($q) {
+        return $query->whereHas('period', function($q) {
             $q->where('is_active', true);
         });
     }

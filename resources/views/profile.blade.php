@@ -27,7 +27,7 @@
                 {{-- Tombol Aksi --}}
                 <div class="flex-shrink-0 mt-4 md:mt-0">
                     <button onclick="bukaModalGantiSandi()"
-                        class="flex items-center gap-2 px-4 py-2 bg-gr  ient-to-r from-blue-900 to-red-700 text-white font-semibold rounded-lg shadow-md hover:opacity-90 transition">
+                        class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-900 to-red-700 text-white font-semibold rounded-lg shadow-md hover:opacity-90 transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H5v-2H3v-2H1l4.257-4.257A6 6 0 1121 9z">
@@ -512,29 +512,44 @@
         /**
          * Render jadwal mingguan dengan tab hari
          */
-        function renderWeeklySchedules(schedules) {
-            const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat']; //Testing sabtu Minggu
-            const dayShort = ['SEN', 'SEL', 'RAB', 'KAM', 'JUM'];
-            const scheduleTabsContainer = document.getElementById('schedule-tabs');
-            const scheduleContentContainer = document.getElementById('schedule-content');
+    function renderWeeklySchedules(schedules) {
+        const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
+        const dayShort = ['SEN', 'SEL', 'RAB', 'KAM', 'JUM'];
+        const scheduleTabsContainer = document.getElementById('schedule-tabs');
+        const scheduleContentContainer = document.getElementById('schedule-content');
 
+        if (!scheduleTabsContainer || !scheduleContentContainer) return;
+        scheduleTabsContainer.innerHTML = '';
+        scheduleContentContainer.innerHTML = '';
 
-            if (!scheduleTabsContainer || !scheduleContentContainer) return;
-            scheduleTabsContainer.innerHTML = '';
-            scheduleContentContainer.innerHTML = '';
+        const weekDates = getWeekDates();
+        
+        // Determine default active day
+        const today = new Date().getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+        let defaultActiveIndex = 0; // Default Monday
+        
+        if (today >= 1 && today <= 5) {
+            // Monday (1) to Friday (5) -> map to index 0-4
+            defaultActiveIndex = today - 1;
+        } else if (today === 6 || today === 0) {
+            // Saturday (6) or Sunday (0) -> default to Friday (index 4)
+            defaultActiveIndex = 4;
+        }
 
+        days.forEach((day, index) => {
+            const daySchedules = schedules[day] || [];
+            const date = weekDates[index];
 
-            const weekDates = getWeekDates();
+            const tabButton = document.createElement('button');
+            const isActive = index === defaultActiveIndex;
+            
+            // Set initial active day global variable
+            if (isActive) {
+                hariAktif = day;
+            }
 
-            days.forEach((day, index) => {
-                    const daySchedules = schedules[day] || [];
-                    const date = weekDates[index];
-
-
-                    const tabButton = document.createElement('button');
-                    const isActive = index === 0;
-                    tabButton.id = `tab-${day.toLowerCase()}`;
-                    tabButton.className = `flex-shrink-0 px-3 py-2 rounded-lg font-semibold text-xs min-w-[60px] transition-all duration-200 ${
+            tabButton.id = `tab-${day.toLowerCase()}`;
+            tabButton.className = `flex-shrink-0 px-3 py-2 rounded-lg font-semibold text-xs min-w-[60px] transition-all duration-200 ${
                 isActive 
                     ? 'bg-gradient-to-r from-blue-900 to-red-700 text-white' 
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -630,8 +645,14 @@
                     actionContent = getStatusBadge(status);
                 } else if (status === 'pindah_ruangan') {
                     borderColor = 'border-purple-500';
-                    actionContent =
-                        `<span class="text-xs text-purple-600 font-medium">Dipindahkan ke Ruangan Lain</span>`;
+                    actionContent = `
+                        <a href="/scan-qr" class="flex items-center gap-2 text-sm px-4 py-2 bg-purple-50 hover:bg-purple-100 rounded-lg transition cursor-pointer">
+                            <svg class="w-5 h-5 text-purple-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
+                            </svg>
+                            <span class="text-purple-600 font-medium">Menunggu Scan QR (Ruangan Baru) →</span>
+                        </a>
+                    `;
                 } else {
                     actionContent = getStatusBadge(status);
                 }
@@ -648,7 +669,6 @@
                             Mata Kuliah: ${schedule.course_name}
                             ${schedule.is_substitute ? '<span class="ml-2 px-2 py-0.5 text-xs bg-yellow-100 text-yellow-800 rounded-full">Kelas Pengganti</span>' : ''}
                             ${schedule.is_override && !schedule.is_substitute ? '<span class="ml-2 px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded-full">Pindah Ruangan</span>' : ''}
-                            ${schedule.schedule_override_id != null && schedule.is_substitute ? '<span class="ml-2 px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded-full">Pindah Ruangan</span>' : ''}
                         </p>
                         <div class="flex items-center flex-wrap gap-2 text-sm text-gray-600 mt-2">
                             <span class="flex items-center gap-1.5 bg-gray-200 px-2 py-1 rounded-md">
@@ -674,24 +694,23 @@
                         ${actionContent}
                     </div>
                 </div>
-                        }).join('')}
+            `;
+        }).join('')
+    }
                     </div>
                 `;
-            } else {
-                contentPanel.innerHTML = `
+                        } else {
+                            contentPanel.innerHTML = `
                     <div class="bg-gray-50 rounded-lg p-8 text-center">
                         <p class="text-gray-600 text-lg">Tidak ada kelas mengajar hari ini</p>
                     </div>
                 `;
-            }
+                        }
 
-            scheduleContentContainer.appendChild(contentPanel);
-        });
-
-        if (days.length > 0) {
-            hariAktif = days[0];
-        }
-    }
+                        scheduleContentContainer.appendChild(contentPanel);
+                    });
+                }
+            
 
     /**
      * Show empty state ketika tidak ada jadwal
@@ -725,57 +744,6 @@
     /**
      * Fungsi untuk mengubah hari yang aktif
      */
-    function ubahHari(hari) {
-                    </div>
-                `;
-                        } else {
-                            contentPanel.innerHTML = `
-                    <div class="bg-gray-50 rounded-lg p-8 text-center">
-                        <p class="text-gray-600 text-lg">Tidak ada kelas mengajar hari ini</p>
-                    </div>
-                `;
-                        }
-
-                        scheduleContentContainer.appendChild(contentPanel);
-                    });
-
-                    if (days.length > 0) {
-                        hariAktif = days[0];
-                    }
-                }
-
-                /**
-                 * Show empty state ketika tidak ada jadwal
-                 */
-                function showEmptyScheduleState() {
-                    const scheduleTabsContainer = document.getElementById('schedule-tabs');
-                    const scheduleContentContainer = document.getElementById('schedule-content');
-                    
-                    if (scheduleTabsContainer) {
-                        scheduleTabsContainer.innerHTML = '';
-                    }
-                    
-                    if (scheduleContentContainer) {
-                        scheduleContentContainer.innerHTML = `
-                <div class="text-center py-12 text-gray-500">
-                    <svg class="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                    </svg>
-                    <p class="text-lg font-medium">Belum ada jadwal</p>
-                    <p class="text-sm">Silakan ambil jadwal terlebih dahulu</p>
-                </div>
-            `;
-                    }
-                }
-
-                // ==========================================
-                // TAB SWITCHING FUNCTION
-                // ==========================================
-                
-                /**
-                 * Fungsi untuk mengubah hari yang aktif
-                 */
                 function ubahHari(hari) {
                     
                     const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat']; //Testing sabtu Minggu
@@ -809,7 +777,6 @@
                     // REFRESH: Update status dan tombol untuk hari yang dipilih
                     refreshDaySchedules(hari);
                 }
-
                 /**
                  * Refresh schedule buttons and status for a specific day
                  */
@@ -836,17 +803,14 @@
                         let actionContent = '';
                         let borderColor = 'border-gray-400';
                         
-                        // Treat 'active' override as 'terjadwal' (Pending Confirmation)
-                        const effectiveStatus = (isOverride && status === 'active') ? 'terjadwal' : status;
-                        
-                        if (effectiveStatus === 'terjadwal') {
+                        if (status === 'terjadwal') {
                             if (showButtons) {
                                 actionContent = `
-                                    <button onclick="konfirmasiBatal(${scheduleId}, ${isOverride})"
+                                    <button onclick="konfirmasiBatal(${scheduleId})"
                                         class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-red-600 to-red-400 rounded-lg hover:opacity-90 transition min-w-[135px]">
                                         Batal
                                     </button>
-                                    <button onclick="konfirmasiAjar(${scheduleId}, ${isOverride})"
+                                    <button onclick="konfirmasiAjar(${scheduleId})"
                                         class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-green-600 to-green-400 rounded-lg hover:opacity-90 transition min-w-[135px]">
                                         Konfirmasi
                                     </button>
@@ -855,46 +819,36 @@
                                 actionContent = getStatusBadge(status);
                             } else {
                                 actionContent = `<span class="text-xs text-gray-500 text-center py-2">Belum waktunya konfirmasi</span>`;
-                            }
-                        }
-                        else if (effectiveStatus === 'dikonfirmasi') {
-                            borderColor = 'border-green-500';
-                            actionContent = `
-                                    <a href="/scan-qr" class="flex items-center gap-2 text-sm px-4 py-2 bg-blue-50 hover:bg-blue-100 rounded-lg transition cursor-pointer">
-                                        <svg class="w-5 h-5 text-blue-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
-                                        </svg>
-                                        <span class="text-blue-600 font-medium">Menunggu Scan QR →</span>
-                                    </a>
-                                `;
-                        } else if (effectiveStatus === 'sedang_berlangsung') {
-                            borderColor = 'border-yellow-500';
+        }
+        }
+        else if (status === 'dikonfirmasi') {
+            borderColor = 'border-green-500';
+            actionContent = `
+                    <a href="/scan-qr" class="flex items-center gap-2 text-sm px-4 py-2 bg-blue-50 hover:bg-blue-100 rounded-lg transition cursor-pointer">
+                        <svg class="w-5 h-5 text-blue-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
+                        </svg>
+                        <span class="text-blue-600 font-medium">Menunggu Scan QR →</span>
+                    </a>
+                `;
+        } else if (status === 'sedang_berlangsung') {
+            borderColor = 'border-yellow-500';
 
-                            actionContent = '';
-                            
-                            // Logic: Tombol pindah ruangan gak berlaku kalau schedule_id ada atau schedule_override_id ada (untuk override)
-                            // Regular schedule (not override) always allows move
-                            let canMove = true;
-                            if (isOverride) {
-                                if (schedule.schedule_id || schedule.schedule_override_id) {
-                                    canMove = false;
-                                }
-                            }
+            actionContent = '';
+            if (!isOverride) {
+                actionContent += `
+                    <button onclick="pindahRuangan(${scheduleId})"
+                        class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-red-600 to-red-400 rounded-lg hover:opacity-90 transition min-w-[135px]">
+                        Pindah Ruangan
+                    </button>`;
+            }
 
-                            if (canMove) {
-                                actionContent += `
-                                    <button onclick="pindahRuangan(${scheduleId}, ${isOverride})"
-                                        class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-red-600 to-red-400 rounded-lg hover:opacity-90 transition min-w-[135px]">
-                                        Pindah Ruangan
-                                    </button>`;
-                            }
-
-                            actionContent += `
-                                <button onclick="selesaiKelas(${scheduleId}, ${isOverride})"
-                                    class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-blue-600 to-blue-400 rounded-lg hover:opacity-90 transition min-w-[135px]">
-                                    Selesai
-                                </button>
-                                `;
+            actionContent += `
+                <button onclick="selesaiKelas(${scheduleId}, ${isOverride})"
+                    class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white text-center bg-gradient-to-r from-blue-600 to-blue-400 rounded-lg hover:opacity-90 transition min-w-[135px]">
+                    Selesai
+                </button>
+                `;
         } else {
             if (status === 'selesai') {
                 borderColor = 'border-green-500';
@@ -903,39 +857,9 @@
                 borderColor = 'border-red-500';
                 actionContent = getStatusBadge(status);
             } else if (status === 'pindah_ruangan') {
-            borderColor = 'border-purple-500';
-            
-            // Cek apakah sudah ada child override (artinya sudah scan di ruangan baru)
-            if (schedule.child_override) {
-                actionContent = `
-                    <div class="text-center w-full">
-                        <p class="text-xs text-purple-600 font-medium">Dipindahkan ke Ruangan Lain</p>
-                    </div>
-                `;
-            } else {
-                // Show Scan QR button ONLY for overrides (Substitute Classes)
-                if (isOverride) {
-                    actionContent = `
-                        <div class="text-center w-full">
-                            <p class="text-xs text-purple-600 mb-2 font-medium">Dipindahkan ke Ruangan Lain</p>
-                            <a href="/scan-qr" class="flex items-center justify-center gap-2 text-sm px-4 py-2 bg-purple-50 hover:bg-purple-100 rounded-lg transition cursor-pointer border border-purple-200">
-                                <svg class="w-5 h-5 text-purple-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
-                                </svg>
-                                <span class="text-purple-600 font-medium">Scan QR Ruangan Baru</span>
-                            </a>
-                        </div>
-                    `;
-                } else {
-                    // Regular class: Just show text
-                    actionContent = `
-                        <div class="text-center w-full">
-                            <p class="text-xs text-purple-600 font-medium">Dipindahkan ke Ruangan Lain</p>
-                        </div>
-                    `;
-                }
-            }
-        } else if (status === 'moved_out') {
+                borderColor = 'border-purple-500';
+                actionContent = `<span class="text-xs text-purple-600 font-medium">Dipindahkan ke Ruangan Lain</span>`;
+            } else if (status === 'moved_out') {
                 borderColor = 'border-gray-400';
                 actionContent = getStatusBadge(status);
             } else {
@@ -1219,6 +1143,7 @@
                 error.textContent = '';
             });
         }
+    }
 
     /**
      * Update indikator visual untuk validasi password
@@ -1234,6 +1159,7 @@
             indicator.className = 'w-3 h-3 rounded-full bg-red-500 mr-2';
             textElement.className = 'text-red-600';
         }
+    }
 
         /**
          * Validasi kata sandi baru
@@ -1353,10 +1279,10 @@
         /**
          * Konfirmasi batal - Ketika user membatalkan jadwal mengajar
          */
-        async function konfirmasiBatal(scheduleId, isOverride = false) {
+        async function konfirmasiBatal(scheduleId) {
             if (!confirm('Batalkan jadwal ini?')) return;
 
-            const result = await cancelScheduleAPI(scheduleId, isOverride);
+            const result = await cancelScheduleAPI(scheduleId);
 
             if (result.success) {
                 alert(' Jadwal berhasil dibatalkan');
@@ -1364,7 +1290,6 @@
                 //  UPDATE UI
                 const statusBadge = document.getElementById(`status-jadwal-${scheduleId}`);
                 const buttonDiv = document.getElementById(`tombol-jadwal-${scheduleId}`);
-                const scheduleDiv = document.getElementById(`jadwal-${scheduleId}`); // Fix: Define scheduleDiv
 
                 if (statusBadge) {
                     statusBadge.textContent = 'Dibatalkan';
@@ -1381,10 +1306,6 @@
                     scheduleDiv.style.pointerEvents = 'none';
                 }
 
-                setTimeout(() => {
-                    location.reload();
-                }, 300);
-
             } else {
                 alert('❌ ' + result.message);
             }
@@ -1395,21 +1316,18 @@
          * Konfirmasi ajar - Ketika user mengkonfirmasi akan mengajar
          * Setelah konfirmasi, button berubah menjadi Pindah Ruangan & Selesai (setelah scan QR)
          */
-        async function konfirmasiAjar(scheduleId, isOverride = false) {
+        async function konfirmasiAjar(scheduleId) {
             if (!confirm('Anda yakin akan mengajar?')) return;
 
-            const result = await confirmScheduleAPI(scheduleId, isOverride);
+            const result = await confirmScheduleAPI(scheduleId);
 
             if (result.success) {
-                alert('✅ Jadwal berhasil dikonfirmasi! Silakan scan QR di ruangan.');
+                alert(' Jadwal berhasil dikonfirmasi! Silakan scan QR di ruangan.');
 
-                // ✅ Fix: Use correct DOM ID for overrides
-                const domId = isOverride ? `override-${scheduleId}` : scheduleId;
-                
-                // ✅ UPDATE UI IMMEDIATELY
-                const statusBadge = document.getElementById(`status-jadwal-${domId}`);
-                const buttonDiv = document.getElementById(`tombol-jadwal-${domId}`);
-                const scheduleDiv = document.getElementById(`jadwal-${domId}`);
+                //  UPDATE UI IMMEDIATELY
+                const statusBadge = document.getElementById(`status-jadwal-${scheduleId}`);
+                const buttonDiv = document.getElementById(`tombol-jadwal-${scheduleId}`);
+                const scheduleDiv = document.getElementById(`jadwal-${scheduleId}`);
 
                 if (statusBadge) {
                     statusBadge.textContent = 'Dikonfirmasi';
@@ -1442,21 +1360,18 @@
         /**
          * Pindah Ruangan - Ketika user ingin pindah ruangan saat sedang berlangsung
          */
-        async function pindahRuangan(scheduleId, isOverride = false) {
+        async function pindahRuangan(scheduleId) {
             if (!confirm('Pindah ke ruangan lain? Status akan berubah menjadi "Pindah Ruangan".')) return;
 
-            const result = await moveToRoomAPI(scheduleId, isOverride);
+            const result = await moveToRoomAPI(scheduleId);
 
             if (result.success) {
-                alert('✅ Status berubah menjadi Pindah Ruangan. Silakan scan QR di ruangan baru.');
-                
-                // Fix: Use correct DOM ID for overrides
-                const domId = isOverride ? `override-${scheduleId}` : scheduleId;
-                
+                alert(' Status berubah menjadi Pindah Ruangan. Silakan scan QR di ruangan baru.');
+
                 // Update UI
-                const statusBadge = document.getElementById(`status-jadwal-${domId}`);
-                const scheduleDiv = document.getElementById(`jadwal-${domId}`);
-                const buttonDiv = document.getElementById(`tombol-jadwal-${domId}`);
+                const statusBadge = document.getElementById(`status-jadwal-${scheduleId}`);
+                const scheduleDiv = document.getElementById(`jadwal-${scheduleId}`);
+                const buttonDiv = document.getElementById(`tombol-jadwal-${scheduleId}`);
 
                 if (statusBadge) {
                     statusBadge.textContent = 'Pindah Ruangan';
@@ -1470,11 +1385,11 @@
 
                 if (buttonDiv) {
                     buttonDiv.innerHTML = `
-                    <a href="/scan-qr" class="flex items-center gap-2 text-sm px-4 py-2 bg-purple-50 hover:bg-purple-100 rounded-lg transition cursor-pointer border border-purple-200">
+                    <a href="/scan-qr" class="flex items-center gap-2 text-sm px-4 py-2 bg-purple-50 hover:bg-purple-100 rounded-lg transition cursor-pointer">
                         <svg class="w-5 h-5 text-purple-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
                         </svg>
-                        <span class="text-purple-600 font-medium">Scan QR Ruangan Baru →</span>
+                        <span class="text-purple-600 font-medium">Menunggu Scan QR (Ruangan Baru) →</span>
                     </a>
                 `;
                 }

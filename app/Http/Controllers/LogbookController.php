@@ -73,7 +73,7 @@ class LogbookController extends Controller
                     'nim' => $logbook->user->nim ?? 'N/A',
                     'course_name' => $logbook->course->course_name ?? 'N/A',
                     'class_name' => $logbook->schedule 
-                        ? ($logbook->schedule->courseClass->class_name ?? 'N/A')
+                        ? ($logbook->schedule->class->class_name ?? 'N/A')  // Fixed: Schedule uses 'class'
                         : ($logbook->scheduleOverride->courseClass->class_name ?? 'N/A'),
                     'room_name' => $logbook->room->room_name ?? 'N/A',
                     'date' => $logbook->date->format('d/m/Y'),
@@ -238,7 +238,7 @@ class LogbookController extends Controller
     public function getLogbookData(Request $request)
     {
         try {
-            $query = Logbook::with(['user', 'room', 'course', 'schedule', 'scheduleOverride.courseClass']);
+            $query = Logbook::with(['user', 'room', 'course', 'schedule.class', 'scheduleOverride.courseClass']);
 
             // Filter Period
             if ($request->period === 'week') {
@@ -267,8 +267,16 @@ class LogbookController extends Controller
             }
 
             if ($request->filled('class')) {
-                $query->whereHas('schedule.courseClass', function($q) use ($request) {
-                    $q->where('class_name', $request->class);
+                $className = $request->class;
+                $query->where(function($q) use ($className) {
+                    // Check in regular schedule (uses 'class' relationship)
+                    $q->whereHas('schedule.class', function($subQ) use ($className) {
+                        $subQ->where('class_name', $className);
+                    })
+                    // OR check in override schedule (uses 'courseClass' relationship) 
+                    ->orWhereHas('scheduleOverride.courseClass', function($subQ) use ($className) {
+                        $subQ->where('class_name', $className);
+                    });
                 });
             }
 
@@ -294,7 +302,7 @@ class LogbookController extends Controller
                     'nim' => $log->user->nim ?? '-',
                     'course' => $log->course->course_name ?? '-',
                     'class' => $log->schedule 
-                        ? ($log->schedule->courseClass->class_name ?? '-')
+                        ? ($log->schedule->class->class_name ?? '-')  // Fixed: Schedule uses 'class'
                         : ($log->scheduleOverride->courseClass->class_name ?? '-'),
                     'room' => $log->room->room_name ?? '-',
                     'schedule' => $log->schedule 
