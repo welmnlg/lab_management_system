@@ -23,25 +23,12 @@ class SemesterPeriodsSeeder extends Seeder
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
         $periods = [
-            // Semester Ganjil 2024/2025 (Completed)
+            // Semester Genap 2024/2025 (Completed)
             [
                 'semester_type' => 'Ganjil',
                 'academic_year' => '2024/2025',
-                'start_date' => '2024-09-01',
-                'end_date' => '2025-01-31',
-                'schedule_start_date' => '2024-08-15',
-                'schedule_end_date' => '2024-08-30',
-                'is_active' => false,
-                'is_schedule_open' => false,
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
-            ],
-            // Semester Genap 2024/2025 (Completed)
-            [
-                'semester_type' => 'Genap',
-                'academic_year' => '2024/2025',
-                'start_date' => '2025-02-01',
-                'end_date' => '2025-06-30',
+                'start_date' => '2024-06-01',
+                'end_date' => '2024-12-31',
                 'schedule_start_date' => '2025-01-15',
                 'schedule_end_date' => '2025-01-30',
                 'is_active' => false,
@@ -51,13 +38,13 @@ class SemesterPeriodsSeeder extends Seeder
             ],
             // Semester Ganjil 2025/2026 (ACTIVE - Current Period)
             [
-                'semester_type' => 'Ganjil',
-                'academic_year' => '2025/2026',
-                'start_date' => '2025-12-10',
-                'end_date' => '2026-05-10',
-                'schedule_start_date' => '2025-12-01',
-                'schedule_end_date' => '2025-12-04',
-                'is_active' => true,  // ✓ AKTIF
+                'semester_type' => 'Genap',
+                'academic_year' => '2024/2025',
+                'start_date' => '2025-01-01',
+                'end_date' => '2025-06-30',
+                'schedule_start_date' => '2025-01-15',
+                'schedule_end_date' => '2025-01-30',
+                'is_active' => false,  // ✓ AKTIF
                 'is_schedule_open' => false,  // Tidak manual override, tapi akan otomatis open berdasarkan tanggal
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),

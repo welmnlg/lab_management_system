@@ -228,6 +228,49 @@
             loadUserSchedules();
         });
 
+        // ==========================================
+        // AUTO-RELOAD DATA SAAT USER KEMBALI KE HALAMAN
+        // ==========================================
+        
+        let lastReloadTime = 0;
+        const RELOAD_INTERVAL = 2000; // Minimum 2 detik antara reload
+        
+        /**
+         * Reload jadwal dengan debouncing
+         */
+        function reloadSchedulesIfNeeded() {
+            const now = Date.now();
+            if (now - lastReloadTime >= RELOAD_INTERVAL) {
+                console.log('🔄 Refresh data jadwal...');
+                lastReloadTime = now;
+                loadUserSchedules();
+            }
+        }
+        
+        /**
+         * Auto-reload jadwal ketika user kembali ke halaman profile
+         * Berguna setelah user scan QR dan kembali ke profile
+         */
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                // Halaman menjadi visible (user kembali ke tab ini)
+                console.log('👁️ User kembali ke halaman');
+                reloadSchedulesIfNeeded();
+            }
+        });
+
+        /**
+         * Auto-reload saat halaman di-show (untuk browser navigation)
+         * Handel case ketika user gunakan tombol back/forward browser
+         */
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted || performance.navigation.type === 2) {
+                // Halaman di-load dari cache (bfcache)
+                console.log('💾 Halaman dari cache');
+                reloadSchedulesIfNeeded();
+            }
+        });
+
         /**
          * Mendapatkan tanggal untuk hari Senin dari minggu ini
          */
@@ -645,14 +688,22 @@
                     actionContent = getStatusBadge(status);
                 } else if (status === 'pindah_ruangan') {
                     borderColor = 'border-purple-500';
-                    actionContent = `
-                        <a href="/scan-qr" class="flex items-center gap-2 text-sm px-4 py-2 bg-purple-50 hover:bg-purple-100 rounded-lg transition cursor-pointer">
-                            <svg class="w-5 h-5 text-purple-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
-                            </svg>
-                            <span class="text-purple-600 font-medium">Menunggu Scan QR (Ruangan Baru) →</span>
-                        </a>
-                    `;
+                    
+                    // 🔧 PERBAIKAN: Cek apakah child override sudah aktif
+                    if (schedule.has_active_child_override) {
+                        // Sudah ada child override yang aktif, hanya tampilkan badge
+                        actionContent = getStatusBadge(status);
+                    } else {
+                        // Belum scan QR di ruangan baru, tampilkan button
+                        actionContent = `
+                            <a href="/scan-qr" class="flex items-center gap-2 text-sm px-4 py-2 bg-purple-50 hover:bg-purple-100 rounded-lg transition cursor-pointer">
+                                <svg class="w-5 h-5 text-purple-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
+                                </svg>
+                                <span class="text-purple-600 font-medium">Menunggu Scan QR (Ruangan Baru) →</span>
+                            </a>
+                        `;
+                    }
                 } else {
                     actionContent = getStatusBadge(status);
                 }

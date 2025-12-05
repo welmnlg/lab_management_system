@@ -69,22 +69,19 @@
             </a>
         </nav>
         
-        <!-- Mobile User Info -->
+        <!-- Mobile User Info - Clickable -->
         <div class="p-4 border-t border-gray-200">
-            <div class="flex items-center space-x-3 bg-gray-50 rounded-xl p-3">
-                <div class="w-12 h-12 rounded-full bg-gradient-to-r from-blue-600 to-red-600 flex items-center justify-center shadow-sm">
+            <a href="{{ route('profil') }}" class="flex items-center space-x-3 bg-gray-50 rounded-xl p-3 hover:bg-gray-100 transition-colors duration-200 group">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-r from-blue-600 to-red-600 flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow duration-200">
                     <span class="text-white font-semibold text-base">
                         {{ collect(explode(' ', Auth::user()->name))->map(fn($n) => strtoupper(substr($n,0,1)))->join('') }}
                     </span>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-semibold text-gray-900 truncate">{{ Auth::user()->name }}</p>
+                    <p class="text-sm font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors duration-200">{{ Auth::user()->name }}</p>
                     <p class="text-xs text-gray-500 truncate">{{ Auth::user()->email }}</p>
                 </div>
-            </div>
-            <button id="closeMobileSidebar" class="text-white p-2 rounded-full hover:bg-white hover:bg-opacity-10 transition-colors duration-200">
-                <i class="bi bi-x-lg text-xl"></i>
-            </button>
+            </a>
         </div>
     </div>
 </div>
@@ -118,15 +115,15 @@
                 <span id="notification-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center hidden">0</span>
             </a>
             
-            <!-- User Info -->
-            <div class="hidden lg:flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2">
-                <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
+            <!-- User Info - Clickable -->
+            <a href="{{ route('profil') }}" class="hidden lg:flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2 hover:bg-gray-100 transition-colors duration-200 cursor-pointer group">
+                <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center group-hover:bg-blue-600 transition-colors duration-200">
                     <span class="text-white text-sm font-semibold">
                         {{ collect(explode(' ', Auth::user()->name))->map(fn($n) => strtoupper(substr($n,0,1)))->join('') }}
                     </span>
                 </div>
-                <span class="text-sm font-medium text-gray-700">{{ Auth::user()->name }}</span>
-            </div>
+                <span class="text-sm font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">{{ Auth::user()->name }}</span>
+            </a>
         </div>
     </div>
 </div>
