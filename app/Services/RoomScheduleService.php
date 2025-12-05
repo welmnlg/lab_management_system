@@ -325,7 +325,7 @@ class RoomScheduleService
         // Get overrides for this date
         $overrides = ScheduleOverride::where('room_id', $roomId)
             ->where('date', $dateCarbon->format('Y-m-d'))
-            ->whereIn('status', ['active', 'dikonfirmasi', 'pindah_ruangan', 'sedang_berlangsung', 'selesai'])
+            ->whereIn('status', ['active', 'dikonfirmasi', 'pindah_ruangan', 'sedang_berlangsung', 'selesai', 'dibatalkan'])
             ->with(['courseClass.course', 'user'])
             ->get();
         
@@ -335,15 +335,30 @@ class RoomScheduleService
         $processedOverrideIds = [];
         
         foreach ($schedules as $schedule) {
-            // Cek apakah ada override untuk schedule ini di ruangan ini (misal ganti jam di ruangan sama)
+            // 🔧 PERBAIKAN: Cek apakah user punya override untuk schedule ini DI TANGGAL INI
+            // (bisa di ruangan berbeda atau jam berbeda)
+            $anyOverrideForThisSchedule = ScheduleOverride::where('schedule_id', $schedule->schedule_id)
+                ->where('date', $dateCarbon->format('Y-m-d'))
+                ->whereIn('status', ['active', 'dikonfirmasi', 'pindah_ruangan', 'sedang_berlangsung', 'selesai'])
+                ->whereNull('schedule_override_id') // Hanya top-level override, bukan child dari pindah ruangan
+                ->first();
+            
+            if ($anyOverrideForThisSchedule) {
+                // User sudah punya kelas ganti untuk tanggal ini
+                // JANGAN tampilkan jadwal reguler di room ini
+                // (Biarkan slot kosong, agar aslab lain bisa booking)
+                continue;
+            }
+            
+            // Cek apakah ada override untuk schedule ini DI RUANGAN INI (misal ganti jam di ruangan sama)
             $override = $overrides->where('schedule_id', $schedule->schedule_id)->first();
             
             if ($override) {
-                // Jika ada override, gunakan override
+                // Jika ada override di ruangan ini, gunakan override
                 $formattedSchedules[] = $this->formatSchedule($override, $dateCarbon, true);
                 $processedOverrideIds[] = $override->id;
             } else {
-                // Jika tidak ada, gunakan jadwal asli
+                // Jika tidak ada override sama sekali, gunakan jadwal reguler
                 $formattedSchedules[] = $this->formatSchedule($schedule, $dateCarbon, false);
             }
         }
@@ -442,6 +457,11 @@ private function formatSchedule($schedule, $date, $isOverride)
         $now = Carbon::now();
         $scheduleDate = Carbon::parse($date);
         $currentTime = $now->format('H:i:s');
+        
+        // PERBAIKAN 0: Cek status dibatalkan PALING AWAL
+        if ($schedule && $schedule->status === 'dibatalkan') {
+            return 'cancelled';
+        }
         
         // PERBAIKAN 1: Cek apakah hari ini
         if (!$scheduleDate->isToday()) {

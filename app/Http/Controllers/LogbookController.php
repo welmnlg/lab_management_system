@@ -61,12 +61,52 @@ class LogbookController extends Controller
 
             $logbooks = Logbook::where('user_id', $user->user_id ?? $user->id)
                 ->whereDate('date', $today)
-                ->with(['user', 'room', 'course', 'schedule', 'scheduleOverride.courseClass'])
+                ->with(['user', 'room', 'course', 'schedule', 'scheduleOverride.courseClass', 'scheduleOverride.schedule', 'scheduleOverride.parentOverride.schedule'])
                 ->orderBy('login', 'desc')
                 ->get();
 
             // ✅ Map dengan calculated fields
             $logbookData = $logbooks->map(function ($logbook) {
+                // ✅ FIXED: Get schedule time from root/parent, not from child override
+                $scheduleTime = 'N/A';
+                if ($logbook->schedule) {
+                    // Regular schedule
+                    $scheduleTime = $logbook->schedule->start_time . ' - ' . $logbook->schedule->end_time;
+                } elseif ($logbook->scheduleOverride) {
+                    // Override schedule - get time from parent or self
+                    $override = $logbook->scheduleOverride;
+                    
+                    // If this override has a parent (recursive move), get time from root
+                    if ($override->schedule_id) {
+                        // Has root schedule - use it
+                        $rootSchedule = $override->schedule;
+                        if ($rootSchedule) {
+                            $scheduleTime = $rootSchedule->start_time . ' - ' . $rootSchedule->end_time;
+                        } else {
+                            // Fallback to override's own time
+                            $scheduleTime = $override->start_time . ' - ' . $override->end_time;
+                        }
+                    } elseif ($override->schedule_override_id) {
+                        // Has parent override - try to get root schedule from parent
+                        $parentOverride = $override->parentOverride;
+                        if ($parentOverride && $parentOverride->schedule_id) {
+                            $rootSchedule = $parentOverride->schedule;
+                            if ($rootSchedule) {
+                                $scheduleTime = $rootSchedule->start_time . ' - ' . $rootSchedule->end_time;
+                            } else {
+                                // Fallback to parent override's time
+                                $scheduleTime = $parentOverride->start_time . ' - ' . $parentOverride->end_time;
+                            }
+                        } else {
+                            // Fallback to override's own time
+                            $scheduleTime = $override->start_time . ' - ' . $override->end_time;
+                        }
+                    } else {
+                        // Standalone override (kelas ganti), use its own time
+                        $scheduleTime = $override->start_time . ' - ' . $override->end_time;
+                    }
+                }
+                
                 return [
                     'id' => $logbook->id,
                     'user_name' => $logbook->user->name ?? 'N/A',
@@ -77,9 +117,7 @@ class LogbookController extends Controller
                         : ($logbook->scheduleOverride->courseClass->class_name ?? 'N/A'),
                     'room_name' => $logbook->room->room_name ?? 'N/A',
                     'date' => $logbook->date->format('d/m/Y'),
-                    'schedule_time' => $logbook->schedule 
-                        ? $logbook->schedule->start_time . ' - ' . $logbook->schedule->end_time
-                        : ($logbook->scheduleOverride ? $logbook->scheduleOverride->start_time . ' - ' . $logbook->scheduleOverride->end_time : 'N/A'),
+                    'schedule_time' => $scheduleTime,
                     'login' => $logbook->login,
                     'logout' => $logbook->logout ?? '-',
                     'duration' => $this->calculateDuration($logbook->login, $logbook->logout),
@@ -238,7 +276,7 @@ class LogbookController extends Controller
     public function getLogbookData(Request $request)
     {
         try {
-            $query = Logbook::with(['user', 'room', 'course', 'schedule.class', 'scheduleOverride.courseClass']);
+            $query = Logbook::with(['user', 'room', 'course', 'schedule.class', 'scheduleOverride.courseClass', 'scheduleOverride.schedule', 'scheduleOverride.parentOverride.schedule']);
 
             // Filter Period
             if ($request->period === 'week') {
@@ -296,6 +334,46 @@ class LogbookController extends Controller
                 ->paginate(10);
 
             $data = $logbooks->getCollection()->map(function ($log) {
+                // ✅ FIXED: Get schedule time from root/parent, not from child override
+                $scheduleTime = '-';
+                if ($log->schedule) {
+                    // Regular schedule
+                    $scheduleTime = $log->schedule->day . ' / ' . $log->schedule->start_time . ' - ' . $log->schedule->end_time;
+                } elseif ($log->scheduleOverride) {
+                    // Override schedule - get time from parent or self
+                    $override = $log->scheduleOverride;
+                    
+                    // If this override has a parent (recursive move), get time from root
+                    if ($override->schedule_id) {
+                        // Has root schedule - use it
+                        $rootSchedule = $override->schedule;
+                        if ($rootSchedule) {
+                            $scheduleTime = $rootSchedule->day . ' / ' . $rootSchedule->start_time . ' - ' . $rootSchedule->end_time;
+                        } else {
+                            // Fallback to override's own time
+                            $scheduleTime = $override->day . ' / ' . $override->start_time . ' - ' . $override->end_time;
+                        }
+                    } elseif ($override->schedule_override_id) {
+                        // Has parent override - try to get root schedule from parent
+                        $parentOverride = $override->parentOverride;
+                        if ($parentOverride && $parentOverride->schedule_id) {
+                            $rootSchedule = $parentOverride->schedule;
+                            if ($rootSchedule) {
+                                $scheduleTime = $rootSchedule->day . ' / ' . $rootSchedule->start_time . ' - ' . $rootSchedule->end_time;
+                            } else {
+                                // Fallback to parent override's time
+                                $scheduleTime = $parentOverride->day . ' / ' . $parentOverride->start_time . ' - ' . $parentOverride->end_time;
+                            }
+                        } else {
+                            // Fallback to override's own time
+                            $scheduleTime = $override->day . ' / ' . $override->start_time . ' - ' . $override->end_time;
+                        }
+                    } else {
+                        // Standalone override (kelas ganti), use its own time
+                        $scheduleTime = $override->day . ' / ' . $override->start_time . ' - ' . $override->end_time;
+                    }
+                }
+                
                 return [
                     'date' => $log->date->format('d/m/Y'),
                     'name' => $log->user->name ?? '-',
@@ -305,9 +383,7 @@ class LogbookController extends Controller
                         ? ($log->schedule->class->class_name ?? '-')  // Fixed: Schedule uses 'class'
                         : ($log->scheduleOverride->courseClass->class_name ?? '-'),
                     'room' => $log->room->room_name ?? '-',
-                    'schedule' => $log->schedule 
-                        ? ($log->schedule->day . ' / ' . $log->schedule->start_time . ' - ' . $log->schedule->end_time) 
-                        : ($log->scheduleOverride ? ($log->scheduleOverride->day . ' / ' . $log->scheduleOverride->start_time . ' - ' . $log->scheduleOverride->end_time) : '-'),
+                    'schedule' => $scheduleTime,
                     // ✅ FIX: Format Time Only (H:i:s)
                     'login' => $log->login ? \Carbon\Carbon::parse($log->login)->format('H:i:s') : '-',
                     'logout' => $log->logout ? \Carbon\Carbon::parse($log->logout)->format('H:i:s') : '-',

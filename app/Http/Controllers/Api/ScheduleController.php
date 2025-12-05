@@ -168,7 +168,27 @@ class ScheduleController extends Controller
                     $roomName = $schedule->room->name ?? $schedule->room->room_name;
                 }
 
-                // 1. Add Original Schedule
+                // 🔧 PERBAIKAN: Check for child override SEBELUM menambahkan parent schedule
+                $hasActiveChildOverride = false;
+                $override = null;
+                
+                if ($schedule->status == 'pindah_ruangan') {
+                    $override = \App\Models\ScheduleOverride::where('schedule_id', $schedule->schedule_id)
+                        ->whereBetween('date', [
+                            now()->startOfWeek(),          // Senin
+                            now()->startOfWeek()->addDays(4) // Jumat
+                        ])
+                        ->whereIn('status', ['sedang_berlangsung', 'selesai'])
+                        ->with('room')
+                        ->first();
+                    
+                    // flag: ada child override yang sudah aktif/selesai
+                    if ($override) {
+                        $hasActiveChildOverride = true;
+                    }
+                }
+
+                // 1. Add Original Schedule with proper flags
                 $grouped[$day][] = [
                     'schedule_id' => $schedule->schedule_id,
                     'course_name' => $courseName,
@@ -182,40 +202,29 @@ class ScheduleController extends Controller
                     'status' => $schedule->status,
                     'confirmed_at' => $schedule->confirmed_at,
                     'is_override' => false,
-                    'child_override' => ($schedule->status == 'pindah_ruangan' && isset($override) && $override) ? true : false,
+                    'has_active_child_override' => $hasActiveChildOverride, // ✅ Flag baru
                     'schedule_override_id' => null
                 ];
 
-                // 2. Check for Override (Pindah Ruangan)
-                if ($schedule->status == 'pindah_ruangan') {
-                $override = \App\Models\ScheduleOverride::where('schedule_id', $schedule->schedule_id)
-                    ->whereBetween('date', [
-                        now()->startOfWeek(),          // Senin
-                        now()->startOfWeek()->addDays(4) // Jumat
-                    ])
-                    ->whereIn('status', ['active', 'sedang_berlangsung', 'selesai'])
-                    ->with('room')
-                    ->first();
-
-                    if ($override && $override->room) {
-                        $grouped[$day][] = [
-                            'schedule_id' => $schedule->schedule_id,
-                            'course_name' => $courseName,
-                            'class_name' => $className,
-                            'room_name' => $override->room->room_name,
-                            'room_id' => $override->room_id,
-                            'day' => $schedule->day,
-                            'time_slot' => $this->formatTimeSlot($override->start_time, $override->end_time),
-                            'start_time' => $override->start_time,
-                            'end_time' => $override->end_time,
-                            'status' => $override->status === 'active' ? 'sedang_berlangsung' : $override->status,
-                            'confirmed_at' => $schedule->confirmed_at,
-                            'is_override' => true,
-                            'override_id' => $override->id,
-                            'child_override' => false,
-                            'schedule_override_id' => $override->schedule_override_id
-                        ];
-                    }
+                // 2. Add Child Override as separate entry (if exists)
+                if ($hasActiveChildOverride && $override && $override->room) {
+                    $grouped[$day][] = [
+                        'schedule_id' => $schedule->schedule_id,
+                        'course_name' => $courseName,
+                        'class_name' => $className,
+                        'room_name' => $override->room->room_name,
+                        'room_id' => $override->room_id,
+                        'day' => $schedule->day,
+                        'time_slot' => $this->formatTimeSlot($override->start_time, $override->end_time),
+                        'start_time' => $override->start_time,
+                        'end_time' => $override->end_time,
+                        'status' => $override->status, // sedang_berlangsung atau selesai
+                        'confirmed_at' => $schedule->confirmed_at,
+                        'is_override' => true,
+                        'override_id' => $override->id,
+                        'has_active_child_override' => false,
+                        'schedule_override_id' => $override->schedule_override_id
+                    ];
                 }
             }
 

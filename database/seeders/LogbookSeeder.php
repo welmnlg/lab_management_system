@@ -43,7 +43,7 @@ class LogbookSeeder extends Seeder
                 'override_id' => null, // Bisa diisi jika ada data schedule_overrides
                 'room_id' => $rooms->random()->room_id,
                 'course_id' => $courses->random()->course_id,
-                'date' => Carbon::now()->subDays(rand(0, 14))->toDateString(),
+                'date' => Carbon::now()->subDays(rand(1, 14))->toDateString(),
                 'login' => $loginTime,
                 'logout' => rand(0, 10) === 0 ? null : $logoutTime, // 10% chance null (belum logout)
                 'activity' => $activities[array_rand($activities)],
