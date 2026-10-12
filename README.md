@@ -168,10 +168,10 @@ Proyek ini dikembangkan secara berkelompok sebagai tugas <!-- TODO: nama mata ku
 
 | No | Nama | Peran | GitHub |
 | --- | --- | --- | --- |
-| 1 | Nurul Aini <!-- sesuaikan nama lengkap --> | Project Manager & Front End | [@nurulaini7](https://github.com/nurulaini7) |
-| 2 | Inda Azara <!-- sesuaikan nama lengkap --> | Front End | [@indaazara](https://github.com/indaazara) |
-| 3 | Cut Nabilah P. <!-- sesuaikan nama lengkap --> | Back End | [@cutnabilahp](https://github.com/cutnabilahp) |
-| 4 | Said Mazaya <!-- sesuaikan nama lengkap --> | Back End | [@saidmazaya](https://github.com/saidmazaya) |
-| 5 | Imanuel Manullang<!-- nama lengkap Anda --> | Back End | [@welmnlg](https://github.com/welmnlg) |
+| 1 | Nurul Aini | Project Manager & Front End | [@nurulaini7](https://github.com/nurulaini7) |
+| 2 | Inda Azara | Front End | [@indaazara](https://github.com/indaazara) |
+| 3 | Cut Nabilah P.  | Back End | [@cutnabilahp](https://github.com/cutnabilahp) |
+| 4 | Said Mazaya | Back End | [@saidmazaya](https://github.com/saidmazaya) |
+| 5 | Imanuel Manullang | Back End | [@welmnlg](https://github.com/welmnlg) |
 
 Daftar lengkap kontributor dapat dilihat di halaman [Contributors](https://github.com/welmnlg/lab_management_system/graphs/contributors).
